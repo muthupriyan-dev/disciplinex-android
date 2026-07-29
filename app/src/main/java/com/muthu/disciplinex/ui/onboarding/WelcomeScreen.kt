@@ -23,17 +23,21 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
                 .fillMaxSize(),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Discipline",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Text(
-                text = "X",
-                fontWeight = FontWeight.Bold,
-                color = com.muthu.disciplinex.ui.theme.OrangeEnd,
-                style = MaterialTheme.typography.headlineLarge
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Discipline",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineLarge,
+                    maxLines = 1
+                )
+                Text(
+                    text = "X",
+                    fontWeight = FontWeight.Bold,
+                    color = com.muthu.disciplinex.ui.theme.OrangeEnd,
+                    style = MaterialTheme.typography.headlineLarge,
+                    maxLines = 1
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Show up before the world wakes up. Miss it, and the apps that distract you stay locked.",
