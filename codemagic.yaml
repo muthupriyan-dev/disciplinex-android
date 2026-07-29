@@ -2,9 +2,7 @@ workflows:
   disciplinex-android:
     name: DisciplineX Android
     max_build_duration: 60
-      environment:
-  vars:
-    PACKAGE_NAME: "com.muthu.disciplinex"
+    environment:
       vars:
         PACKAGE_NAME: "com.muthu.disciplinex"
     scripts:
