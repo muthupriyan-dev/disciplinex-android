@@ -2,9 +2,9 @@ workflows:
   disciplinex-android:
     name: DisciplineX Android
     max_build_duration: 60
-    environment:
-      android_signing:
-        - disciplinex_keystore   # set this up in Codemagic > Code signing identities, or remove this line to build unsigned for now
+      environment:
+  vars:
+    PACKAGE_NAME: "com.muthu.disciplinex"
       vars:
         PACKAGE_NAME: "com.muthu.disciplinex"
     scripts:
