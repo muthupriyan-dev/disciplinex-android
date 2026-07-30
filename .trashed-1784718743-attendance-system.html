@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Attendance System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+
+  body {
+    background:#151f28;
+    color:#fff;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 16px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    width:100%;
+    max-width:420px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+    font-size:0.78em;
+    color:#9aa5b1;
+  }
+  .brand {
+    font-size:1.1em;
+    font-weight:700;
+    color:#fff;
+    letter-spacing:0.5px;
+  }
+  .brand span { color:#00f7ff; }
+  .status-row { display:flex; align-items:center; gap:6px; }
+  .status-dot {
+    width:9px; height:9px; border-radius:50%;
+    background:#ff4d4d;
+    box-shadow:0 0 6px #ff4d4d;
+    transition:.4s;
+  }
+  .status-dot.online {
+    background:#2ed573;
+    box-shadow:0 0 8px #2ed573;
+  }
+  .clock-row { width:100%; max-width:420px; text-align:center; margin-bottom:18px; color:#7fdfff; font-size:0.85em; letter-spacing:0.5px; }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display:flex;
+    width:100%;
+    max-width:420px;
+    background:#191919;
+    border-radius:14px;
+    padding:5px;
+    margin-bottom:20px;
+  }
+  .tab-btn {
+    flex:1;
+    padding:10px 0;
+    text-align:center;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:0.9em;
+    font-weight:600;
+    color:#9aa5b1;
+    transition:.3s;
+  }
+  .tab-btn.active {
+    background:#00f7ff;
+    color:#111;
+    box-shadow:0 0 12px rgba(0,247,255,0.4);
+  }
+
+  .card {
+    width:100%;
+    max-width:420px;
+    background:#191919;
+    border-radius:20px;
+    padding:26px 22px;
+    margin-bottom:16px;
+  }
+
+  h2 { font-size:1.4em; margin-bottom:14px; text-align:center; }
+  h3 { font-size:1.05em; margin-bottom:10px; color:#00f7ff; }
+
+  .closed-msg {
+    text-align:center;
+    padding:30px 10px;
+    color:#ff8a65;
+    font-size:0.95em;
+    line-height:1.6;
+  }
+
+  /* ---------- Inputs ---------- */
+  .input-box { position:relative; width:100%; margin:24px 0; }
+  .input-box .input-line {
+    position:absolute; bottom:-2px; left:0; width:100%; height:2.5px;
+    background:#444; transition:.4s;
+  }
+  .input-box input:focus ~ .input-line,
+  .input-box select:focus ~ .input-line { background:#00f7ff; box-shadow:0 0 8px #00f7ff; }
+  .input-box label {
+    position:absolute; top:50%; left:5px; transform:translateY(-50%);
+    font-size:0.95em; color:#9aa5b1; pointer-events:none; transition:.3s;
+  }
+  .input-box input:focus ~ label,
+  .input-box input:not(:placeholder-shown) ~ label { top:-12px; font-size:0.75em; color:#00f7ff; }
+  .input-box input, .input-box select {
+    width:100%; height:46px; background:transparent; border:none; outline:none;
+    font-size:1em; color:#fff; padding:0 5px; border-bottom:2.5px solid #333;
+  }
+  #rollNumber, #histRoll { text-transform:uppercase; }
+
+  select option { background:#191919; color:#fff; }
+
+  .badge {
+    display:inline-block;
+    background:rgba(0,247,255,0.1);
+    border:1px solid #00f7ff;
+    color:#00f7ff;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:0.8em;
+    margin:4px 4px 4px 0;
+  }
+
+  button.primary {
+    width:100%; height:46px; background:#fff; border:none; border-radius:40px;
+    cursor:pointer; font-size:1em; color:#191919; font-weight:600; margin-top:6px;
+    transition:.3s;
+  }
+  button.primary:hover { background:#00f7ff; box-shadow:0 0 15px #00f7ff; }
+  button.primary:disabled { opacity:0.5; cursor:not-allowed; }
+
+  button.secondary {
+    width:100%; height:42px; background:transparent; border:1.5px solid #444;
+    border-radius:40px; color:#9aa5b1; font-size:0.9em; cursor:pointer; margin-top:10px;
+    transition:.3s;
+  }
+  button.secondary:hover { border-color:#00f7ff; color:#00f7ff; }
+
+  .error-msg { color:#ff4d4d; font-size:.82em; margin-top:8px; min-height:14px; text-align:center; }
+  .success-msg { color:#2ed573; font-size:.85em; margin-top:8px; min-height:14px; text-align:center; }
+
+  .welcome-tag { text-align:center; color:#00f7ff; font-size:0.85em; margin-bottom:8px; }
+
+  /* ---------- QR scan/video ---------- */
+  #qrVideoWrap { display:none; margin-top:14px; }
+  video { width:100%; border-radius:14px; border:2px solid #00f7ff; }
+  #qrCanvasHidden { display:none; }
+  .scan-hint { text-align:center; font-size:0.78em; color:#9aa5b1; margin-top:8px; }
+
+  /* spinner */
+  .spinner {
+    width:16px; height:16px; border:2px solid rgba(255,255,255,0.3);
+    border-top-color:#191919; border-radius:50%;
+    display:inline-block; margin-right:8px; vertical-align:middle;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* teacher qr display */
+  #teacherQrBox { text-align:center; margin-top:18px; }
+  #qrcodeCanvasHolder { display:inline-block; background:#fff; padding:14px; border-radius:14px; margin-top:10px; }
+
+  /* history list */
+  .history-item {
+    display:flex; justify-content:space-between; padding:10px 0;
+    border-bottom:1px solid #2a2a2a; font-size:0.88em;
+  }
+  .history-item:last-child { border-bottom:none; }
+  .history-date { color:#fff; }
+  .history-sub { color:#9aa5b1; font-size:0.85em; }
+
+  footer {
+    margin-top:10px;
+    text-align:center;
+    color:#5a6472;
+    font-size:0.75em;
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">Smart<span>Attend</span></div>
+    <div class="status-row">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting...</span>
+    </div>
+  </div>
+  <div class="clock-row" id="clockRow">--</div>
+
+  <div class="tabs">
+    <div class="tab-btn active" id="studentTabBtn" onclick="switchTab('student')">Student</div>
+    <div class="tab-btn" id="teacherTabBtn" onclick="switchTab('teacher')">Teacher</div>
+  </div>
+
+  <!-- ================= STUDENT TAB ================= -->
+  <div id="studentTab">
+
+    <div class="card" id="closedCard" style="display:none;">
+      <div class="closed-msg">
+        🔒 Attendance window closed.<br>
+        Open between <b id="windowText"></b>.<br>
+        Try again during class hours.
+      </div>
+    </div>
+
+    <div class="card" id="scanCard">
+      <h2>Mark Attendance</h2>
+      <span class="welcome-tag" id="welcomeTag"></span>
+
+      <div id="classInfoBox" style="display:none; text-align:center; margin-bottom:10px;">
+        <span class="badge" id="classBadge"></span>
+        <span class="badge" id="subjectBadge"></span>
+      </div>
+
+      <div id="preScanArea">
+        <button class="primary" onclick="startScanner()">📷 Scan QR Code</button>
+        <button class="secondary" onclick="toggleManualEntry()">Enter class manually</button>
+
+        <div id="manualEntryArea" style="display:none; margin-top:14px;">
+          <div class="input-box">
+            <select id="manualClass">
+              <option value="">-- Select Class --</option>
+              <option value="CSE-A">CSE-A</option>
+              <option value="CSE-B">CSE-B</option>
+              <option value="IT-A">IT-A</option>
+            </select>
+            <label>Class</label>
+            <div class="input-line"></div>
+          </div>
+          <div class="input-box">
+            <input type="text" id="manualSubject" placeholder=" " />
+            <label>Subject</label>
+            <div class="input-line"></div>
+          </div>
+          <button class="primary" onclick="confirmManualClass()">Confirm Class</button>
+        </div>
+
+        <div id="qrVideoWrap">
+          <video id="qrVideo" playsinline></video>
+          <canvas id="qrCanvasHidden"></canvas>
+          <div class="scan-hint">Point camera at the QR shown by your teacher</div>
+          <button class="secondary" onclick="stopScanner()">Cancel Scan</button>
+        </div>
+      </div>
+
+      <form id="loginForm" style="display:none; margin-top:10px;">
+        <div class="input-box">
+          <input type="text" id="name" required placeholder=" " />
+          <label>Name</label>
+          <div class="input-line"></div>
+        </div>
+        <div class="input-box">
+          <input type="text" id="rollNumber" required placeholder=" " maxlength="20" autocomplete="off" />
+          <label>Roll Number</label>
+          <div class="input-line"></div>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="success-msg" id="successMsg"></div>
+        <button type="submit" class="primary" id="loginBtn">Mark Attendance</button>
+        <button type="button" class="secondary" onclick="resetClassSelection()">Change Class</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>📋 My Attendance History</h3>
+      <div class="input-box">
+        <input type="text" id="histRoll" placeholder=" " />
+        <label>Enter Roll Number</label>
+        <div class="input-line"></div>
+      </div>
+      <button class="primary" onclick="loadHistory()">View History</button>
+      <div id="historyList" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- ================= TEACHER TAB ================= -->
+  <div id="teacherTab" style="display:none;">
+    <div class="card">
+      <h2>Generate Session QR</h2>
+      <div class="input-box">
+        <select id="teacherClass">
+          <option value="">-- Select Class --</option>
+          <option value="CSE-A">CSE-A</option>
+          <option value="CSE-B">CSE-B</option>
+          <option value="IT-A">IT-A</option>
+        </select>
+        <label>Class</label>
+        <div class="input-line"></div>
+      </div>
+      <div class="input-box">
+        <input type="text" id="teacherSubject" placeholder=" " />
+        <label>Subject</label>
+        <div class="input-line"></div>
+      </div>
+      <button class="primary" onclick="generateTeacherQR()">Generate QR</button>
+
+      <div id="teacherQrBox">
+        <div id="qrcodeCanvasHolder"></div>
+        <div class="scan-hint" id="qrValidText"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Smart Attendance System &copy; 2026<br>
+    Built by Muthupriyan &middot; muthupriyan-dev
+  </footer>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+  <!-- jsQR for scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- QRCode.js for generating -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <script>
+    // ---------------- Firebase config ----------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOadS2ltGbZis_W_1D8O_pgCJkEiED4Xk",
+      authDomain: "smart-attendance-ac361.firebaseapp.com",
+      databaseURL: "https://smart-attendance-ac361-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-attendance-ac361",
+      storageBucket: "smart-attendance-ac361.firebasestorage.app",
+      messagingSenderId: "202785785574",
+      appId: "1:202785785574:web:a778409123cda5361c9d27"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ---------------- Attendance window (edit hours here) ----------------
+    const WINDOW_START_HOUR = 7;   // 7 AM
+    const WINDOW_END_HOUR   = 19;  // 7 PM
+    document.getElementById('windowText').textContent =
+      `${WINDOW_START_HOUR}:00 AM - ${WINDOW_END_HOUR-12}:00 PM`;
+
+    function isWithinWindow() {
+      const h = new Date().getHours();
+      return h >= WINDOW_START_HOUR && h < WINDOW_END_HOUR;
+    }
+
+    function checkWindowLock() {
+      const open = isWithinWindow();
+      document.getElementById('closedCard').style.display = open ? 'none' : 'block';
+      document.getElementById('scanCard').style.display = open ? 'block' : 'none';
+    }
+    checkWindowLock();
+    setInterval(checkWindowLock, 60000);
+
+    // ---------------- Live clock ----------------
+    function updateClock() {
+      const now = new Date();
+      const opts = { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' };
+      document.getElementById('clockRow').textContent = now.toLocaleString('en-IN', opts);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ---------------- Connection status ----------------
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        statusDot.classList.add('online');
+        statusText.textContent = 'Connected';
+      } else {
+        statusDot.classList.remove('online');
+        statusText.textContent = 'Offline';
+      }
+    });
+
+    // ---------------- Tabs ----------------
+    function switchTab(tab) {
+      document.getElementById('studentTab').style.display = tab === 'student' ? 'block' : 'none';
+      document.getElementById('teacherTab').style.display = tab === 'teacher' ? 'block' : 'none';
+      document.getElementById('studentTabBtn').classList.toggle('active', tab === 'student');
+      document.getElementById('teacherTabBtn').classList.toggle('active', tab === 'teacher');
+    }
+
+    // ================= STUDENT: class selection =================
+    let currentClass = null;
+    let currentSubject = null;
+
+    function showClassBadgesAndForm() {
+      document.getElementById('classInfoBox').style.display = 'block';
+      document.getElementById('classBadge').textContent = 'Class: ' + currentClass;
+      document.getElementById('subjectBadge').textContent = 'Subject: ' + currentSubject;
+      document.getElementById('preScanArea').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+    }
+
+    function resetClassSelection() {
+      currentClass = null;
+      currentSubject = null;
+      document.getElementById('classInfoBox').style.display = 'none';
+      document.getElementById('preScanArea').style.display = 'block';
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('manualEntryArea').style.display = 'none';
+    }
+
+    function toggleManualEntry() {
+      const area = document.getElementById('manualEntryArea');
+      area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function confirmManualClass() {
+      const cls = document.getElementById('manualClass').value;
+      const sub = document.getElementById('manualSubject').value.trim();
+      if (!cls || !sub) {
+        alert('Class & Subject select pannunga');
+        return;
+      }
+      currentClass = cls;
+      currentSubject = sub;
+      showClassBadgesAndForm();
+    }
+
+    // ================= QR SCANNER (jsQR) =================
+    let scanStream = null;
+    let scanLoopId = null;
+
+    function startScanner() {
+      document.getElementById('qrVideoWrap').style.display = 'block';
+      const video = document.getElementById('qrVideo');
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then((stream) => {
+          scanStream = stream;
+          video.srcObject = stream;
+          video.setAttribute('playsinline', true);
+          video.play();
+          requestAnimationFrame(scanTick);
+        })
+        .catch((err) => {
+          alert('Camera access failed: ' + err.message);
+          document.getElementById('qrVideoWrap').style.display = 'none';
+        });
+    }
+
+    function stopScanner() {
+      if (scanStream) {
+        scanStream.getTracks().forEach(t => t.stop());
+        scanStream = null;
+      }
+      if (scanLoopId) cancelAnimationFrame(scanLoopId);
+      document.getElementById('qrVideoWrap').style.display = 'none';
+    }
+
+    function scanTick() {
+      const video = document.getElementById('qrVideo');
+      const canvas = document.getElementById('qrCanvasHidden');
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          try {
+            const payload = JSON.parse(code.data);
+            if (payload.class && payload.subject) {
+              currentClass = payload.class;
+              currentSubject = payload.subject;
+              stopScanner();
+              showClassBadgesAndForm();
+              return;
+            }
+          } catch (e) { /* not valid QR, keep scanning */ }
+        }
+      }
+      scanLoopId = requestAnimationFrame(scanTick);
+    }
+
+    // ================= Login form: autofill + submit =================
+    const nameInput = document.getElementById('name');
+    const rollInput = document.getElementById('rollNumber');
+    const form = document.getElementById('loginForm');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const loginBtn = document.getElementById('loginBtn');
+    const welcomeTag = document.getElementById('welcomeTag');
+
+    rollInput.addEventListener('input', () => { rollInput.value = rollInput.value.toUpperCase(); });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedName = localStorage.getItem('student_name');
+      const savedRoll = localStorage.getItem('student_roll');
+      if (savedName && savedRoll) {
+        nameInput.value = savedName;
+        rollInput.value = savedRoll;
+        welcomeTag.textContent = `Welcome back, ${savedName.split(' ')[0]}!`;
+        document.getElementById('histRoll').value = savedRoll;
+      }
+    });
+
+    function getTodayKey() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const roll = rollInput.value.trim();
+      const rollPattern = /^[A-Z0-9]{4,15}$/;
+
+      errorMsg.textContent = '';
+      successMsg.textContent = '';
+
+      if (!name) { errorMsg.textContent = 'Name venum!'; return; }
+      if (!rollPattern.test(roll)) { errorMsg.textContent = 'Correct ah Roll Number podunga (e.g. 23CSE045)'; return; }
+      if (!currentClass || !currentSubject) { errorMsg.textContent = 'Class select pannunga first'; return; }
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+      const todayKey = getTodayKey();
+      const attendanceRef = db.ref(`attendance/${todayKey}/${roll}`);
+      const byRollRef = db.ref(`attendanceByRoll/${roll}/${todayKey}`);
+
+      attendanceRef.once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+          successMsg.textContent = `${name}, attendance already marked today ✅`;
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Confirm Attendance';
+          saveToLocalStorage(name, roll);
+          return;
+        }
+        const record = {
+          name: name,
+          roll: roll,
+          class: currentClass,
+          subject: currentSubject,
+          timestamp: new Date().toISOString()
+        };
+        Promise.all([ attendanceRef.set(record), byRollRef.set(record) ]).then(() => {
+          successMsg.textContent = `Attendance marked successfully, ${name}! ✅`;
+          saveToLocalStorage(name, roll);
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Confirm Attendance';
+        }).catch((err) => {
+          errorMsg.textContent = 'Error saving data. Try again.';
+          console.error(err);
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Mark Attendance';
+        });
+      }).catch((err) => {
+        errorMsg.textContent = 'Connection error. Check internet.';
+        console.error(err);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Mark Attendance';
+      });
+    });
+
+    function saveToLocalStorage(name, roll) {
+      localStorage.setItem('student_name', name);
+      localStorage.setItem('student_roll', roll);
+    }
+
+    // ================= History =================
+    function loadHistory() {
+      const roll = document.getElementById('histRoll').value.trim().toUpperCase();
+      const listDiv = document.getElementById('historyList');
+      if (!roll) { listDiv.innerHTML = '<div class="error-msg">Roll number venum</div>'; return; }
+      listDiv.innerHTML = '<div class="scan-hint">Loading...</div>';
+
+      db.ref(`attendanceByRoll/${roll}`).once('value').then((snap) => {
+        if (!snap.exists()) {
+          listDiv.innerHTML = '<div class="scan-hint">No attendance records found.</div>';
+          return;
+        }
+        const data = snap.val();
+        const dates = Object.keys(data).sort().reverse();
+        let html = '';
+        dates.forEach((date) => {
+          const entry = data[date];
+          html += `<div class="history-item">
+            <div><div class="history-date">${date}</div><div class="history-sub">${entry.subject || ''} (${entry.class || ''})</div></div>
+            <div class="history-sub">${new Date(entry.timestamp).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})}</div>
+          </div>`;
+        });
+        listDiv.innerHTML = html;
+      }).catch((err) => {
+        listDiv.innerHTML = '<div class="error-msg">Error loading history</div>';
+        console.error(err);
+      });
+    }
+
+    // ================= TEACHER: Generate QR =================
+    function generateTeacherQR() {
+      const cls = document.getElementById('teacherClass').value;
+      const sub = document.getElementById('teacherSubject').value.trim();
+      if (!cls || !sub) { alert('Class & Subject select pannunga'); return; }
+
+      const payload = JSON.stringify({
+        class: cls,
+        subject: sub,
+        date: getTodayKey()
+      });
+
+      const holder = document.getElementById('qrcodeCanvasHolder');
+      holder.innerHTML = '';
+      new QRCode(holder, {
+        text: payload,
+        width: 220,
+        height: 220,
+        colorDark: '#191919',
+        colorLight: '#ffffff'
+      });
+      document.getElementById('qrValidText').textContent =
+        `${cls} - ${sub} | Valid for today (${getTodayKey()})`;
+    }
+  </script>
+</body>
+</html>
