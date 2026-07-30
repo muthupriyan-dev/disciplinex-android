@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.DisciplineX" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+    </style>
+</resources>
