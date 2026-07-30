@@ -4,9 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,11 +26,24 @@ private val exerciseOptions = listOf(
     ExerciseOption("Reading", usesCamera = false)
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExerciseTypeScreen(onNext: (ExerciseOption) -> Unit) {
+fun ExerciseTypeScreen(onNext: (ExerciseOption) -> Unit, onBack: () -> Unit) {
     var selected by remember { mutableStateOf(exerciseOptions[0]) }
 
-    Scaffold { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
+            )
+        }
+    ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(20.dp).fillMaxSize()) {
             Text("Pick your challenge", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
