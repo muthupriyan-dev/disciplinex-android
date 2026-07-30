@@ -18,6 +18,7 @@ import com.muthu.disciplinex.ui.theme.TextMuted
 private val wakeTimes = listOf("4:30 AM", "5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM")
 private val durations = listOf("15 min", "20 min", "30 min", "45 min")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WakeTimeScreen(onNext: (wakeTime: String, duration: String) -> Unit, onBack: () -> Unit) {
     var selectedTime by remember { mutableStateOf(wakeTimes[1]) }
