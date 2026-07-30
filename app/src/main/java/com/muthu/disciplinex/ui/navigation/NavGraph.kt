@@ -34,11 +34,14 @@ fun DisciplineXNavGraph() {
             WelcomeScreen(onGetStarted = { navController.navigate(Routes.WAKE_TIME) })
         }
         composable(Routes.WAKE_TIME) {
-            WakeTimeScreen(onNext = { time, dur ->
-                wakeTime = time
-                duration = dur
-                navController.navigate(Routes.EXERCISE)
-            })
+            WakeTimeScreen(
+                onNext = { time, dur ->
+                    wakeTime = time
+                    duration = dur
+                    navController.navigate(Routes.EXERCISE)
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Routes.EXERCISE) {
             ExerciseTypeScreen(onNext = { option ->
