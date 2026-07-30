@@ -3,6 +3,8 @@ package com.muthu.disciplinex.ui.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,9 +25,22 @@ private val permissions = listOf(
     PermissionInfo("Accessibility service", "Only used to detect when a blocked app opens, so it can show the lock screen. Never reads message or app content.")
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PermissionsScreen(onFinish: () -> Unit) {
-    Scaffold { padding ->
+fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
+            )
+        }
+    ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(20.dp).fillMaxSize()) {
             Text("Why we ask for this", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
