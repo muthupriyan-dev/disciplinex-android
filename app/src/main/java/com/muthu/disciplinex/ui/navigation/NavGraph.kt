@@ -44,6 +44,21 @@ fun DisciplineXNavGraph() {
             )
         }
         composable(Routes.EXERCISE) {
+    ExerciseTypeScreen(
+        onNext = { option ->
+            exercise = option
+            navController.navigate(Routes.PERMISSIONS)
+        },
+        onBack = { navController.popBackStack() }
+    )
+}
+composable(Routes.PERMISSIONS) {
+    PermissionsScreen(
+        onFinish = { navController.navigate(Routes.HOME) },
+        onBack = { navController.popBackStack() }
+    )
+}
+        composable(Routes.EXERCISE) {
             ExerciseTypeScreen(onNext = { option ->
                 exercise = option
                 navController.navigate(Routes.PERMISSIONS)
