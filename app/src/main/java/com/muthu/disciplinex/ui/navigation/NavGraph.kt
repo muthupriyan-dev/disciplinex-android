@@ -1,12 +1,13 @@
 package com.muthu.disciplinex.ui.navigation
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.home.HomeScreen
-import com.muthu.disciplinex.ui.onboarding.ExerciseOption
 import com.muthu.disciplinex.ui.onboarding.ExerciseTypeScreen
 import com.muthu.disciplinex.ui.onboarding.PermissionsScreen
 import com.muthu.disciplinex.ui.onboarding.WakeTimeScreen
@@ -23,13 +24,16 @@ private object Routes {
 @Composable
 fun DisciplineXNavGraph() {
     val navController: NavHostController = rememberNavController()
+    val context = LocalContext.current
 
-    // Held in memory only for M1 — persisted via Room/DataStore in a later milestone
-    var wakeTime by remember { mutableStateOf("5:00 AM") }
-    var duration by remember { mutableStateOf("20 min") }
-    var exercise by remember { mutableStateOf(ExerciseOption("Push-ups", true)) }
+    // Seeded from UserPrefs so HomeScreen shows real saved data after app restart
+    var wakeTime by remember { mutableStateOf(UserPrefs.getWakeTime(context)) }
+    var duration by remember { mutableStateOf(UserPrefs.getDuration(context)) }
+    var exerciseName by remember { mutableStateOf(UserPrefs.getExercise(context)) }
 
-    NavHost(navController = navController, startDestination = Routes.WELCOME) {
+    val startDestination = if (UserPrefs.isOnboarded(context)) Routes.HOME else Routes.WELCOME
+
+    NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.WELCOME) {
             WelcomeScreen(onGetStarted = { navController.navigate(Routes.WAKE_TIME) })
         }
@@ -46,7 +50,7 @@ fun DisciplineXNavGraph() {
         composable(Routes.EXERCISE) {
             ExerciseTypeScreen(
                 onNext = { option ->
-                    exercise = option
+                    exerciseName = option.name
                     navController.navigate(Routes.PERMISSIONS)
                 },
                 onBack = { navController.popBackStack() }
@@ -54,12 +58,17 @@ fun DisciplineXNavGraph() {
         }
         composable(Routes.PERMISSIONS) {
             PermissionsScreen(
-                onFinish = { navController.navigate(Routes.HOME) },
+                onFinish = {
+                    UserPrefs.saveOnboarding(context, wakeTime, duration, exerciseName)
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    }
+                },
                 onBack = { navController.popBackStack() }
             )
         }
         composable(Routes.HOME) {
-            HomeScreen(wakeTime = wakeTime, duration = duration, exerciseName = exercise.name)
+            HomeScreen(wakeTime = wakeTime, duration = duration, exerciseName = exerciseName)
         }
     }
 }
