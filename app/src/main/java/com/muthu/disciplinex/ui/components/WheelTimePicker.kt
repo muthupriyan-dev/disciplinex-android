@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -97,6 +98,7 @@ fun WheelTimePicker(
  * A single scrollable, snapping wheel column used by [WheelTimePicker].
  * Centers the selected item, scales/fades items based on distance from center.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WheelColumn(
     items: List<String>,
