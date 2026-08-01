@@ -3,6 +3,7 @@ package com.muthu.disciplinex.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import com.muthu.disciplinex.MainActivity
 
 /**
@@ -16,6 +17,8 @@ import com.muthu.disciplinex.MainActivity
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        Toast.makeText(context, "DEBUG: AlarmReceiver fired!", Toast.LENGTH_LONG).show()
+
         // Re-arm for tomorrow first, in case launching the activity is delayed.
         AlarmScheduler.scheduleWakeAlarm(context)
 
