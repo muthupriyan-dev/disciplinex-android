@@ -34,6 +34,15 @@ fun DisciplineXNavGraph() {
 
     val startDestination = if (UserPrefs.isOnboarded(context)) Routes.HOME else Routes.WELCOME
 
+    // PermissionsScreen.onFinish only schedules the alarm the first time onboarding
+    // completes. On every later app launch (already onboarded), make sure the
+    // alarm is (re)armed too — cheap and idempotent.
+    LaunchedEffect(Unit) {
+        if (UserPrefs.isOnboarded(context)) {
+            AlarmScheduler.scheduleWakeAlarm(context)
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.WELCOME) {
             WelcomeScreen(onGetStarted = { navController.navigate(Routes.WAKE_TIME) })
