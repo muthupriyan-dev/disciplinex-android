@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.muthu.disciplinex.alarm.AlarmScheduler
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.home.HomeScreen
 import com.muthu.disciplinex.ui.onboarding.ExerciseTypeScreen
@@ -60,6 +61,7 @@ fun DisciplineXNavGraph() {
             PermissionsScreen(
                 onFinish = {
                     UserPrefs.saveOnboarding(context, wakeTime, duration, exerciseName)
+                    AlarmScheduler.scheduleWakeAlarm(context)
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.WELCOME) { inclusive = true }
                     }
