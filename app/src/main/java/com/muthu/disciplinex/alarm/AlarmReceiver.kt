@@ -5,24 +5,17 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * Fires when the daily wake alarm goes off. Launches [AlarmRingActivity]
- * (full-screen, sound + vibration, shown over the lock screen) and
- * immediately re-schedules tomorrow's alarm, since exact alarms in
- * Android are one-shot.
+ * Fires when the daily wake alarm goes off. Starts [AlarmService], which
+ * plays the sound/vibration as a foreground service (so it keeps ringing
+ * even if the user leaves the app or locks the phone) and shows
+ * [AlarmRingActivity] for the dismiss UI. Also immediately re-schedules
+ * tomorrow's alarm, since exact alarms in Android are one-shot.
  */
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Re-arm for tomorrow first, in case launching the activity is delayed.
+        // Re-arm for tomorrow first, in case starting the service is delayed.
         AlarmScheduler.scheduleWakeAlarm(context)
-
-        val launchIntent = Intent(context, AlarmRingActivity::class.java).apply {
-            addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-            )
-        }
-        context.startActivity(launchIntent)
+        AlarmService.start(context)
     }
 }
