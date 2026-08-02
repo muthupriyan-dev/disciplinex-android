@@ -6,6 +6,7 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.media.Ringtone
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
@@ -49,6 +50,8 @@ class AlarmRingActivity : ComponentActivity() {
     private var toneGenerator: ToneGenerator? = null
     private val toneHandler = Handler(Looper.getMainLooper())
     private var toneRunnable: Runnable? = null
+    private var ringtone: Ringtone? = null
+    private var ringtoneLoopRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,6 +122,32 @@ class AlarmRingActivity : ComponentActivity() {
                 return
             }
 
+        // Try 1: android.media.Ringtone — this is what the system's own alarm
+        // clock app uses to play the user's chosen ringtone, and it's far more
+        // reliable across OEM ROMs than manually calling MediaPlayer.setDataSource
+        // on a content:// URI (which fails with a system error on some devices,
+        // e.g. Vivo/OriginOS).
+        try {
+            val rt = RingtoneManager.getRingtone(this, alarmUri)
+            if (rt != null) {
+                rt.audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    rt.isLooping = true
+                } else {
+                    startRingtoneLoopWatcher(rt)
+                }
+                rt.play()
+                ringtone = rt
+                return
+            }
+        } catch (e: Exception) {
+            Log.e("AlarmRingActivity", "startAlarmSound (Ringtone) failed", e)
+        }
+
+        // Try 2: raw MediaPlayer against the same URI.
         try {
             mediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(
@@ -133,15 +162,37 @@ class AlarmRingActivity : ComponentActivity() {
                 start()
             }
         } catch (e: Exception) {
-            // System alarm ringtone file couldn't be opened/played (seen on some
-            // OEM ROMs, e.g. Vivo/OriginOS) — fall back to a synthesized beep
-            // loop via ToneGenerator, which needs no file/URI at all.
+            // Both playback paths failed — fall back to a synthesized beep loop
+            // via ToneGenerator, which needs no file/URI at all.
             Log.e("AlarmRingActivity", "startAlarmSound (MediaPlayer) failed", e)
             mediaPlayer?.release()
             mediaPlayer = null
             Toast.makeText(this, "Alarm ringtone unavailable — using beep fallback", Toast.LENGTH_SHORT).show()
             startFallbackTone()
         }
+    }
+
+    /** Pre-API28 devices: [Ringtone] has no setLooping, so poll and restart it manually. */
+    private fun startRingtoneLoopWatcher(rt: Ringtone) {
+        val runnable = object : Runnable {
+            override fun run() {
+                if (ringtone === rt && !rt.isPlaying) {
+                    try { rt.play() } catch (e: Exception) {
+                        Log.e("AlarmRingActivity", "ringtone loop restart failed", e)
+                    }
+                }
+                toneHandler.postDelayed(this, 500)
+            }
+        }
+        ringtoneLoopRunnable = runnable
+        toneHandler.postDelayed(runnable, 500)
+    }
+
+    private fun stopRingtone() {
+        ringtoneLoopRunnable?.let { toneHandler.removeCallbacks(it) }
+        ringtoneLoopRunnable = null
+        safely("stopRingtone") { ringtone?.stop() }
+        ringtone = null
     }
 
     private fun startFallbackTone() {
@@ -186,6 +237,7 @@ class AlarmRingActivity : ComponentActivity() {
         }
         mediaPlayer = null
         vibrator?.cancel()
+        stopRingtone()
         stopFallbackTone()
         restoreAlarmVolume()
         finish()
@@ -204,6 +256,7 @@ class AlarmRingActivity : ComponentActivity() {
         safely("onDestroy release") { mediaPlayer?.release() }
         mediaPlayer = null
         vibrator?.cancel()
+        stopRingtone()
         stopFallbackTone()
         restoreAlarmVolume()
         super.onDestroy()
