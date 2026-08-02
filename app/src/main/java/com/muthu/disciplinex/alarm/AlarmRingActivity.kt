@@ -6,8 +6,11 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -43,6 +46,9 @@ class AlarmRingActivity : ComponentActivity() {
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private var originalAlarmVolume: Int? = null
+    private var toneGenerator: ToneGenerator? = null
+    private val toneHandler = Handler(Looper.getMainLooper())
+    private var toneRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,7 +114,8 @@ class AlarmRingActivity : ComponentActivity() {
         val alarmUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: run {
-                Toast.makeText(this, "No alarm sound found on device — check Settings > Sound > Alarm ringtone", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "No alarm sound file found — using beep fallback", Toast.LENGTH_SHORT).show()
+                startFallbackTone()
                 return
             }
 
@@ -126,9 +133,38 @@ class AlarmRingActivity : ComponentActivity() {
                 start()
             }
         } catch (e: Exception) {
-            Log.e("AlarmRingActivity", "startAlarmSound failed", e)
-            Toast.makeText(this, "Alarm sound failed to play: ${e.message}", Toast.LENGTH_LONG).show()
+            // System alarm ringtone file couldn't be opened/played (seen on some
+            // OEM ROMs, e.g. Vivo/OriginOS) — fall back to a synthesized beep
+            // loop via ToneGenerator, which needs no file/URI at all.
+            Log.e("AlarmRingActivity", "startAlarmSound (MediaPlayer) failed", e)
+            mediaPlayer?.release()
+            mediaPlayer = null
+            Toast.makeText(this, "Alarm ringtone unavailable — using beep fallback", Toast.LENGTH_SHORT).show()
+            startFallbackTone()
         }
+    }
+
+    private fun startFallbackTone() {
+        try {
+            toneGenerator = ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME)
+            val runnable = object : Runnable {
+                override fun run() {
+                    toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 700)
+                    toneHandler.postDelayed(this, 1200)
+                }
+            }
+            toneRunnable = runnable
+            toneHandler.post(runnable)
+        } catch (e: Exception) {
+            Log.e("AlarmRingActivity", "startFallbackTone failed", e)
+        }
+    }
+
+    private fun stopFallbackTone() {
+        toneRunnable?.let { toneHandler.removeCallbacks(it) }
+        toneRunnable = null
+        toneGenerator?.release()
+        toneGenerator = null
     }
 
     private fun startVibration() {
@@ -150,6 +186,7 @@ class AlarmRingActivity : ComponentActivity() {
         }
         mediaPlayer = null
         vibrator?.cancel()
+        stopFallbackTone()
         restoreAlarmVolume()
         finish()
     }
@@ -167,6 +204,7 @@ class AlarmRingActivity : ComponentActivity() {
         safely("onDestroy release") { mediaPlayer?.release() }
         mediaPlayer = null
         vibrator?.cancel()
+        stopFallbackTone()
         restoreAlarmVolume()
         super.onDestroy()
     }
