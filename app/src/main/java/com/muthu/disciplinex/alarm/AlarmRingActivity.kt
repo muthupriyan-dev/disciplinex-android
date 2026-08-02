@@ -3,6 +3,7 @@ package com.muthu.disciplinex.alarm
 import android.app.KeyguardManager
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.Build
@@ -12,6 +13,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -40,6 +42,7 @@ class AlarmRingActivity : ComponentActivity() {
 
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
+    private var originalAlarmVolume: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,21 +90,44 @@ class AlarmRingActivity : ComponentActivity() {
     }
 
     private fun startAlarmSound() {
+        // Force the ALARM stream up — on many OEM ROMs (Vivo/OriginOS included)
+        // there's a separate "alarm volume" that can be 0 even when media/ringer
+        // volume is fine, in which case USAGE_ALARM audio plays completely silently.
+        try {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val current = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+            if (current <= 0) {
+                originalAlarmVolume = current
+                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, (max * 0.7).toInt().coerceAtLeast(1), 0)
+            }
+        } catch (e: Exception) {
+            Log.e("AlarmRingActivity", "raising alarm volume failed", e)
+        }
+
         val alarmUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: return // no alarm sound available on this device — skip, don't crash
+            ?: run {
+                Toast.makeText(this, "No alarm sound found on device — check Settings > Sound > Alarm ringtone", Toast.LENGTH_LONG).show()
+                return
+            }
 
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
-            setDataSource(this@AlarmRingActivity, alarmUri)
-            isLooping = true
-            prepare()
-            start()
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(this@AlarmRingActivity, alarmUri)
+                isLooping = true
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            Log.e("AlarmRingActivity", "startAlarmSound failed", e)
+            Toast.makeText(this, "Alarm sound failed to play: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -124,13 +150,24 @@ class AlarmRingActivity : ComponentActivity() {
         }
         mediaPlayer = null
         vibrator?.cancel()
+        restoreAlarmVolume()
         finish()
+    }
+
+    private fun restoreAlarmVolume() {
+        val original = originalAlarmVolume ?: return
+        safely("restoreAlarmVolume") {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, original, 0)
+        }
+        originalAlarmVolume = null
     }
 
     override fun onDestroy() {
         safely("onDestroy release") { mediaPlayer?.release() }
         mediaPlayer = null
         vibrator?.cancel()
+        restoreAlarmVolume()
         super.onDestroy()
     }
 
