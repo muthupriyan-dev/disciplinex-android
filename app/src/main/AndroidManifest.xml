@@ -7,14 +7,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <activity
-    android:name=".alarm.AlarmRingActivity"
-    android:exported="false"
-    android:showWhenLocked="true"
-    android:turnScreenOn="true"
-    android:excludeFromRecents="true"
-    android:launchMode="singleInstance"
-    android:theme="@style/Theme.DisciplineX" />
+
     
     <application
         android:allowBackup="true"
@@ -22,6 +15,15 @@
         android:label="DisciplineX"
         android:theme="@style/Theme.DisciplineX"
         android:supportsRtl="true">
+
+        <activity
+    android:name=".alarm.AlarmRingActivity"
+    android:exported="false"
+    android:showWhenLocked="true"
+    android:turnScreenOn="true"
+    android:excludeFromRecents="true"
+    android:launchMode="singleInstance"
+    android:theme="@style/Theme.DisciplineX" />
 
         <activity
             android:name=".MainActivity"
