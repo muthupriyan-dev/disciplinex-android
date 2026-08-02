@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -40,6 +41,7 @@ class AlarmService : Service() {
     private var toneGenerator: ToneGenerator? = null
     private var vibrator: Vibrator? = null
     private var originalAlarmVolume: Int? = null
+    private var wakeLock: PowerManager.WakeLock? = null
     private val handler = Handler(Looper.getMainLooper())
     private var loopRunnable: Runnable? = null
 
@@ -53,9 +55,21 @@ class AlarmService : Service() {
 
         startForeground(NOTIFICATION_ID, buildNotification())
         launchRingActivity()
+        safely("acquireWakeLock") { acquireWakeLock() }
         safely("startAlarmSound") { startAlarmSound() }
         safely("startVibration") { startVibration() }
         return START_STICKY
+    }
+
+    private fun acquireWakeLock() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK, "DisciplineX:AlarmWakeLock"
+        ).apply {
+            // Safety cap so it can never hold the CPU awake forever if something
+            // goes wrong and stopEverything() is never reached.
+            acquire(20 * 60 * 1000L)
+        }
     }
 
     private inline fun safely(label: String, block: () -> Unit) {
@@ -238,6 +252,11 @@ class AlarmService : Service() {
             }
         }
         originalAlarmVolume = null
+
+        safely("release wakeLock") {
+            wakeLock?.let { if (it.isHeld) it.release() }
+        }
+        wakeLock = null
 
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
