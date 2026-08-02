@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,11 @@ import com.muthu.disciplinex.ui.theme.OrangeEnd
 /**
  * Shown when the wake alarm fires. Displays over the lock screen, turns the
  * screen on, plays a looping alarm sound + vibration until the user dismisses it.
+ *
+ * Every non-UI side effect (sound, vibration, lock-screen flags) is wrapped in
+ * try/catch: on some OEM ROMs the default alarm ringtone URI or vibrator
+ * service can behave unexpectedly, and a crash here must never take down the
+ * whole screen — the UI (and the ability to dismiss) has to survive regardless.
  */
 class AlarmRingActivity : ComponentActivity() {
 
@@ -37,9 +43,10 @@ class AlarmRingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        showOverLockScreen()
-        startAlarmSound()
-        startVibration()
+
+        safely("showOverLockScreen") { showOverLockScreen() }
+        safely("startAlarmSound") { startAlarmSound() }
+        safely("startVibration") { startVibration() }
 
         val exerciseName = UserPrefs.getExercise(this) ?: "your challenge"
         val duration = UserPrefs.getDuration(this) ?: "15 min"
@@ -50,6 +57,14 @@ class AlarmRingActivity : ComponentActivity() {
                 duration = duration,
                 onDismiss = { stopAlarmAndFinish() }
             )
+        }
+    }
+
+    private inline fun safely(label: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (e: Exception) {
+            Log.e("AlarmRingActivity", "$label failed", e)
         }
     }
 
@@ -67,13 +82,14 @@ class AlarmRingActivity : ComponentActivity() {
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        keyguardManager.requestDismissKeyguard(this, null)
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        keyguardManager?.requestDismissKeyguard(this, null)
     }
 
     private fun startAlarmSound() {
         val alarmUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: return // no alarm sound available on this device — skip, don't crash
 
         mediaPlayer = MediaPlayer().apply {
             setAudioAttributes(
@@ -92,25 +108,27 @@ class AlarmRingActivity : ComponentActivity() {
     private fun startVibration() {
         val pattern = longArrayOf(0, 500, 500)
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            manager.defaultVibrator
+            val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            manager?.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
         vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
     }
 
     private fun stopAlarmAndFinish() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
+        safely("stopAlarmAndFinish") {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        }
         mediaPlayer = null
         vibrator?.cancel()
         finish()
     }
 
     override fun onDestroy() {
-        mediaPlayer?.release()
+        safely("onDestroy release") { mediaPlayer?.release() }
         mediaPlayer = null
         vibrator?.cancel()
         super.onDestroy()
