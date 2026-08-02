@@ -2,22 +2,10 @@ package com.muthu.disciplinex.alarm
 
 import android.app.KeyguardManager
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.MediaPlayer
-import android.media.RingtoneManager
-import android.media.Ringtone
-import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -34,31 +22,26 @@ import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 
 /**
- * Shown when the wake alarm fires. Displays over the lock screen, turns the
- * screen on, plays a looping alarm sound + vibration until the user dismisses it.
+ * Shown when the wake alarm fires. Displays over the lock screen and lets
+ * the user dismiss the alarm.
  *
- * Every non-UI side effect (sound, vibration, lock-screen flags) is wrapped in
- * try/catch: on some OEM ROMs the default alarm ringtone URI or vibrator
- * service can behave unexpectedly, and a crash here must never take down the
- * whole screen — the UI (and the ability to dismiss) has to survive regardless.
+ * The sound/vibration itself is owned by [AlarmService] (a foreground
+ * service), NOT this Activity — that's deliberate. Some OEM ROMs (Vivo/
+ * OriginOS included) aggressively freeze or kill backgrounded activities to
+ * save battery, which was silently cutting the alarm sound the moment the
+ * user left the app, opened another app, or locked the phone. The service
+ * survives all of that; this Activity is UI-only.
+ *
+ * Lock-screen display flags are still wrapped in try/catch: on some OEM ROMs
+ * these can behave unexpectedly, and a crash here must never take down the
+ * whole screen — the ability to dismiss the alarm has to survive regardless.
  */
 class AlarmRingActivity : ComponentActivity() {
-
-    private var mediaPlayer: MediaPlayer? = null
-    private var vibrator: Vibrator? = null
-    private var originalAlarmVolume: Int? = null
-    private var toneGenerator: ToneGenerator? = null
-    private val toneHandler = Handler(Looper.getMainLooper())
-    private var toneRunnable: Runnable? = null
-    private var ringtone: Ringtone? = null
-    private var ringtoneLoopRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         safely("showOverLockScreen") { showOverLockScreen() }
-        safely("startAlarmSound") { startAlarmSound() }
-        safely("startVibration") { startVibration() }
 
         val exerciseName = UserPrefs.getExercise(this)
         val duration = UserPrefs.getDuration(this)
@@ -67,7 +50,10 @@ class AlarmRingActivity : ComponentActivity() {
             AlarmRingScreen(
                 exerciseName = exerciseName,
                 duration = duration,
-                onDismiss = { stopAlarmAndFinish() }
+                onDismiss = {
+                    AlarmService.stop(this)
+                    finish()
+                }
             )
         }
     }
@@ -96,170 +82,6 @@ class AlarmRingActivity : ComponentActivity() {
 
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
         keyguardManager?.requestDismissKeyguard(this, null)
-    }
-
-    private fun startAlarmSound() {
-        // Force the ALARM stream up — on many OEM ROMs (Vivo/OriginOS included)
-        // there's a separate "alarm volume" that can be 0 even when media/ringer
-        // volume is fine, in which case USAGE_ALARM audio plays completely silently.
-        try {
-            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            val current = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-            if (current <= 0) {
-                originalAlarmVolume = current
-                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, (max * 0.7).toInt().coerceAtLeast(1), 0)
-            }
-        } catch (e: Exception) {
-            Log.e("AlarmRingActivity", "raising alarm volume failed", e)
-        }
-
-        val alarmUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: run {
-                Toast.makeText(this, "No alarm sound file found — using beep fallback", Toast.LENGTH_SHORT).show()
-                startFallbackTone()
-                return
-            }
-
-        // Try 1: android.media.Ringtone — this is what the system's own alarm
-        // clock app uses to play the user's chosen ringtone, and it's far more
-        // reliable across OEM ROMs than manually calling MediaPlayer.setDataSource
-        // on a content:// URI (which fails with a system error on some devices,
-        // e.g. Vivo/OriginOS).
-        try {
-            val rt = RingtoneManager.getRingtone(this, alarmUri)
-            if (rt != null) {
-                rt.audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    rt.isLooping = true
-                } else {
-                    startRingtoneLoopWatcher(rt)
-                }
-                rt.play()
-                ringtone = rt
-                return
-            }
-        } catch (e: Exception) {
-            Log.e("AlarmRingActivity", "startAlarmSound (Ringtone) failed", e)
-        }
-
-        // Try 2: raw MediaPlayer against the same URI.
-        try {
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                setDataSource(this@AlarmRingActivity, alarmUri)
-                isLooping = true
-                prepare()
-                start()
-            }
-        } catch (e: Exception) {
-            // Both playback paths failed — fall back to a synthesized beep loop
-            // via ToneGenerator, which needs no file/URI at all.
-            Log.e("AlarmRingActivity", "startAlarmSound (MediaPlayer) failed", e)
-            mediaPlayer?.release()
-            mediaPlayer = null
-            Toast.makeText(this, "Alarm ringtone unavailable — using beep fallback", Toast.LENGTH_SHORT).show()
-            startFallbackTone()
-        }
-    }
-
-    /** Pre-API28 devices: [Ringtone] has no setLooping, so poll and restart it manually. */
-    private fun startRingtoneLoopWatcher(rt: Ringtone) {
-        val runnable = object : Runnable {
-            override fun run() {
-                if (ringtone === rt && !rt.isPlaying) {
-                    try { rt.play() } catch (e: Exception) {
-                        Log.e("AlarmRingActivity", "ringtone loop restart failed", e)
-                    }
-                }
-                toneHandler.postDelayed(this, 500)
-            }
-        }
-        ringtoneLoopRunnable = runnable
-        toneHandler.postDelayed(runnable, 500)
-    }
-
-    private fun stopRingtone() {
-        ringtoneLoopRunnable?.let { toneHandler.removeCallbacks(it) }
-        ringtoneLoopRunnable = null
-        safely("stopRingtone") { ringtone?.stop() }
-        ringtone = null
-    }
-
-    private fun startFallbackTone() {
-        try {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME)
-            val runnable = object : Runnable {
-                override fun run() {
-                    toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 700)
-                    toneHandler.postDelayed(this, 1200)
-                }
-            }
-            toneRunnable = runnable
-            toneHandler.post(runnable)
-        } catch (e: Exception) {
-            Log.e("AlarmRingActivity", "startFallbackTone failed", e)
-        }
-    }
-
-    private fun stopFallbackTone() {
-        toneRunnable?.let { toneHandler.removeCallbacks(it) }
-        toneRunnable = null
-        toneGenerator?.release()
-        toneGenerator = null
-    }
-
-    private fun startVibration() {
-        val pattern = longArrayOf(0, 500, 500)
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            manager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-        vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
-    }
-
-    private fun stopAlarmAndFinish() {
-        safely("stopAlarmAndFinish") {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-        }
-        mediaPlayer = null
-        vibrator?.cancel()
-        stopRingtone()
-        stopFallbackTone()
-        restoreAlarmVolume()
-        finish()
-    }
-
-    private fun restoreAlarmVolume() {
-        val original = originalAlarmVolume ?: return
-        safely("restoreAlarmVolume") {
-            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, original, 0)
-        }
-        originalAlarmVolume = null
-    }
-
-    override fun onDestroy() {
-        safely("onDestroy release") { mediaPlayer?.release() }
-        mediaPlayer = null
-        vibrator?.cancel()
-        stopRingtone()
-        stopFallbackTone()
-        restoreAlarmVolume()
-        super.onDestroy()
     }
 
     override fun onBackPressed() {
