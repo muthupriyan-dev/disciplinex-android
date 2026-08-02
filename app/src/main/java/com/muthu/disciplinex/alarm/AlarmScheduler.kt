@@ -23,7 +23,7 @@ object AlarmScheduler {
     private const val REQUEST_CODE_WAKE_ALARM = 1001
 
     fun scheduleWakeAlarm(context: Context) {
-        val wakeTime = UserPrefs.getWakeTime(context) ?: return
+        val wakeTime = UserPrefs.getWakeTime(context)
         val triggerAtMillis = nextTriggerTimeMillis(wakeTime) ?: return
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
