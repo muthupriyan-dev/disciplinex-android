@@ -5,11 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.widget.Toast
 import com.muthu.disciplinex.data.UserPrefs
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 /**
@@ -26,35 +23,21 @@ object AlarmScheduler {
     private const val REQUEST_CODE_WAKE_ALARM = 1001
 
     fun scheduleWakeAlarm(context: Context) {
-        val wakeTime = UserPrefs.getWakeTime(context)
-        if (wakeTime == null) {
-            Toast.makeText(context, "DEBUG: no saved wake time, alarm not scheduled", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val triggerAtMillis = nextTriggerTimeMillis(wakeTime)
-        if (triggerAtMillis == null) {
-            Toast.makeText(context, "DEBUG: could not parse wake time '$wakeTime'", Toast.LENGTH_LONG).show()
-            return
-        }
+        val wakeTime = UserPrefs.getWakeTime(context) ?: return
+        val triggerAtMillis = nextTriggerTimeMillis(wakeTime) ?: return
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = wakeAlarmPendingIntent(context)
-
-        val readableTime = SimpleDateFormat("dd MMM, h:mm:ss a", Locale.getDefault())
-            .format(Date(triggerAtMillis))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
             // Caller should have already asked for SCHEDULE_EXACT_ALARM permission
             // on the PermissionsScreen. Fall back to an inexact alarm so the app
             // still fires (just not guaranteed to the minute).
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-            Toast.makeText(context, "DEBUG: inexact alarm set for $readableTime", Toast.LENGTH_LONG).show()
             return
         }
 
         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-        Toast.makeText(context, "DEBUG: exact alarm set for $readableTime", Toast.LENGTH_LONG).show()
     }
 
     fun cancelWakeAlarm(context: Context) {
