@@ -7,23 +7,12 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
-
-    
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="DisciplineX"
         android:theme="@style/Theme.DisciplineX"
         android:supportsRtl="true">
-
-        <activity
-    android:name=".alarm.AlarmRingActivity"
-    android:exported="false"
-    android:showWhenLocked="true"
-    android:turnScreenOn="true"
-    android:excludeFromRecents="true"
-    android:launchMode="singleInstance"
-    android:theme="@style/Theme.DisciplineX" />
 
         <activity
             android:name=".MainActivity"
@@ -34,6 +23,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".alarm.AlarmRingActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.DisciplineX" />
 
         <receiver
             android:name=".alarm.AlarmReceiver"
