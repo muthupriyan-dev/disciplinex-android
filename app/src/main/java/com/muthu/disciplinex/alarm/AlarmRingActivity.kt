@@ -48,8 +48,8 @@ class AlarmRingActivity : ComponentActivity() {
         safely("startAlarmSound") { startAlarmSound() }
         safely("startVibration") { startVibration() }
 
-        val exerciseName = UserPrefs.getExercise(this) ?: "your challenge"
-        val duration = UserPrefs.getDuration(this) ?: "15 min"
+        val exerciseName = UserPrefs.getExercise(this)
+        val duration = UserPrefs.getDuration(this)
 
         setContent {
             AlarmRingScreen(
