@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.muthu.disciplinex.alarm.AlarmScheduler
 import com.muthu.disciplinex.data.UserPrefs
+import com.muthu.disciplinex.ui.challenge.ChallengeScreen
 import com.muthu.disciplinex.ui.home.HomeScreen
 import com.muthu.disciplinex.ui.onboarding.ExerciseTypeScreen
 import com.muthu.disciplinex.ui.onboarding.PermissionsScreen
@@ -20,10 +21,11 @@ private object Routes {
     const val EXERCISE = "exercise"
     const val PERMISSIONS = "permissions"
     const val HOME = "home"
+    const val CHALLENGE = "challenge"
 }
 
 @Composable
-fun DisciplineXNavGraph() {
+fun DisciplineXNavGraph(startChallenge: Boolean = false) {
     val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
 
@@ -32,7 +34,11 @@ fun DisciplineXNavGraph() {
     var duration by remember { mutableStateOf(UserPrefs.getDuration(context)) }
     var exerciseName by remember { mutableStateOf(UserPrefs.getExercise(context)) }
 
-    val startDestination = if (UserPrefs.isOnboarded(context)) Routes.HOME else Routes.WELCOME
+    val startDestination = when {
+        startChallenge && UserPrefs.isOnboarded(context) -> Routes.CHALLENGE
+        UserPrefs.isOnboarded(context) -> Routes.HOME
+        else -> Routes.WELCOME
+    }
 
     // PermissionsScreen.onFinish only schedules the alarm the first time onboarding
     // completes. On every later app launch (already onboarded), make sure the
@@ -80,6 +86,17 @@ fun DisciplineXNavGraph() {
         }
         composable(Routes.HOME) {
             HomeScreen(wakeTime = wakeTime, duration = duration, exerciseName = exerciseName)
+        }
+        composable(Routes.CHALLENGE) {
+            ChallengeScreen(
+                exerciseName = exerciseName,
+                duration = duration,
+                onComplete = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.CHALLENGE) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
