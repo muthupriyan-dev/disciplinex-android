@@ -2,6 +2,7 @@ package com.muthu.disciplinex.alarm
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.muthu.disciplinex.MainActivity
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 
@@ -52,6 +54,11 @@ class AlarmRingActivity : ComponentActivity() {
                 duration = duration,
                 onDismiss = {
                     AlarmService.stop(this)
+                    val challengeIntent = Intent(this, MainActivity::class.java).apply {
+                        putExtra(MainActivity.EXTRA_START_CHALLENGE, true)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    startActivity(challengeIntent)
                     finish()
                 }
             )
