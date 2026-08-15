@@ -58,12 +58,15 @@
             </intent-filter>
         </receiver>
 
+<<<<<<< HEAD
         <!-- Lets Play Services pre-fetch the pose-detection model so the
              first camera challenge doesn't stall on a cold model download. -->
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="pose" />
 
+=======
+>>>>>>> a512d418a5efceaa94ab8c5ec5faf269b76eee0a
     </application>
 
 </manifest>
