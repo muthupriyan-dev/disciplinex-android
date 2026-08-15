@@ -11,17 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.muthu.disciplinex.ui.components.PrimaryPillButton
+import com.muthu.disciplinex.ui.components.WheelTimePicker
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 
-private val wakeTimes = listOf("4:30 AM", "5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM")
 private val durations = listOf("15 min", "20 min", "30 min", "45 min")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WakeTimeScreen(onNext: (wakeTime: String, duration: String) -> Unit, onBack: () -> Unit) {
-    var selectedTime by remember { mutableStateOf(wakeTimes[1]) }
+    // Default wake time: 5:00 AM
+    var selectedHour by remember { mutableStateOf(5) }
+    var selectedMinute by remember { mutableStateOf(0) }
+    var selectedIsAm by remember { mutableStateOf(true) }
     var selectedDuration by remember { mutableStateOf(durations[1]) }
 
     Scaffold(
@@ -43,20 +46,16 @@ fun WakeTimeScreen(onNext: (wakeTime: String, duration: String) -> Unit, onBack:
             Text("The alarm fires at this time, every day.", color = TextMuted, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(wakeTimes) { time ->
-                    val selected = time == selectedTime
-                    FilterChip(
-                        selected = selected,
-                        onClick = { selectedTime = time },
-                        label = { Text(time) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = OrangeEnd,
-                            selectedLabelColor = Surface
-                        )
-                    )
+            WheelTimePicker(
+                initialHour = selectedHour,
+                initialMinute = selectedMinute,
+                initialIsAm = selectedIsAm,
+                onTimeChanged = { hour, minute, isAm ->
+                    selectedHour = hour
+                    selectedMinute = minute
+                    selectedIsAm = isAm
                 }
-            }
+            )
 
             Spacer(modifier = Modifier.height(28.dp))
             Text("Challenge duration", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
@@ -80,7 +79,15 @@ fun WakeTimeScreen(onNext: (wakeTime: String, duration: String) -> Unit, onBack:
             }
 
             Spacer(modifier = Modifier.weight(1f))
-            PrimaryPillButton(text = "Continue", onClick = { onNext(selectedTime, selectedDuration) })
+            PrimaryPillButton(
+                text = "Continue",
+                onClick = {
+                    val minuteStr = selectedMinute.toString().padStart(2, '0')
+                    val period = if (selectedIsAm) "AM" else "PM"
+                    val wakeTime = "$selectedHour:$minuteStr $period"
+                    onNext(wakeTime, selectedDuration)
+                }
+            )
         }
     }
 }
