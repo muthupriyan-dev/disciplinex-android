@@ -76,22 +76,28 @@ class PushUpRepCounter : RepCounter {
         val elbowAngle = jointAngle(shoulder.position3D, elbow.position3D, wrist.position3D)
         val plankTilt = tiltFromHorizontal(shoulder.position3D, hip.position3D)
         val torsoLength = kotlin.math.abs(hip.position.y - shoulder.position.y).coerceAtLeast(1f)
-        val isPlank = plankTilt < 35.0 // roughly horizontal body, not sitting upright
+        // Loosened from 35°/0.12 — with the phone just propped on the floor
+        // (not a perfect overhead/side view), the shoulder-hip line rarely
+        // reads as truly horizontal and shoulder displacement varies a lot
+        // by camera angle, so the strict versions of these checks were
+        // silently blocking every real rep. These stay only as a loose
+        // sanity check against someone sitting bolt upright.
+        val isPlank = plankTilt < 65.0
 
         val liveProgress = ((elbowAngle - 70.0) / (160.0 - 70.0)).toFloat().coerceIn(0f, 1f)
 
         when (state) {
             State.UP -> {
-                if (elbowAngle < 95.0 && isPlank) {
+                if (elbowAngle < 100.0 && isPlank) {
                     state = State.DOWN
                     shoulderYAtDown = shoulder.position.y
                 }
             }
             State.DOWN -> {
                 val downY = shoulderYAtDown
-                val movedEnough = downY != null &&
-                    kotlin.math.abs(shoulder.position.y - downY) > torsoLength * 0.12f
-                if (elbowAngle > 150.0 && isPlank && movedEnough) {
+                val movedEnough = downY == null ||
+                    kotlin.math.abs(shoulder.position.y - downY) > torsoLength * 0.04f
+                if (elbowAngle > 145.0 && isPlank && movedEnough) {
                     reps++
                     state = State.UP
                     shoulderYAtDown = null
@@ -155,8 +161,8 @@ class SquatRepCounter : RepCounter {
             }
             State.DOWN -> {
                 val downY = hipYAtDown
-                val droppedEnough = downY != null &&
-                    kotlin.math.abs(hip.position.y - downY) > legLength * 0.10f
+                val droppedEnough = downY == null ||
+                    kotlin.math.abs(hip.position.y - downY) > legLength * 0.04f
                 if (kneeAngle > 155.0 && droppedEnough) {
                     reps++
                     state = State.UP
