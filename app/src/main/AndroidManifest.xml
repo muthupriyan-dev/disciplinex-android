@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -41,6 +42,12 @@
             android:name=".alarm.AlarmReceiver"
             android:exported="false" />
 
+        <activity
+            android:name=".alarm.DismissAlarmActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true" />
+
         <service
             android:name=".alarm.AlarmService"
             android:exported="false"
@@ -58,15 +65,12 @@
             </intent-filter>
         </receiver>
 
-<<<<<<< HEAD
         <!-- Lets Play Services pre-fetch the pose-detection model so the
              first camera challenge doesn't stall on a cold model download. -->
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="pose" />
 
-=======
->>>>>>> a512d418a5efceaa94ab8c5ec5faf269b76eee0a
     </application>
 
 </manifest>

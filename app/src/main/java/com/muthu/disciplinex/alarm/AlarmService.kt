@@ -103,9 +103,31 @@ class AlarmService : Service() {
             manager.createNotificationChannel(channel)
         }
 
-        val stopIntent = Intent(this, AlarmService::class.java).apply { action = ACTION_STOP }
-        val stopPendingIntent = PendingIntent.getService(
-            this, 0, stopIntent,
+        // Dismiss action now goes through DismissAlarmActivity (not straight to
+        // the service) so tapping it from the notification behaves exactly like
+        // tapping "Dismiss & Start Challenge" on the ring screen: stop the sound
+        // AND land in the challenge, instead of just silencing the alarm.
+        val dismissIntent = Intent(this, DismissAlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val dismissPendingIntent = PendingIntent.getActivity(
+            this, 0, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Full-screen ring UI, shown via a full-screen notification intent
+        // rather than Service.startActivity(). This is the OS-blessed path for
+        // alarm-clock-style apps — it reliably brings the UI to the foreground
+        // even while the user is actively in another app, which a raw
+        // startActivity() call from a background Service is not guaranteed to
+        // do on Android 10+.
+        val ringIntent = Intent(this, AlarmRingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val ringPendingIntent = PendingIntent.getActivity(
+            this, 1, ringIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -115,7 +137,10 @@ class AlarmService : Service() {
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .addAction(0, "Dismiss", stopPendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(ringPendingIntent)
+            .setFullScreenIntent(ringPendingIntent, true)
+            .addAction(0, "Dismiss", dismissPendingIntent)
             .build()
     }
 

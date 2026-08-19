@@ -24,7 +24,7 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
                 subtitle = "$exerciseName · $duration to complete"
             ) {
                 Text(
-                    "Alarm, camera tracking & app-locking arrive in the next build.",
+                    "Your alarm will open this challenge automatically — dismiss it from the alarm screen to start.",
                     color = Surface.copy(alpha = 0.9f),
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -32,7 +32,7 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                "This is the Milestone 1 skeleton — streaks, leaderboard, and the live challenge screen are next.",
+                "App-locking until challenge completion, streaks, and the leaderboard are next.",
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
