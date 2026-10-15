@@ -25,7 +25,7 @@ private object Routes {
 }
 
 @Composable
-fun DisciplineXNavGraph(startChallenge: Boolean = false) {
+fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int = 0) {
     val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
 
@@ -46,6 +46,14 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false) {
     LaunchedEffect(Unit) {
         if (UserPrefs.isOnboarded(context)) {
             AlarmScheduler.scheduleWakeAlarm(context)
+        }
+    }
+
+    // The activity was re-opened with "start challenge" while already running
+    // (alarm dismiss / blocked-app redirect) — jump to the challenge screen.
+    LaunchedEffect(challengeRequest) {
+        if (challengeRequest > 0 && UserPrefs.isOnboarded(context)) {
+            navController.navigate(Routes.CHALLENGE) { launchSingleTop = true }
         }
     }
 
@@ -92,6 +100,8 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false) {
                 exerciseName = exerciseName,
                 duration = duration,
                 onComplete = {
+                    // Unlock blocked apps + record today as completed.
+                    UserPrefs.completeChallenge(context)
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.CHALLENGE) { inclusive = true }
                     }

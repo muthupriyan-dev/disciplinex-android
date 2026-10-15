@@ -3,6 +3,7 @@ package com.muthu.disciplinex.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.muthu.disciplinex.data.UserPrefs
 
 /**
  * Fires when the daily wake alarm goes off. Starts [AlarmService], which
@@ -16,6 +17,8 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         // Re-arm for tomorrow first, in case starting the service is delayed.
         AlarmScheduler.scheduleWakeAlarm(context)
+        // Blocked apps stay locked until the challenge is completed.
+        UserPrefs.startLock(context)
         AlarmService.start(context)
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.lock.LockAccessibilityService
 import com.muthu.disciplinex.ui.components.PrimaryPillButton
 import com.muthu.disciplinex.ui.theme.Divider
 import com.muthu.disciplinex.ui.theme.OrangeEnd
@@ -104,6 +105,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
     val exactAlarmGranted = remember(refreshTick) { hasExactAlarmPermission(context) }
     val notificationGranted = remember(refreshTick) { hasNotificationPermission(context) }
     val cameraGranted = remember(refreshTick) { hasCameraPermission(context) }
+    val accessibilityGranted = remember(refreshTick) { LockAccessibilityService.isEnabled(context) }
 
     val permissions = listOf(
         PermissionRow(
@@ -140,10 +142,12 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         ),
         PermissionRow(
             title = "Accessibility service",
-            reason = "Only used to detect when a blocked app opens, so it can show the lock screen. Never reads message or app content. You'll set this up from Home once app-locking is ready.",
-            isGranted = true, // not built yet — informational row only for now
-            actionable = false,
-            onRequest = {}
+            reason = "Only used to detect when a blocked app opens, so it can send you back to your challenge. Never reads message or app content. Tap Allow, open \"DisciplineX App Lock\" and switch it on.",
+            isGranted = accessibilityGranted,
+            actionable = true,
+            onRequest = {
+                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
         )
     )
 
