@@ -15,7 +15,8 @@ object UserPrefs {
     private const val KEY_LOCK_ACTIVE = "lock_active"
     private const val KEY_LOCK_STARTED_AT = "lock_started_at"
     private const val KEY_LAST_COMPLETED_DATE = "last_completed_date"
-    private const val KEY_LOCKED_APPS = "locked_apps"
+    private const val KEY_ALLOWED_APPS = "allowed_apps"
+    private const val KEY_LOCK_IS_TEST = "lock_is_test"
 
     /**
      * Fail-safe: even if the challenge can never be completed (camera broken,
@@ -25,23 +26,14 @@ object UserPrefs {
     private const val MAX_LOCK_MS = 3 * 60 * 60 * 1000L // 3 hours
 
     /**
-     * Default distracting apps. This is an explicit allow-list of what to
-     * block — the phone dialer, Settings, SMS, WhatsApp etc. are never in it,
-     * so emergencies can't be blocked. A user-editable picker comes later.
+     * While the lock is active EVERY app with a launcher icon is blocked,
+     * except these (plus Phone, Camera, keyboards, the home screen and system
+     * screens, which the service detects by itself). A user-editable picker
+     * can come later.
      */
-    val DEFAULT_LOCKED_APPS: Set<String> = setOf(
-        "com.instagram.android",
-        "com.instagram.lite",
-        "com.google.android.youtube",
-        "com.facebook.katana",
-        "com.facebook.lite",
-        "com.snapchat.android",
-        "com.twitter.android",
-        "com.reddit.frontpage",
-        "com.netflix.mediaclient",
-        "in.startv.hotstar",
-        "in.mohalla.sharechat",
-        "in.mohalla.video"
+    val DEFAULT_ALLOWED_APPS: Set<String> = setOf(
+        "com.whatsapp",
+        "com.whatsapp.w4b" // WhatsApp Business
     )
 
     private fun prefs(context: Context): SharedPreferences =
@@ -65,12 +57,25 @@ object UserPrefs {
     // App-lock
     // ------------------------------------------------------------------
 
-    /** Called when the wake alarm fires (or from the Home "test" button). */
-    fun startLock(context: Context) {
+    /**
+     * Called when the wake alarm fires, or from the Home "test" button
+     * (isTest = true — a test lock can be ended from Home, a real one can't).
+     */
+    fun startLock(context: Context, isTest: Boolean = false) {
         prefs(context).edit()
             .putBoolean(KEY_LOCK_ACTIVE, true)
+            .putBoolean(KEY_LOCK_IS_TEST, isTest)
             .putLong(KEY_LOCK_STARTED_AT, System.currentTimeMillis())
             .apply()
+    }
+
+    fun isTestLock(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_LOCK_IS_TEST, false)
+
+    /** Ends a TEST lock without recording a completed day. No-op for a real alarm lock. */
+    fun cancelTestLock(context: Context) {
+        if (!isTestLock(context)) return
+        prefs(context).edit().putBoolean(KEY_LOCK_ACTIVE, false).apply()
     }
 
     /** Called when the user finishes the challenge — unlocks and records the day. */
@@ -96,6 +101,6 @@ object UserPrefs {
     fun getLastCompletedDate(context: Context): String? =
         prefs(context).getString(KEY_LAST_COMPLETED_DATE, null)
 
-    fun getLockedApps(context: Context): Set<String> =
-        prefs(context).getStringSet(KEY_LOCKED_APPS, null) ?: DEFAULT_LOCKED_APPS
+    fun getAllowedApps(context: Context): Set<String> =
+        prefs(context).getStringSet(KEY_ALLOWED_APPS, null) ?: DEFAULT_ALLOWED_APPS
 }

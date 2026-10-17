@@ -89,7 +89,7 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
                 when {
                     !serviceEnabled -> {
                         Text(
-                            "Off \u2014 turn on the DisciplineX App Lock accessibility service so distracting apps stay locked until you finish your challenge.",
+                            "Off \u2014 turn on the DisciplineX App Lock accessibility service so every app except Phone, Camera and WhatsApp stays locked until you finish your challenge.",
                             color = Warning,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -105,14 +105,14 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
                     }
                     lockActive -> {
                         Text(
-                            "Locked right now \u2014 finish your challenge to unlock Instagram, YouTube and the rest.",
+                            "Locked right now \u2014 only Phone, Camera and WhatsApp work. Finish your challenge to unlock everything else.",
                             color = OrangeEnd,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     else -> {
                         Text(
-                            "Ready \u2014 blocked apps lock when your alarm rings and open again once you finish the challenge.",
+                            "Ready \u2014 when your alarm rings, every app except Phone, Camera and WhatsApp locks until you finish the challenge.",
                             color = Success,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -123,7 +123,7 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = {
-                            UserPrefs.startLock(context)
+                            UserPrefs.startLock(context, isTest = true)
                             testArmed = true
                             refreshTick++
                         },
@@ -132,10 +132,23 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
                     ) { Text("Test app lock now", color = OrangeEnd) }
                 }
 
+                if (lockActive && UserPrefs.isTestLock(context)) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = {
+                            UserPrefs.cancelTestLock(context)
+                            testArmed = false
+                            refreshTick++
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp)
+                    ) { Text("End test lock", color = OrangeEnd) }
+                }
+
                 if (testArmed && lockActive) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Test lock armed \u2014 open Instagram or YouTube. You should land on the challenge screen.",
+                        "Test lock armed \u2014 open any app other than Phone, Camera or WhatsApp. You should land on the challenge screen.",
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium
                     )

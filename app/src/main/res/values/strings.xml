@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">DisciplineX</string>
-    <string name="accessibility_service_description">DisciplineX App Lock only detects when a blocked app (like Instagram or YouTube) opens, so it can send you back to your morning challenge. It never reads your screen, messages or anything you type.</string>
+    <string name="accessibility_service_description">DisciplineX App Lock only detects which app is opening, so it can send you back to your morning challenge until it is done. Phone, Camera and WhatsApp stay available. It never reads your screen, messages or anything you type.</string>
 </resources>
