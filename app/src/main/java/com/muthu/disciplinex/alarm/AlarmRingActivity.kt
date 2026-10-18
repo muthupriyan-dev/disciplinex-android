@@ -46,7 +46,7 @@ class AlarmRingActivity : ComponentActivity() {
         safely("showOverLockScreen") { showOverLockScreen() }
 
         val exerciseName = UserPrefs.getExercise(this)
-        val duration = UserPrefs.getDuration(this)
+        val duration = UserPrefs.getChallengeSummary(this)
 
         setContent {
             AlarmRingScreen(

@@ -10,6 +10,9 @@ object UserPrefs {
     private const val KEY_DURATION = "duration"
     private const val KEY_EXERCISE = "exercise"
     private const val KEY_ONBOARDED = "onboarded"
+    private const val KEY_TARGET_REPS = "target_reps"
+    private const val KEY_DURATION_MIN = "duration_min"
+    private const val KEY_TIMED_PROGRESS_MS = "timed_progress_ms"
 
     // --- App-lock state (Milestone 3) ---
     private const val KEY_LOCK_ACTIVE = "lock_active"
@@ -39,13 +42,57 @@ object UserPrefs {
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun saveOnboarding(context: Context, wakeTime: String, duration: String, exercise: String) {
+    fun saveOnboarding(
+        context: Context,
+        wakeTime: String,
+        exercise: String,
+        targetReps: Int,
+        durationMinutes: Int
+    ) {
         prefs(context).edit()
             .putString(KEY_WAKE_TIME, wakeTime)
-            .putString(KEY_DURATION, duration)
             .putString(KEY_EXERCISE, exercise)
+            .putInt(KEY_TARGET_REPS, targetReps)
+            .putInt(KEY_DURATION_MIN, durationMinutes)
+            .putString(KEY_DURATION, "$durationMinutes min")
             .putBoolean(KEY_ONBOARDED, true)
             .apply()
+    }
+
+    // ---- Challenge target (reps for rep exercises, minutes for timed ones) ----
+
+    fun getTargetReps(context: Context): Int = prefs(context).getInt(KEY_TARGET_REPS, 10)
+
+    fun setTargetReps(context: Context, reps: Int) {
+        prefs(context).edit().putInt(KEY_TARGET_REPS, reps).apply()
+    }
+
+    fun getDurationMinutes(context: Context): Int {
+        val p = prefs(context)
+        if (p.contains(KEY_DURATION_MIN)) return p.getInt(KEY_DURATION_MIN, 15)
+        // Older installs saved a string like "20 min".
+        return getDuration(context).filter { it.isDigit() }.toIntOrNull() ?: 15
+    }
+
+    fun setDurationMinutes(context: Context, minutes: Int) {
+        prefs(context).edit()
+            .putInt(KEY_DURATION_MIN, minutes)
+            .putString(KEY_DURATION, "$minutes min")
+            .apply()
+    }
+
+    /** "10 reps" or "15 min", depending on the chosen exercise. */
+    fun getChallengeSummary(context: Context): String =
+        if (ExerciseKinds.isTimed(getExercise(context))) "${getDurationMinutes(context)} min"
+        else "${getTargetReps(context)} reps"
+
+    // ---- Timed challenge progress (survives the app being closed/killed) ----
+
+    fun getTimedProgressMs(context: Context): Long =
+        prefs(context).getLong(KEY_TIMED_PROGRESS_MS, 0L)
+
+    fun setTimedProgressMs(context: Context, ms: Long) {
+        prefs(context).edit().putLong(KEY_TIMED_PROGRESS_MS, ms).apply()
     }
 
     fun getWakeTime(context: Context): String = prefs(context).getString(KEY_WAKE_TIME, "5:00 AM") ?: "5:00 AM"
@@ -66,6 +113,7 @@ object UserPrefs {
             .putBoolean(KEY_LOCK_ACTIVE, true)
             .putBoolean(KEY_LOCK_IS_TEST, isTest)
             .putLong(KEY_LOCK_STARTED_AT, System.currentTimeMillis())
+            .putLong(KEY_TIMED_PROGRESS_MS, 0L)
             .apply()
     }
 
@@ -75,7 +123,10 @@ object UserPrefs {
     /** Ends a TEST lock without recording a completed day. No-op for a real alarm lock. */
     fun cancelTestLock(context: Context) {
         if (!isTestLock(context)) return
-        prefs(context).edit().putBoolean(KEY_LOCK_ACTIVE, false).apply()
+        prefs(context).edit()
+            .putBoolean(KEY_LOCK_ACTIVE, false)
+            .putLong(KEY_TIMED_PROGRESS_MS, 0L)
+            .apply()
     }
 
     /** Called when the user finishes the challenge — unlocks and records the day. */
@@ -83,6 +134,7 @@ object UserPrefs {
         prefs(context).edit()
             .putBoolean(KEY_LOCK_ACTIVE, false)
             .putString(KEY_LAST_COMPLETED_DATE, LocalDate.now().toString())
+            .putLong(KEY_TIMED_PROGRESS_MS, 0L)
             .apply()
     }
 

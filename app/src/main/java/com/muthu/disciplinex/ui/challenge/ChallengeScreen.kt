@@ -2,6 +2,7 @@ package com.muthu.disciplinex.ui.challenge
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -18,34 +19,181 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.data.ExerciseKinds
+import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.pose.RepUpdate
 import com.muthu.disciplinex.pose.PoseCameraView
 import com.muthu.disciplinex.ui.components.PrimaryPillButton
 import com.muthu.disciplinex.ui.theme.*
+import kotlinx.coroutines.delay
+import java.util.Locale
 
-private const val TARGET_REPS = 10
-private val CAMERA_EXERCISES = setOf("Push-ups", "Squats")
-
+/**
+ * Two kinds of challenge:
+ *  - Timed (Reading / Meditation / Walking): a countdown that only runs while
+ *    this screen is in front. No button adds progress; it completes only when
+ *    the full time has been spent here.
+ *  - Rep-based (Push-ups / Squats via camera, Jumping Jacks manual): finish
+ *    the number of reps you set.
+ */
 @Composable
 fun ChallengeScreen(
     exerciseName: String,
-    duration: String,
+    targetReps: Int,
+    durationMinutes: Int,
     onComplete: () -> Unit
 ) {
-    val usesCamera = exerciseName in CAMERA_EXERCISES
+    if (ExerciseKinds.isTimed(exerciseName)) {
+        TimedChallenge(exerciseName, durationMinutes, onComplete)
+    } else {
+        RepChallenge(exerciseName, targetReps, onComplete)
+    }
+}
+
+@Composable
+private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplete: () -> Unit) {
+    val context = LocalContext.current
+    val totalMs = durationMinutes.coerceAtLeast(1) * 60_000L
+
+    // Saved progress survives the app being closed or killed mid-challenge.
+    var elapsedMs by remember {
+        mutableStateOf(UserPrefs.getTimedProgressMs(context).coerceIn(0L, totalMs))
+    }
+    val isComplete = elapsedMs >= totalMs
+
+    // Keep the screen awake while the timer is on screen.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+
+    // Time only counts while this screen is actually in front.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isResumed by remember {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> isResumed = true
+                Lifecycle.Event.ON_PAUSE -> isResumed = false
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(isResumed, isComplete) {
+        if (!isResumed || isComplete) return@LaunchedEffect
+        var last = SystemClock.elapsedRealtime()
+        var sinceSave = 0L
+        try {
+            while (true) {
+                delay(250)
+                val now = SystemClock.elapsedRealtime()
+                val step = now - last
+                last = now
+                elapsedMs = (elapsedMs + step).coerceAtMost(totalMs)
+                sinceSave += step
+                if (sinceSave >= 5_000L) {
+                    UserPrefs.setTimedProgressMs(context, elapsedMs)
+                    sinceSave = 0L
+                }
+                if (elapsedMs >= totalMs) break
+            }
+        } finally {
+            // Runs on pause (leaving the app), completion, and screen close.
+            UserPrefs.setTimedProgressMs(context, elapsedMs)
+        }
+    }
+
+    val remainingSec = ((totalMs - elapsedMs + 999) / 1000).coerceAtLeast(0)
+    val timeText = String.format(Locale.US, "%02d:%02d", remainingSec / 60, remainingSec % 60)
+    val progress by animateFloatAsState(
+        targetValue = (elapsedMs.toFloat() / totalMs).coerceIn(0f, 1f),
+        animationSpec = tween(250),
+        label = "timedProgress"
+    )
+
+    Scaffold(containerColor = Background) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = exerciseName,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "$durationMinutes min \u00b7 stay on this screen until the timer ends",
+                color = TextMuted,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            ProgressRing(
+                progress = progress,
+                centerText = timeText,
+                subText = if (isComplete) "done" else "remaining",
+                isComplete = isComplete
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (isComplete) {
+                Text(
+                    text = "Challenge complete!",
+                    color = Success,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                PrimaryPillButton(text = "Finish & Unlock Phone", onClick = onComplete)
+            } else {
+                Text(
+                    text = if (isResumed) "Timer running \u2014 leaving the app pauses it, and there's no skipping."
+                    else "Paused \u2014 come back to this screen to continue.",
+                    color = if (isResumed) TextMuted else OrangeEnd,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Unit) {
+    val usesCamera = ExerciseKinds.isCamera(exerciseName)
 
     var reps by remember(exerciseName) { mutableStateOf(0) }
     var liveProgress by remember(exerciseName) { mutableStateOf(0f) }
     var isTracking by remember(exerciseName) { mutableStateOf(false) }
-    val isComplete = reps >= TARGET_REPS
+    val isComplete = reps >= target
 
-    val displayProgress = if (usesCamera && !isComplete) liveProgress else (reps.toFloat() / TARGET_REPS)
+    val displayProgress = if (usesCamera && !isComplete) liveProgress else (reps.toFloat() / target)
     val progress by animateFloatAsState(
         targetValue = displayProgress.coerceIn(0f, 1f),
         animationSpec = tween(200),
@@ -70,7 +218,7 @@ fun ChallengeScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$duration challenge · complete to unlock your phone",
+                text = "$target reps \u00b7 complete to unlock your phone",
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -81,7 +229,7 @@ fun ChallengeScreen(
                 CameraRepTracker(
                     exerciseName = exerciseName,
                     onUpdate = { update ->
-                        reps = update.reps.coerceAtMost(TARGET_REPS)
+                        reps = update.reps.coerceAtMost(target)
                         liveProgress = update.liveProgress
                         isTracking = update.isTracking
                     }
@@ -92,8 +240,8 @@ fun ChallengeScreen(
 
             ProgressRing(
                 progress = progress,
-                reps = reps,
-                target = TARGET_REPS,
+                centerText = "$reps",
+                subText = "of $target reps",
                 isComplete = isComplete
             )
 
@@ -115,7 +263,7 @@ fun ChallengeScreen(
                 }
                 usesCamera -> {
                     Text(
-                        text = if (isTracking) "Keep going — full range of motion counts."
+                        text = if (isTracking) "Keep going \u2014 full range of motion counts."
                         else "Get your whole body in frame to start counting.",
                         color = if (isTracking) TextMuted else OrangeEnd,
                         style = MaterialTheme.typography.labelMedium,
@@ -124,14 +272,14 @@ fun ChallengeScreen(
                 }
                 else -> {
                     Text(
-                        text = "Motion-sensor tracking for this exercise arrives next — tap to simulate a rep for now.",
+                        text = "Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.",
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     PrimaryPillButton(
                         text = "+1 Rep",
-                        onClick = { reps = (reps + 1).coerceAtMost(TARGET_REPS) }
+                        onClick = { reps = (reps + 1).coerceAtMost(target) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     TextButton(onClick = { reps = 0 }) {
@@ -198,8 +346,8 @@ private fun CameraRepTracker(exerciseName: String, onUpdate: (RepUpdate) -> Unit
 @Composable
 private fun ProgressRing(
     progress: Float,
-    reps: Int,
-    target: Int,
+    centerText: String,
+    subText: String,
     isComplete: Boolean
 ) {
     val ringColor = if (isComplete) Success else OrangeEnd
@@ -233,13 +381,13 @@ private fun ProgressRing(
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "$reps",
+                text = centerText,
                 fontWeight = FontWeight.Bold,
-                fontSize = 56.sp,
+                fontSize = 52.sp,
                 color = TextPrimary
             )
             Text(
-                text = "of $target reps",
+                text = subText,
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )

@@ -31,7 +31,8 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
 
     // Seeded from UserPrefs so HomeScreen shows real saved data after app restart
     var wakeTime by remember { mutableStateOf(UserPrefs.getWakeTime(context)) }
-    var duration by remember { mutableStateOf(UserPrefs.getDuration(context)) }
+    var targetReps by remember { mutableStateOf(UserPrefs.getTargetReps(context)) }
+    var durationMinutes by remember { mutableStateOf(UserPrefs.getDurationMinutes(context)) }
     var exerciseName by remember { mutableStateOf(UserPrefs.getExercise(context)) }
 
     val startDestination = when {
@@ -63,9 +64,8 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
         }
         composable(Routes.WAKE_TIME) {
             WakeTimeScreen(
-                onNext = { time, dur ->
+                onNext = { time ->
                     wakeTime = time
-                    duration = dur
                     navController.navigate(Routes.EXERCISE)
                 },
                 onBack = { navController.popBackStack() }
@@ -73,8 +73,10 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
         }
         composable(Routes.EXERCISE) {
             ExerciseTypeScreen(
-                onNext = { option ->
+                onNext = { option, reps, minutes ->
                     exerciseName = option.name
+                    targetReps = reps
+                    durationMinutes = minutes
                     navController.navigate(Routes.PERMISSIONS)
                 },
                 onBack = { navController.popBackStack() }
@@ -83,7 +85,7 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
         composable(Routes.PERMISSIONS) {
             PermissionsScreen(
                 onFinish = {
-                    UserPrefs.saveOnboarding(context, wakeTime, duration, exerciseName)
+                    UserPrefs.saveOnboarding(context, wakeTime, exerciseName, targetReps, durationMinutes)
                     AlarmScheduler.scheduleWakeAlarm(context)
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.WELCOME) { inclusive = true }
@@ -93,12 +95,14 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
             )
         }
         composable(Routes.HOME) {
-            HomeScreen(wakeTime = wakeTime, duration = duration, exerciseName = exerciseName)
+            HomeScreen(wakeTime = wakeTime, exerciseName = exerciseName)
         }
         composable(Routes.CHALLENGE) {
+            // Read the target fresh from prefs so a change made on Home is always used.
             ChallengeScreen(
                 exerciseName = exerciseName,
-                duration = duration,
+                targetReps = UserPrefs.getTargetReps(context),
+                durationMinutes = UserPrefs.getDurationMinutes(context),
                 onComplete = {
                     // Unlock blocked apps + record today as completed.
                     UserPrefs.completeChallenge(context)

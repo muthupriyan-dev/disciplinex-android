@@ -22,9 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.data.ExerciseKinds
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.lock.LockAccessibilityService
 import com.muthu.disciplinex.ui.components.GradientHeroCard
+import com.muthu.disciplinex.ui.components.TargetStepper
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Success
 import com.muthu.disciplinex.ui.theme.Surface
@@ -32,7 +34,7 @@ import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.Warning
 
 @Composable
-fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
+fun HomeScreen(wakeTime: String, exerciseName: String) {
     val context = LocalContext.current
 
     // Re-read lock/accessibility state whenever the user returns to this
@@ -51,6 +53,12 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
     val lockActive = remember(refreshTick) { UserPrefs.isLockActive(context) }
     var testArmed by remember { mutableStateOf(false) }
 
+    // Challenge target: reps for rep exercises, minutes for timed ones.
+    val isTimed = ExerciseKinds.isTimed(exerciseName)
+    var reps by remember(refreshTick) { mutableStateOf(UserPrefs.getTargetReps(context)) }
+    var minutes by remember(refreshTick) { mutableStateOf(UserPrefs.getDurationMinutes(context)) }
+    val summary = if (isTimed) "$minutes min" else "$reps reps"
+
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -64,13 +72,67 @@ fun HomeScreen(wakeTime: String, duration: String, exerciseName: String) {
 
             GradientHeroCard(
                 title = "$wakeTime challenge",
-                subtitle = "$exerciseName \u00b7 $duration to complete"
+                subtitle = "$exerciseName \u00b7 $summary to complete"
             ) {
                 Text(
                     "Your alarm will open this challenge automatically \u2014 dismiss it from the alarm screen to start.",
                     color = Surface.copy(alpha = 0.9f),
                     style = MaterialTheme.typography.labelLarge
                 )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ---- Challenge target card ----
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Surface)
+                    .padding(18.dp)
+            ) {
+                Text("Your target", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    if (isTimed) "How long you have to stay on the $exerciseName timer."
+                    else "How many $exerciseName you have to do.",
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                if (isTimed) {
+                    TargetStepper(
+                        value = minutes,
+                        unit = "minutes",
+                        min = 1,
+                        max = 180,
+                        enabled = !lockActive,
+                        onValueChange = {
+                            minutes = it
+                            UserPrefs.setDurationMinutes(context, it)
+                        }
+                    )
+                } else {
+                    TargetStepper(
+                        value = reps,
+                        unit = "reps",
+                        min = 1,
+                        max = 200,
+                        enabled = !lockActive,
+                        onValueChange = {
+                            reps = it
+                            UserPrefs.setTargetReps(context, it)
+                        }
+                    )
+                }
+                if (lockActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Locked until you finish today's challenge, so the target can't be changed right now.",
+                        color = TextMuted,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
