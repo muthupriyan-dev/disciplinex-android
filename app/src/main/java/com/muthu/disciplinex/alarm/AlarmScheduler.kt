@@ -4,40 +4,39 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import com.muthu.disciplinex.MainActivity
 import com.muthu.disciplinex.data.UserPrefs
 import java.util.Calendar
 import java.util.Locale
 
 /**
- * Schedules and cancels the daily wake-time alarm.
+ * Schedules and cancels the daily wake-time alarm (and the short "snooze" alarm).
+ *
+ * Uses [AlarmManager.setAlarmClock] — the API real clock apps use. Unlike
+ * setExact*(), it needs NO special permission (Android 14 denies
+ * SCHEDULE_EXACT_ALARM by default), is not delayed by Doze, and lets the
+ * receiver start the alarm foreground service from the background.
  *
  * Reads the saved wake time from [UserPrefs] (format: "5:00 AM" / "12:30 PM"),
- * computes the next trigger time (today if it hasn't passed yet, else tomorrow),
- * and schedules an exact alarm via [AlarmManager]. [AlarmReceiver] re-schedules
- * the next day's alarm each time it fires, so this only needs to be called once
- * after onboarding (or whenever the wake time changes).
+ * computes the next trigger time (today if it hasn't passed yet, else tomorrow).
+ * [AlarmReceiver] re-schedules the next day's alarm each time it fires.
  */
 object AlarmScheduler {
 
     private const val REQUEST_CODE_WAKE_ALARM = 1001
+    private const val REQUEST_CODE_SHOW_APP = 1002
+    private const val REQUEST_CODE_SNOOZE = 1003
 
     fun scheduleWakeAlarm(context: Context) {
         val wakeTime = UserPrefs.getWakeTime(context)
         val triggerAtMillis = nextTriggerTimeMillis(wakeTime) ?: return
+        setClockAlarm(context, triggerAtMillis, wakeAlarmPendingIntent(context))
+    }
 
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent = wakeAlarmPendingIntent(context)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-            // Caller should have already asked for SCHEDULE_EXACT_ALARM permission
-            // on the PermissionsScreen. Fall back to an inexact alarm so the app
-            // still fires (just not guaranteed to the minute).
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-            return
-        }
-
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+    /** One-off alarm [minutes] from now. Does not touch the daily alarm. */
+    fun scheduleSnooze(context: Context, minutes: Int) {
+        val triggerAtMillis = System.currentTimeMillis() + minutes * 60_000L
+        setClockAlarm(context, triggerAtMillis, snoozePendingIntent(context))
     }
 
     fun cancelWakeAlarm(context: Context) {
@@ -45,10 +44,33 @@ object AlarmScheduler {
         alarmManager.cancel(wakeAlarmPendingIntent(context))
     }
 
+    private fun setClockAlarm(context: Context, triggerAtMillis: Long, operation: PendingIntent) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        // Shown when the user taps the alarm icon in the status bar / clock.
+        val showIntent = PendingIntent.getActivity(
+            context,
+            REQUEST_CODE_SHOW_APP,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
+            operation
+        )
+    }
+
     private fun wakeAlarmPendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         return PendingIntent.getBroadcast(context, REQUEST_CODE_WAKE_ALARM, intent, flags)
+    }
+
+    private fun snoozePendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(context, REQUEST_CODE_SNOOZE, intent, flags)
     }
 
     /**

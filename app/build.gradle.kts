@@ -11,8 +11,21 @@ android {
         applicationId = "com.muthu.disciplinex"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0-m1"
+        versionCode = 4
+        versionName = "0.4.0"
+    }
+
+    // Fixed signing key (committed in the repo) so every Codemagic build is signed
+    // the same way and can be installed OVER the previous one without uninstalling.
+    // NOTE: this is a personal-use debug key. Keep the repo private if you care
+    // about nobody else being able to sign updates for this app.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildFeatures {

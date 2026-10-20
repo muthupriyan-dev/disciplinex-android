@@ -12,6 +12,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +36,15 @@ fun PoseCameraView(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    // Always call the latest callback, even though the camera is bound only once.
+    val currentOnUpdate by rememberUpdatedState(onUpdate)
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val repCounter = remember(exerciseName) { repCounterFor(exerciseName) }
+
+    // Don't leak the analysis thread when the camera view leaves the screen.
+    DisposableEffect(Unit) {
+        onDispose { analysisExecutor.shutdown() }
+    }
 
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
 
@@ -64,7 +72,7 @@ fun PoseCameraView(
                     }
 
                     val analyzer = PoseAnalyzer { pose ->
-                        onUpdate(repCounter.onFrame(pose))
+                        currentOnUpdate(repCounter.onFrame(pose))
                     }
                     poseAnalyzer = analyzer
 
@@ -89,8 +97,12 @@ fun PoseCameraView(
         }
 
         onDispose {
-            cameraProviderRef?.unbindAll()
-            poseAnalyzer?.close()
+            try {
+                cameraProviderRef?.unbindAll()
+                poseAnalyzer?.close()
+            } catch (e: Exception) {
+                Log.w("PoseCameraView", "cleanup failed", e)
+            }
         }
     }
 }

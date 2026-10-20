@@ -12,8 +12,8 @@ import com.google.mlkit.vision.pose.defaults.PoseDetectorOptions
 
 /**
  * Bridges CameraX frames into ML Kit's streaming pose detector and forwards
- * each result (or null on failure/no-body-found) to [onPose] on a background
- * thread. One analyzer per camera session; call [close] when the challenge
+ * each result (or null on failure/no-body-found) to [onPose] on the main
+ * thread (ML Kit's default listener thread). One analyzer per camera session; call [close] when the challenge
  * screen is torn down to release the detector.
  */
 class PoseAnalyzer(

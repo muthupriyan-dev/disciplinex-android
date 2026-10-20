@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.alarm.AlarmService
 import com.muthu.disciplinex.data.ExerciseKinds
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.lock.LockAccessibilityService
@@ -34,7 +37,7 @@ import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.Warning
 
 @Composable
-fun HomeScreen(wakeTime: String, exerciseName: String) {
+fun HomeScreen(wakeTime: String, exerciseName: String, onOpenSettings: () -> Unit) {
     val context = LocalContext.current
 
     // Re-read lock/accessibility state whenever the user returns to this
@@ -51,7 +54,10 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
 
     val serviceEnabled = remember(refreshTick) { LockAccessibilityService.isEnabled(context) }
     val lockActive = remember(refreshTick) { UserPrefs.isLockActive(context) }
+    val isTestLock = remember(refreshTick) { UserPrefs.isTestLock(context) }
+    val skipsLeft = remember(refreshTick) { UserPrefs.getSkipsLeft(context) }
     var testArmed by remember { mutableStateOf(false) }
+    var showSkipConfirm by remember { mutableStateOf(false) }
 
     // Challenge target: reps for rep exercises, minutes for timed ones.
     val isTimed = ExerciseKinds.isTimed(exerciseName)
@@ -151,7 +157,7 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
                 when {
                     !serviceEnabled -> {
                         Text(
-                            "Off \u2014 turn on the DisciplineX App Lock accessibility service so every app except Phone, Camera and WhatsApp stays locked until you finish your challenge.",
+                            "Off \u2014 turn on the DisciplineX App Lock accessibility service so every app except Phone, Camera and your allowed apps stays locked until you finish your challenge.",
                             color = Warning,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -167,17 +173,30 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
                     }
                     lockActive -> {
                         Text(
-                            "Locked right now \u2014 only Phone, Camera and WhatsApp work. Finish your challenge to unlock everything else.",
+                            "Locked right now \u2014 only Phone, Camera and your allowed apps work. Finish your challenge to unlock everything else.",
                             color = OrangeEnd,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     else -> {
                         Text(
-                            "Ready \u2014 when your alarm rings, every app except Phone, Camera and WhatsApp locks until you finish the challenge.",
+                            "Ready \u2014 when your alarm rings, every app except Phone, Camera and your allowed apps locks until you finish the challenge.",
                             color = Success,
                             style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                }
+
+                // A real (alarm) lock can be skipped a limited number of times a week.
+                if (lockActive && !isTestLock) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { showSkipConfirm = true },
+                        enabled = skipsLeft > 0,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Text("Skip today ($skipsLeft left this week)", color = OrangeEnd)
                     }
                 }
 
@@ -194,7 +213,7 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
                     ) { Text("Test app lock now", color = OrangeEnd) }
                 }
 
-                if (lockActive && UserPrefs.isTestLock(context)) {
+                if (lockActive && isTestLock) {
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = {
@@ -210,12 +229,19 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
                 if (testArmed && lockActive) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Test lock armed \u2014 open any app other than Phone, Camera or WhatsApp. You should land on the challenge screen.",
+                        "Test lock armed \u2014 open any app other than Phone, Camera or an allowed app. You should land on the challenge screen.",
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp)
+            ) { Text("Alarm, exercise & allowed apps", color = OrangeEnd) }
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
@@ -224,5 +250,32 @@ fun HomeScreen(wakeTime: String, exerciseName: String) {
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+
+    if (showSkipConfirm) {
+        AlertDialog(
+            onDismissRequest = { showSkipConfirm = false },
+            title = { Text("Skip today's challenge?") },
+            text = {
+                Text("Your apps unlock without doing the challenge. This uses 1 of your $skipsLeft skips left this week.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (UserPrefs.skipToday(context)) {
+                        // Also silence the alarm if it is still ringing.
+                        try {
+                            AlarmService.stop(context)
+                        } catch (e: Exception) {
+                            // Not ringing / can't reach the service — nothing to stop.
+                        }
+                    }
+                    showSkipConfirm = false
+                    refreshTick++
+                }) { Text("Skip today", color = OrangeEnd) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSkipConfirm = false }) { Text("Cancel", color = TextMuted) }
+            }
+        )
     }
 }

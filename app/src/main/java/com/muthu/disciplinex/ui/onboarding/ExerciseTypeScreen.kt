@@ -21,7 +21,7 @@ import com.muthu.disciplinex.ui.theme.*
 
 data class ExerciseOption(val name: String, val usesCamera: Boolean)
 
-private val exerciseOptions = listOf(
+internal val exerciseOptions = listOf(
     ExerciseOption("Push-ups", usesCamera = true),
     ExerciseOption("Squats", usesCamera = true),
     ExerciseOption("Jumping Jacks", usesCamera = false),
@@ -70,36 +70,7 @@ fun ExerciseTypeScreen(
             )
             Spacer(modifier = Modifier.height(18.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                exerciseOptions.forEach { option ->
-                    val isSelected = option == selected
-                    val tag = when {
-                        option.usesCamera -> "Camera"
-                        ExerciseKinds.isTimed(option.name) -> "Timer"
-                        else -> "Reps"
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) OrangeEnd else Surface)
-                            .clickable { selected = option }
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            option.name,
-                            color = if (isSelected) Surface else TextPrimary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            tag,
-                            color = if (isSelected) Surface.copy(alpha = 0.85f) else TextMuted,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-                }
-            }
+            ExerciseList(selected = selected, onSelect = { selected = it })
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -127,6 +98,41 @@ fun ExerciseTypeScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
             PrimaryPillButton(text = "Continue", onClick = { onNext(selected, reps, minutes) })
+        }
+    }
+}
+
+/** The tappable list of exercises — shared by onboarding and Settings. */
+@Composable
+internal fun ExerciseList(selected: ExerciseOption, onSelect: (ExerciseOption) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        exerciseOptions.forEach { option ->
+            val isSelected = option == selected
+            val tag = when {
+                option.usesCamera -> "Camera"
+                ExerciseKinds.isTimed(option.name) -> "Timer"
+                else -> "Reps"
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (isSelected) OrangeEnd else Surface)
+                    .clickable { onSelect(option) }
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    option.name,
+                    color = if (isSelected) Surface else TextPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    tag,
+                    color = if (isSelected) Surface.copy(alpha = 0.85f) else TextMuted,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }

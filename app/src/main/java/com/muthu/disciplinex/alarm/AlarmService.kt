@@ -45,6 +45,10 @@ class AlarmService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var loopRunnable: Runnable? = null
 
+    // Stops the sound after MAX_RING_MS so a forgotten alarm can't ring forever.
+    // The app lock stays on, so the challenge is still pending.
+    private val autoStop = Runnable { stopEverything() }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,6 +62,8 @@ class AlarmService : Service() {
         safely("acquireWakeLock") { acquireWakeLock() }
         safely("startAlarmSound") { startAlarmSound() }
         safely("startVibration") { startVibration() }
+        handler.removeCallbacks(autoStop)
+        handler.postDelayed(autoStop, MAX_RING_MS)
         return START_STICKY
     }
 
@@ -253,6 +259,7 @@ class AlarmService : Service() {
     }
 
     private fun stopEverything() {
+        handler.removeCallbacks(autoStop)
         loopRunnable?.let { handler.removeCallbacks(it) }
         loopRunnable = null
 
@@ -296,6 +303,7 @@ class AlarmService : Service() {
         const val ACTION_STOP = "com.muthu.disciplinex.alarm.ACTION_STOP"
         private const val CHANNEL_ID = "alarm_channel"
         private const val NOTIFICATION_ID = 1001
+        private const val MAX_RING_MS = 10 * 60 * 1000L // 10 minutes
 
         /** Called from AlarmReceiver (background context) — must use startForegroundService. */
         fun start(context: Context) {

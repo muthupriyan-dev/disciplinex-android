@@ -1,33 +1,31 @@
-# DisciplineX — Native Android (Milestone 1)
+# DisciplineX — Native Android
 
-This is the **first milestone** of the full native Android app from your spec. Building all 26 feature areas (alarm, AI pose verification, Accessibility Service app-locking, Firebase, anti-cheat, leaderboards, penalties, analytics...) properly in one shot isn't realistic — that's a multi-week production build. So we're doing it in stages, like you asked.
+A wake-up accountability app: an alarm rings, and **your phone stays locked down until you finish a challenge** (push-ups / squats counted by the camera, or a timed Reading / Meditation / Walking session).
 
-## What's in this milestone
-- Full Gradle project structure (Kotlin + Jetpack Compose + Material 3)
-- Orange gradient theme matching your reference screenshots (`ui/theme/`)
-- Onboarding flow: Welcome → Wake-up time & duration → Exercise type → Permissions explanation → Home
-- A placeholder Home screen showing the chosen challenge
+## What it does
+- **Alarm** at your wake time (`AlarmManager.setAlarmClock`, works in Doze, no special permission), with snooze (2×10 min) and "skip today" (2 per week).
+- **Camera rep counting** (CameraX + ML Kit pose detection) for Push-ups and Squats, with anti-cheat (consistent body side, minimum rep time, plank/hip-drop checks).
+- **Timed challenges** (Reading, Meditation, Walking): the timer only runs while the challenge screen is open and can't be skipped by tapping.
+- **App lock** (Accessibility Service): while a challenge is pending, every app is blocked except Phone, Camera, your allowed apps (default: WhatsApp), keyboards, the home screen and system screens. It only watches *which app opened* — it never reads screen content. Fail-safe: the lock expires by itself after 3 hours.
+- **Settings**: change wake time, exercise, target and allowed apps without reinstalling (read-only while locked).
 
-## What's NOT in this milestone yet (coming in later ones)
-- Actual alarm firing (AlarmManager) + full-screen lock alarm UI
-- Live challenge countdown timer
-- CameraX + TensorFlow Lite MoveNet pose detection & rep counting
-- Motion sensor verification for non-camera exercises
-- Accessibility Service app-locking
-- Firebase Auth / Firestore / FCM / Crashlytics
-- Streaks, XP, leaderboard, penalties, anti-cheat, analytics dashboard
+## Build (phone-only, via Codemagic)
+1. Push this repo to GitHub.
+2. Codemagic reads `codemagic.yaml`, generates the Gradle wrapper and builds a debug APK.
+3. Download the APK from Codemagic and install it.
 
-## Why this needs a real device (not just Codemagic)
-Once we add Accessibility Service, CameraX, and Firebase, you'll need to **install the APK on your actual phone** to test them — accessibility permissions and camera behavior don't work properly on typical emulators, and Codemagic only builds the APK, it doesn't run it. Codemagic + install-on-phone is the same pattern as your web builds, just for an APK instead of a URL.
+**Signing:** `app/debug.keystore` is a fixed key committed on purpose so every build is signed the same way and installs *over* the previous version. The first time after switching to this key you must uninstall the old (differently signed) app once. Keep the repo private if you don't want others to be able to sign updates for this app.
 
-## Build steps (phone-only, via Codemagic)
-1. Create a GitHub repo (e.g. `disciplinex-android`), upload this whole folder structure using the GitHub web upload button — keep the folder paths exactly as they are (`app/src/main/java/...` etc.).
-2. In Codemagic: **Add application → GitHub → select the repo**. Codemagic should auto-detect it as a native Android project (it reads `codemagic.yaml`).
-3. Start a build. It generates the Gradle wrapper on Codemagic's machine (no need to upload wrapper binaries yourself) and produces a debug APK as a build artifact.
-4. Download the APK from the Codemagic build page on your phone, tap to install (you may need to allow "install unknown apps" for your browser once).
+## Project layout
+- `alarm/` — scheduling, ring screen, foreground service, boot/time-change re-arming, backup notification
+- `lock/` — the accessibility service that enforces the lock
+- `pose/` — camera preview, ML Kit analyzer, rep counters
+- `data/` — `UserPrefs` (all saved settings + lock state), `ExerciseKinds`
+- `ui/` — Compose screens (onboarding, home, challenge, settings)
 
-## Note on the app icon
-The launcher icon is currently a simple placeholder (orange square with a bold "X"). We can design a proper one later — it doesn't block the build.
+## Known limits
+- Settings stays reachable while locked (it is how you switch the lock off in an emergency), so the lock can always be bypassed by disabling the accessibility service or uninstalling the app.
+- Jumping Jacks still uses manual "+1 Rep" until motion-sensor tracking is added.
 
-## Next milestone (M2)
-Alarm + live challenge countdown screen. Say the word when you want to start it.
+## Next
+Streaks / history, motion-sensor tracking, Firebase (auth, leaderboard).

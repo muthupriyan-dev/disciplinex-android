@@ -186,12 +186,27 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
 
 @Composable
 private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Unit) {
+    val context = LocalContext.current
     val usesCamera = ExerciseKinds.isCamera(exerciseName)
 
-    var reps by remember(exerciseName) { mutableStateOf(0) }
+    // Progress is saved, so leaving the app (or the system killing it) mid-set
+    // doesn't throw away the reps already done.
+    var reps by remember(exerciseName) {
+        mutableStateOf(UserPrefs.getRepProgress(context).coerceIn(0, target))
+    }
+    // The camera counter starts from 0 every time it is (re)created; track its
+    // last value so only NEW reps are added on top of the saved total.
+    var lastCounterReps by remember(exerciseName) { mutableStateOf(0) }
     var liveProgress by remember(exerciseName) { mutableStateOf(0f) }
     var isTracking by remember(exerciseName) { mutableStateOf(false) }
     val isComplete = reps >= target
+
+    // Phone is propped on the floor during push-ups: don't let the screen time out.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
 
     val displayProgress = if (usesCamera && !isComplete) liveProgress else (reps.toFloat() / target)
     val progress by animateFloatAsState(
@@ -229,7 +244,12 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 CameraRepTracker(
                     exerciseName = exerciseName,
                     onUpdate = { update ->
-                        reps = update.reps.coerceAtMost(target)
+                        val newReps = update.reps - lastCounterReps
+                        lastCounterReps = update.reps
+                        if (newReps > 0) {
+                            reps = (reps + newReps).coerceAtMost(target)
+                            UserPrefs.setRepProgress(context, reps)
+                        }
                         liveProgress = update.liveProgress
                         isTracking = update.isTracking
                     }
@@ -279,10 +299,16 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                     )
                     PrimaryPillButton(
                         text = "+1 Rep",
-                        onClick = { reps = (reps + 1).coerceAtMost(target) }
+                        onClick = {
+                            reps = (reps + 1).coerceAtMost(target)
+                            UserPrefs.setRepProgress(context, reps)
+                        }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(onClick = { reps = 0 }) {
+                    TextButton(onClick = {
+                        reps = 0
+                        UserPrefs.setRepProgress(context, 0)
+                    }) {
                         Text("Reset", color = TextMuted)
                     }
                 }

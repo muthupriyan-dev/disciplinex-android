@@ -13,6 +13,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,12 +50,16 @@ class AlarmRingActivity : ComponentActivity() {
         safely("showOverLockScreen") { showOverLockScreen() }
 
         val exerciseName = UserPrefs.getExercise(this)
-        val duration = UserPrefs.getChallengeSummary(this)
+        val summary = UserPrefs.getChallengeSummary(this)
+        val skipsLeft = UserPrefs.getSkipsLeft(this)
+        val snoozesLeft = UserPrefs.getSnoozesLeft(this)
 
         setContent {
             AlarmRingScreen(
                 exerciseName = exerciseName,
-                duration = duration,
+                duration = summary,
+                skipsLeft = skipsLeft,
+                snoozesLeft = snoozesLeft,
                 onDismiss = {
                     AlarmService.stop(this)
                     val challengeIntent = Intent(this, MainActivity::class.java).apply {
@@ -60,6 +68,21 @@ class AlarmRingActivity : ComponentActivity() {
                     }
                     startActivity(challengeIntent)
                     finish()
+                },
+                onSnooze = {
+                    // Silences the alarm and rings again later. The app lock stays on.
+                    if (UserPrefs.useSnooze(this)) {
+                        AlarmService.stop(this)
+                        AlarmScheduler.scheduleSnooze(this, UserPrefs.SNOOZE_MINUTES)
+                        finish()
+                    }
+                },
+                onSkip = {
+                    // Limited per week; unlocks everything without doing the challenge.
+                    if (UserPrefs.skipToday(this)) {
+                        AlarmService.stop(this)
+                        finish()
+                    }
                 }
             )
         }
@@ -104,8 +127,14 @@ class AlarmRingActivity : ComponentActivity() {
 private fun AlarmRingScreen(
     exerciseName: String,
     duration: String,
-    onDismiss: () -> Unit
+    skipsLeft: Int,
+    snoozesLeft: Int,
+    onDismiss: () -> Unit,
+    onSnooze: () -> Unit,
+    onSkip: () -> Unit
 ) {
+    var showSkipConfirm by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -124,7 +153,7 @@ private fun AlarmRingScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "$exerciseName · $duration to complete",
+                text = "$exerciseName \u00b7 $duration to complete",
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = 18.sp
             )
@@ -141,6 +170,38 @@ private fun AlarmRingScreen(
             ) {
                 Text("Dismiss & Start Challenge", fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(onClick = onSnooze, enabled = snoozesLeft > 0) {
+                Text(
+                    "Snooze ${UserPrefs.SNOOZE_MINUTES} min ($snoozesLeft left)",
+                    color = Color.White.copy(alpha = if (snoozesLeft > 0) 1f else 0.5f)
+                )
+            }
+            TextButton(onClick = { showSkipConfirm = true }, enabled = skipsLeft > 0) {
+                Text(
+                    "Skip today ($skipsLeft left this week)",
+                    color = Color.White.copy(alpha = if (skipsLeft > 0) 1f else 0.5f)
+                )
+            }
         }
+    }
+
+    if (showSkipConfirm) {
+        AlertDialog(
+            onDismissRequest = { showSkipConfirm = false },
+            title = { Text("Skip today's challenge?") },
+            text = {
+                Text("Your apps unlock without doing the challenge. This uses 1 of your $skipsLeft skips left this week.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSkipConfirm = false
+                    onSkip()
+                }) { Text("Skip today", color = OrangeEnd) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSkipConfirm = false }) { Text("Cancel") }
+            }
+        )
     }
 }

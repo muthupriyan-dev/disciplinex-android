@@ -14,6 +14,8 @@ import com.muthu.disciplinex.ui.onboarding.ExerciseTypeScreen
 import com.muthu.disciplinex.ui.onboarding.PermissionsScreen
 import com.muthu.disciplinex.ui.onboarding.WakeTimeScreen
 import com.muthu.disciplinex.ui.onboarding.WelcomeScreen
+import com.muthu.disciplinex.ui.settings.AllowedAppsScreen
+import com.muthu.disciplinex.ui.settings.SettingsScreen
 
 private object Routes {
     const val WELCOME = "welcome"
@@ -22,6 +24,8 @@ private object Routes {
     const val PERMISSIONS = "permissions"
     const val HOME = "home"
     const val CHALLENGE = "challenge"
+    const val SETTINGS = "settings"
+    const val ALLOWED_APPS = "allowed_apps"
 }
 
 @Composable
@@ -95,7 +99,31 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
             )
         }
         composable(Routes.HOME) {
-            HomeScreen(wakeTime = wakeTime, exerciseName = exerciseName)
+            HomeScreen(
+                wakeTime = wakeTime,
+                exerciseName = exerciseName,
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+            )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                onSave = { time, exercise, reps, minutes ->
+                    UserPrefs.saveOnboarding(context, time, exercise, reps, minutes)
+                    wakeTime = time
+                    exerciseName = exercise
+                    targetReps = reps
+                    durationMinutes = minutes
+                    // New wake time -> replace the scheduled alarm.
+                    AlarmScheduler.cancelWakeAlarm(context)
+                    AlarmScheduler.scheduleWakeAlarm(context)
+                    navController.popBackStack()
+                },
+                onOpenAllowedApps = { navController.navigate(Routes.ALLOWED_APPS) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.ALLOWED_APPS) {
+            AllowedAppsScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.CHALLENGE) {
             // Read the target fresh from prefs so a change made on Home is always used.

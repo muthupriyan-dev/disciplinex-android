@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -10,6 +9,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Lets the alarm and app-lock keep running on phones that aggressively kill background apps. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Lets the app-lock see which apps exist (launcher apps, dialer, camera, home screen). -->
@@ -47,10 +48,12 @@
         android:theme="@style/Theme.DisciplineX"
         android:supportsRtl="true">
 
+        <!-- Portrait only: rotating the phone mid-challenge used to restart the activity. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.DisciplineX">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -65,6 +68,7 @@
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.DisciplineX" />
 
         <receiver
@@ -86,11 +90,15 @@
                 android:value="alarm" />
         </service>
 
+        <!-- Re-arms the alarm after reboot, app update, and time/timezone changes. -->
         <receiver
             android:name=".alarm.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
 
@@ -107,12 +115,6 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_accessibility_service" />
         </service>
-
-        <!-- Lets Play Services pre-fetch the pose-detection model so the
-             first camera challenge doesn't stall on a cold model download. -->
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="pose" />
     </application>
 
 </manifest>
