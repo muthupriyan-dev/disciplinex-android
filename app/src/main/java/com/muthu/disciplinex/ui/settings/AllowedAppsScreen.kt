@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Surface
@@ -44,7 +45,7 @@ private fun loadLaunchableApps(context: Context): List<AppEntry> {
 @Composable
 fun AllowedAppsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val locked = remember { UserPrefs.isLockActive(context) }
+    val locked = remember { ChallengeSession.isLockActive(context) }
     val apps = remember { loadLaunchableApps(context) }
     var allowed by remember { mutableStateOf(UserPrefs.getAllowedApps(context)) }
 

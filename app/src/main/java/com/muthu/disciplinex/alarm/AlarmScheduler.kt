@@ -5,108 +5,79 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.muthu.disciplinex.MainActivity
-import com.muthu.disciplinex.data.UserPrefs
-import java.util.Calendar
-import java.util.Locale
+import com.muthu.disciplinex.data.AlarmEntry
+import com.muthu.disciplinex.data.AlarmStore
+import java.time.Instant
+import java.time.ZoneId
 
 /**
- * Schedules and cancels the daily wake-time alarm (and the short "snooze" alarm).
+ * Schedules every alarm in the list. Each alarm gets its own system alarm
+ * (request code = REQUEST_BASE + alarm id).
  *
- * Uses [AlarmManager.setAlarmClock] — the API real clock apps use. Unlike
- * setExact*(), it needs NO special permission (Android 14 denies
- * SCHEDULE_EXACT_ALARM by default), is not delayed by Doze, and lets the
- * receiver start the alarm foreground service from the background.
- *
- * Reads the saved wake time from [UserPrefs] (format: "5:00 AM" / "12:30 PM"),
- * computes the next trigger time (today if it hasn't passed yet, else tomorrow).
- * [AlarmReceiver] re-schedules the next day's alarm each time it fires.
+ * Uses [AlarmManager.setAlarmClock] — the API real clock apps use. It needs NO
+ * special permission, is not delayed by Doze, and lets the receiver start the
+ * alarm foreground service from the background.
  */
 object AlarmScheduler {
 
-    private const val REQUEST_CODE_WAKE_ALARM = 1001
-    private const val REQUEST_CODE_SHOW_APP = 1002
-    private const val REQUEST_CODE_SNOOZE = 1003
+    private const val REQUEST_BASE = 2000
+    private const val REQUEST_SHOW_APP = 1002
 
-    fun scheduleWakeAlarm(context: Context) {
-        val wakeTime = UserPrefs.getWakeTime(context)
-        val triggerAtMillis = nextTriggerTimeMillis(wakeTime) ?: return
-        setClockAlarm(context, triggerAtMillis, wakeAlarmPendingIntent(context))
+    /** (Re)arms every enabled alarm and cancels the disabled ones. */
+    fun scheduleAll(context: Context) {
+        AlarmStore.getAll(context).forEach { alarm ->
+            if (alarm.enabled) schedule(context, alarm) else cancel(context, alarm.id)
+        }
     }
 
-    /** One-off alarm [minutes] from now. Does not touch the daily alarm. */
-    fun scheduleSnooze(context: Context, minutes: Int) {
-        val triggerAtMillis = System.currentTimeMillis() + minutes * 60_000L
-        setClockAlarm(context, triggerAtMillis, snoozePendingIntent(context))
-    }
-
-    fun cancelWakeAlarm(context: Context) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(wakeAlarmPendingIntent(context))
-    }
-
-    private fun setClockAlarm(context: Context, triggerAtMillis: Long, operation: PendingIntent) {
+    /** @param after only trigger times later than this are used (defaults to now). */
+    fun schedule(context: Context, alarm: AlarmEntry, after: Long = System.currentTimeMillis()) {
+        val triggerAtMillis = nextTriggerMillis(alarm, after) ?: return
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         // Shown when the user taps the alarm icon in the status bar / clock.
         val showIntent = PendingIntent.getActivity(
             context,
-            REQUEST_CODE_SHOW_APP,
+            REQUEST_SHOW_APP,
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.setAlarmClock(
             AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
-            operation
+            alarmPendingIntent(context, alarm.id)
         )
     }
 
-    private fun wakeAlarmPendingIntent(context: Context): PendingIntent {
-        val intent = Intent(context, AlarmReceiver::class.java)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(context, REQUEST_CODE_WAKE_ALARM, intent, flags)
+    fun cancel(context: Context, alarmId: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(alarmPendingIntent(context, alarmId))
     }
 
-    private fun snoozePendingIntent(context: Context): PendingIntent {
+    /** The soonest time any enabled alarm will ring (null if none). */
+    fun nextAlarmMillis(context: Context): Long? =
+        AlarmStore.getAll(context)
+            .filter { it.enabled }
+            .mapNotNull { nextTriggerMillis(it, System.currentTimeMillis()) }
+            .minOrNull()
+
+    private fun alarmPendingIntent(context: Context, alarmId: Int): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
+            putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(context, REQUEST_CODE_SNOOZE, intent, flags)
+        return PendingIntent.getBroadcast(context, REQUEST_BASE + alarmId, intent, flags)
     }
 
-    /**
-     * Parses a "h:mm a" style string (e.g. "5:00 AM") and returns the next
-     * epoch-millis timestamp for that time, rolling over to tomorrow if the
-     * time has already passed today.
-     */
-    private fun nextTriggerTimeMillis(wakeTime: String): Long? {
-        val parts = wakeTime.trim().split(" ")
-        if (parts.size != 2) return null
-
-        val timeParts = parts[0].split(":")
-        if (timeParts.size != 2) return null
-
-        val hour12 = timeParts[0].toIntOrNull() ?: return null
-        val minute = timeParts[1].toIntOrNull() ?: return null
-        val isAm = parts[1].uppercase(Locale.ROOT) == "AM"
-
-        val hour24 = when {
-            isAm && hour12 == 12 -> 0
-            !isAm && hour12 != 12 -> hour12 + 12
-            else -> hour12
+    /** The next time [alarm] should ring that is strictly after [after], or null. */
+    fun nextTriggerMillis(alarm: AlarmEntry, after: Long): Long? {
+        val zone = ZoneId.systemDefault()
+        val nowDt = Instant.ofEpochMilli(after).atZone(zone).toLocalDateTime()
+        for (offset in 0..7) {
+            val date = nowDt.toLocalDate().plusDays(offset.toLong())
+            val dayBit = (alarm.daysMask shr (date.dayOfWeek.value - 1)) and 1
+            if (alarm.daysMask != 0 && dayBit == 0) continue
+            val dt = date.atTime(alarm.hour24, alarm.minute)
+            if (dt.isAfter(nowDt)) return dt.atZone(zone).toInstant().toEpochMilli()
         }
-
-        val now = Calendar.getInstance()
-        val target = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour24)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        if (target.timeInMillis <= now.timeInMillis) {
-            target.add(Calendar.DAY_OF_YEAR, 1)
-        }
-
-        return target.timeInMillis
+        return null
     }
 }

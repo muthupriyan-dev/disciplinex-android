@@ -23,6 +23,7 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.muthu.disciplinex.data.ChallengeSession
 
 /**
  * Owns the alarm sound + vibration for as long as the alarm is ringing.
@@ -45,9 +46,12 @@ class AlarmService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var loopRunnable: Runnable? = null
 
-    // Stops the sound after MAX_RING_MS so a forgotten alarm can't ring forever.
-    // The app lock stays on, so the challenge is still pending.
-    private val autoStop = Runnable { stopEverything() }
+    // Stops the sound after the 10-minute start window. isLockActive() also
+    // marks the challenge as missed if it was never opened in that time.
+    private val autoStop = Runnable {
+        ChallengeSession.isLockActive(this)
+        stopEverything()
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -138,15 +142,15 @@ class AlarmService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Wake up!")
-            .setContentText("Your DisciplineX challenge is waiting.")
+            .setContentTitle(ChallengeSession.label(this).ifBlank { "Time for your challenge!" })
+            .setContentText("${ChallengeSession.exercise(this)} \u00b7 ${ChallengeSession.summary(this)} \u2014 start within 10 minutes or it counts as missed.")
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(ringPendingIntent)
             .setFullScreenIntent(ringPendingIntent, true)
-            .addAction(0, "Dismiss", dismissPendingIntent)
+            .addAction(0, "Start challenge", dismissPendingIntent)
             .build()
     }
 
@@ -303,7 +307,7 @@ class AlarmService : Service() {
         const val ACTION_STOP = "com.muthu.disciplinex.alarm.ACTION_STOP"
         private const val CHANNEL_ID = "alarm_channel"
         private const val NOTIFICATION_ID = 1001
-        private const val MAX_RING_MS = 10 * 60 * 1000L // 10 minutes
+        private const val MAX_RING_MS = ChallengeSession.START_WINDOW_MS // 10 minutes
 
         /** Called from AlarmReceiver (background context) — must use startForegroundService. */
         fun start(context: Context) {

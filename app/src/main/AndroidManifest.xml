@@ -53,6 +53,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:resizeableActivity="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.DisciplineX">
             <intent-filter>
@@ -68,6 +69,7 @@
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
+            android:resizeableActivity="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.DisciplineX" />
 

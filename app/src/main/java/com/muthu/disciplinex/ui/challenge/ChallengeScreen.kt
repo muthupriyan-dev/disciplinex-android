@@ -95,6 +95,11 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // A phone can show a second app in a small floating / split window while this
+    // screen still counts as "resumed". Only count time while THIS window has focus.
+    val activity = remember(context) { context.findActivity() }
+    var windowActive by remember { mutableStateOf(true) }
+
     LaunchedEffect(isResumed, isComplete) {
         if (!isResumed || isComplete) return@LaunchedEffect
         var last = SystemClock.elapsedRealtime()
@@ -105,7 +110,12 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                 val now = SystemClock.elapsedRealtime()
                 val step = now - last
                 last = now
-                elapsedMs = (elapsedMs + step).coerceAtMost(totalMs)
+                val focused = activity?.hasWindowFocus() ?: true
+                val multiWindow = activity?.isInMultiWindowMode ?: false
+                windowActive = focused && !multiWindow
+                if (windowActive) {
+                    elapsedMs = (elapsedMs + step).coerceAtMost(totalMs)
+                }
                 sinceSave += step
                 if (sinceSave >= 5_000L) {
                     UserPrefs.setTimedProgressMs(context, elapsedMs)
@@ -171,9 +181,12 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                 PrimaryPillButton(text = "Finish & Unlock Phone", onClick = onComplete)
             } else {
                 Text(
-                    text = if (isResumed) "Timer running \u2014 leaving the app pauses it, and there's no skipping."
-                    else "Paused \u2014 come back to this screen to continue.",
-                    color = if (isResumed) TextMuted else OrangeEnd,
+                    text = when {
+                        !isResumed -> "Paused \u2014 come back to this screen to continue."
+                        !windowActive -> "Paused \u2014 another window is open on top. Close it to continue."
+                        else -> "Timer running \u2014 leaving the app pauses it, and there's no skipping."
+                    },
+                    color = if (isResumed && windowActive) TextMuted else OrangeEnd,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -419,4 +432,10 @@ private fun ProgressRing(
             )
         }
     }
+}
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

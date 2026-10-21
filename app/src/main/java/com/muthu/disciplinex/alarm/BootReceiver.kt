@@ -20,7 +20,7 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED,
             Intent.ACTION_TIME_CHANGED -> {
                 if (!UserPrefs.isOnboarded(context)) return
-                AlarmScheduler.scheduleWakeAlarm(context)
+                AlarmScheduler.scheduleAll(context)
             }
         }
     }

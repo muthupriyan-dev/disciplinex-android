@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">DisciplineX</string>
-    <string name="accessibility_service_description">DisciplineX App Lock only detects which app is opening, so it can send you back to your morning challenge until it is done. Phone, Camera and WhatsApp stay available. It never reads your screen, messages or anything you type.</string>
+    <string name="accessibility_service_description">DisciplineX App Lock only checks which app owns each window on screen, so it can send you back to your challenge until it is done (including apps opened in split-screen or small floating windows). Phone, Camera and your allowed apps stay available. It never reads your messages, passwords or anything you type.</string>
 </resources>

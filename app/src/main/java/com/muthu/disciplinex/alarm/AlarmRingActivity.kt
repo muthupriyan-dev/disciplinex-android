@@ -12,35 +12,30 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.muthu.disciplinex.MainActivity
-import com.muthu.disciplinex.data.UserPrefs
+import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.ui.theme.OrangeEnd
+import kotlinx.coroutines.delay
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
- * Shown when the wake alarm fires. Displays over the lock screen and lets
- * the user dismiss the alarm.
+ * Shown when an alarm fires. Displays over the lock screen with ONE big button
+ * and a 10-minute countdown: start the challenge in time, or it counts as missed.
  *
  * The sound/vibration itself is owned by [AlarmService] (a foreground
- * service), NOT this Activity — that's deliberate. Some OEM ROMs (Vivo/
- * OriginOS included) aggressively freeze or kill backgrounded activities to
- * save battery, which was silently cutting the alarm sound the moment the
- * user left the app, opened another app, or locked the phone. The service
- * survives all of that; this Activity is UI-only.
- *
- * Lock-screen display flags are still wrapped in try/catch: on some OEM ROMs
- * these can behave unexpectedly, and a crash here must never take down the
- * whole screen — the ability to dismiss the alarm has to survive regardless.
+ * service), NOT this Activity — some OEM ROMs (Vivo/OriginOS included) kill
+ * backgrounded activities to save battery, which was cutting the alarm sound.
  */
 class AlarmRingActivity : ComponentActivity() {
 
@@ -49,18 +44,9 @@ class AlarmRingActivity : ComponentActivity() {
 
         safely("showOverLockScreen") { showOverLockScreen() }
 
-        val exerciseName = UserPrefs.getExercise(this)
-        val summary = UserPrefs.getChallengeSummary(this)
-        val skipsLeft = UserPrefs.getSkipsLeft(this)
-        val snoozesLeft = UserPrefs.getSnoozesLeft(this)
-
         setContent {
             AlarmRingScreen(
-                exerciseName = exerciseName,
-                duration = summary,
-                skipsLeft = skipsLeft,
-                snoozesLeft = snoozesLeft,
-                onDismiss = {
+                onStart = {
                     AlarmService.stop(this)
                     val challengeIntent = Intent(this, MainActivity::class.java).apply {
                         putExtra(MainActivity.EXTRA_START_CHALLENGE, true)
@@ -69,20 +55,9 @@ class AlarmRingActivity : ComponentActivity() {
                     startActivity(challengeIntent)
                     finish()
                 },
-                onSnooze = {
-                    // Silences the alarm and rings again later. The app lock stays on.
-                    if (UserPrefs.useSnooze(this)) {
-                        AlarmService.stop(this)
-                        AlarmScheduler.scheduleSnooze(this, UserPrefs.SNOOZE_MINUTES)
-                        finish()
-                    }
-                },
-                onSkip = {
-                    // Limited per week; unlocks everything without doing the challenge.
-                    if (UserPrefs.skipToday(this)) {
-                        AlarmService.stop(this)
-                        finish()
-                    }
+                onClose = {
+                    AlarmService.stop(this)
+                    finish()
                 }
             )
         }
@@ -97,11 +72,8 @@ class AlarmRingActivity : ComponentActivity() {
     }
 
     private fun showOverLockScreen() {
-        // Set both the modern API (27+) methods AND the legacy window flags
-        // together — on some OEM skins (Vivo/OriginOS included) the newer
-        // setShowWhenLocked()/setTurnScreenOn() alone are unreliable, and
-        // adding the older flags on top improves the odds of actually
-        // showing over the lock screen.
+        // Both the modern API and the legacy window flags: on some OEM skins
+        // (Vivo/OriginOS included) the newer calls alone are unreliable.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -119,21 +91,28 @@ class AlarmRingActivity : ComponentActivity() {
     }
 
     override fun onBackPressed() {
-        // Swallow back button — alarm must be dismissed via the button, not skipped.
+        // Swallow back button — the alarm can only be answered with the button.
     }
 }
 
 @Composable
-private fun AlarmRingScreen(
-    exerciseName: String,
-    duration: String,
-    skipsLeft: Int,
-    snoozesLeft: Int,
-    onDismiss: () -> Unit,
-    onSnooze: () -> Unit,
-    onSkip: () -> Unit
-) {
-    var showSkipConfirm by remember { mutableStateOf(false) }
+private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
+    val context = LocalContext.current
+    var phase by remember { mutableStateOf(ChallengeSession.phase(context)) }
+    var msLeft by remember { mutableStateOf(ChallengeSession.msLeftToStart(context)) }
+
+    // Tick every second so the countdown (and the "missed" state) stay live.
+    LaunchedEffect(Unit) {
+        while (true) {
+            phase = ChallengeSession.phase(context)
+            msLeft = ChallengeSession.msLeftToStart(context)
+            delay(1000)
+        }
+    }
+
+    val exercise = ChallengeSession.exercise(context)
+    val summary = ChallengeSession.summary(context)
+    val label = ChallengeSession.label(context)
 
     Box(
         modifier = Modifier
@@ -145,63 +124,89 @@ private fun AlarmRingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(32.dp)
         ) {
-            Text(
-                text = "Wake Up!",
-                color = Color.White,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "$exerciseName \u00b7 $duration to complete",
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 18.sp
-            )
-            Spacer(modifier = Modifier.height(64.dp))
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = OrangeEnd
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text("Dismiss & Start Challenge", fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            TextButton(onClick = onSnooze, enabled = snoozesLeft > 0) {
-                Text(
-                    "Snooze ${UserPrefs.SNOOZE_MINUTES} min ($snoozesLeft left)",
-                    color = Color.White.copy(alpha = if (snoozesLeft > 0) 1f else 0.5f)
-                )
-            }
-            TextButton(onClick = { showSkipConfirm = true }, enabled = skipsLeft > 0) {
-                Text(
-                    "Skip today ($skipsLeft left this week)",
-                    color = Color.White.copy(alpha = if (skipsLeft > 0) 1f else 0.5f)
-                )
+            when (phase) {
+                ChallengeSession.Phase.WAITING -> {
+                    Text(
+                        text = if (label.isBlank()) "Time to move!" else label,
+                        color = Color.White,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "$exercise \u00b7 $summary",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(36.dp))
+                    val sec = (msLeft / 1000).toInt()
+                    Text(
+                        text = String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60),
+                        color = Color.White,
+                        fontSize = 56.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "left to start \u2014 after that the challenge is missed and your streak resets",
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(40.dp))
+                    Button(
+                        onClick = onStart,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = OrangeEnd
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    ) {
+                        Text("Start challenge", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                ChallengeSession.Phase.IN_PROGRESS -> {
+                    Text("Challenge in progress", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onStart,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    ) { Text("Continue challenge", fontWeight = FontWeight.Bold) }
+                }
+
+                ChallengeSession.Phase.MISSED -> {
+                    val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
+                        .format(Date(ChallengeSession.lockEndsAtMillis(context)))
+                    Text("Challenge missed", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "You didn't start within 10 minutes. Your streak is reset and your apps stay locked until $unlockAt.",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = onClose,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    ) { Text("OK", fontWeight = FontWeight.Bold) }
+                }
+
+                ChallengeSession.Phase.IDLE -> {
+                    Text("Nothing pending", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onClose,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    ) { Text("Close", fontWeight = FontWeight.Bold) }
+                }
             }
         }
-    }
-
-    if (showSkipConfirm) {
-        AlertDialog(
-            onDismissRequest = { showSkipConfirm = false },
-            title = { Text("Skip today's challenge?") },
-            text = {
-                Text("Your apps unlock without doing the challenge. This uses 1 of your $skipsLeft skips left this week.")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSkipConfirm = false
-                    onSkip()
-                }) { Text("Skip today", color = OrangeEnd) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSkipConfirm = false }) { Text("Cancel") }
-            }
-        )
     }
 }

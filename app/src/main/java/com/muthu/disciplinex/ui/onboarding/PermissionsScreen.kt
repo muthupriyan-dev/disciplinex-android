@@ -163,7 +163,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         add(
             PermissionRow(
                 title = "Accessibility service",
-                reason = "Only used to detect when a blocked app opens, so it can send you back to your challenge. Never reads message or app content. Tap Allow, open \"DisciplineX App Lock\" and switch it on.",
+                reason = "Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on.",
                 isGranted = accessibilityGranted,
                 onRequest = {
                     context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))

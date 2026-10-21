@@ -13,8 +13,10 @@ import android.telecom.TelecomManager
 import android.text.TextUtils
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import com.muthu.disciplinex.MainActivity
+import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.data.UserPrefs
 
 /**
@@ -23,9 +25,11 @@ import com.muthu.disciplinex.data.UserPrefs
  * system screens (so the phone can never be bricked). Blocked app opens ->
  * user is sent Home and the challenge screen opens.
  *
- * It only watches "which app's window came to the front"
- * (TYPE_WINDOW_STATE_CHANGED); it never reads screen content
- * (canRetrieveWindowContent = false), so it cannot see messages or typing.
+ * It also checks every visible window (split-screen / floating "mini" windows),
+ * so a blocked app can't be used in a small window next to the challenge.
+ *
+ * It only ever looks at WHICH app owns a window (its package name). It never
+ * reads text, messages or anything you type.
  */
 class LockAccessibilityService : AccessibilityService() {
 
@@ -35,19 +39,47 @@ class LockAccessibilityService : AccessibilityService() {
     private val launchableCache = HashMap<String, Boolean>()
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        if (event == null) return
+        val type = event.eventType
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            type != AccessibilityEvent.TYPE_WINDOWS_CHANGED
+        ) return
 
-        val pkg = event.packageName?.toString() ?: return
-        if (pkg == packageName) return                       // never block ourselves
-        if (!UserPrefs.isLockActive(this)) return            // no challenge pending
-        if (!shouldBlock(pkg)) return
+        if (!ChallengeSession.isLockActive(this)) return     // no challenge pending
 
+        // 1) The app that just came to the front.
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val pkg = event.packageName?.toString()
+            if (pkg != null && pkg != packageName && shouldBlock(pkg)) {
+                redirectToChallenge()
+                return
+            }
+        }
+
+        // 2) Any other visible window (split-screen or floating mini window).
+        if (hasBlockedWindowOnScreen()) redirectToChallenge()
+    }
+
+    /** True if a window of a blocked app is visible anywhere on screen. */
+    private fun hasBlockedWindowOnScreen(): Boolean {
+        val list = try { windows } catch (e: Exception) { null } ?: return false
+        for (w in list) {
+            if (w.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
+            val root = try { w.root } catch (e: Exception) { null } ?: continue
+            val pkg = root.packageName?.toString()
+            root.recycle()
+            if (pkg != null && pkg != packageName && shouldBlock(pkg)) return true
+        }
+        return false
+    }
+
+    private fun redirectToChallenge() {
         // Debounce: one app opening can fire several window events in a row.
         val now = SystemClock.elapsedRealtime()
         if (now - lastRedirectAt < REDIRECT_COOLDOWN_MS) return
         lastRedirectAt = now
 
-        // Step 1 always works: kick the user out of the blocked app.
+        // Step 1 always works: kick the user out of the blocked app / mini window.
         performGlobalAction(GLOBAL_ACTION_HOME)
 
         // Step 2: bring up the challenge. If the OEM blocks background launches,
@@ -74,6 +106,7 @@ class LockAccessibilityService : AccessibilityService() {
      * we fail open and let it through.
      */
     private fun shouldBlock(pkg: String): Boolean {
+        if (pkg in ALWAYS_BLOCKED) return true
         if (pkg in allowedPackages()) return false
         return launchableCache.getOrPut(pkg) {
             try {
@@ -143,12 +176,16 @@ class LockAccessibilityService : AccessibilityService() {
         private const val ALLOWED_CACHE_MS = 60_000L
 
         /**
-         * Always allowed. Settings stays open on purpose: it is how you switch
-         * this service off in an emergency, and WhatsApp/camera permission
-         * screens need it.
+         * Blocked even if they would otherwise pass. System Settings is blocked
+         * while locked so the lock can't be switched off from the Accessibility
+         * page or by opening this app's info page.
          */
+        private val ALWAYS_BLOCKED = setOf(
+            "com.android.settings"
+        )
+
+        /** Always allowed so the phone can never be bricked. */
         private val ALWAYS_ALLOWED = setOf(
-            "com.android.settings",
             "com.android.systemui",
             "android",
             "com.android.emergency",
