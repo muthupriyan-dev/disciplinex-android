@@ -2,7 +2,7 @@ package com.muthu.disciplinex.ui.components
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.exponentialDecay
+import androidx.compose.animation.core.FloatExponentialDecaySpec
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
@@ -135,12 +135,12 @@ private class WheelFlingBehavior(
     private val lastIndex: Int
 ) : FlingBehavior {
 
-    private val decay = exponentialDecay<Float>(frictionMultiplier = 1.6f)
+    private val decay = FloatExponentialDecaySpec(frictionMultiplier = 1.6f)
     private val easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f) // ease-out: quick start, soft landing
 
     override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
         val start = (state.firstVisibleItemIndex * itemPx + state.firstVisibleItemScrollOffset).toFloat()
-        val projected = start + decay.calculateTargetValue(0f, initialVelocity)
+        val projected = start + decay.getTargetValue(0f, initialVelocity)
         val targetIndex = (projected / itemPx).roundToInt().coerceIn(0, lastIndex)
         val distance = targetIndex * itemPx - start
         if (abs(distance) < 0.5f) return 0f
