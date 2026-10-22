@@ -29,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.data.ExerciseKinds
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.pose.RepUpdate
@@ -54,17 +55,91 @@ fun ChallengeScreen(
     exerciseName: String,
     targetReps: Int,
     durationMinutes: Int,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    onMissed: () -> Unit = {}
 ) {
     if (ExerciseKinds.isTimed(exerciseName)) {
-        TimedChallenge(exerciseName, durationMinutes, onComplete)
+        TimedChallenge(exerciseName, durationMinutes, onComplete, onMissed)
     } else {
-        RepChallenge(exerciseName, targetReps, onComplete)
+        RepChallenge(exerciseName, targetReps, onComplete, onMissed)
+    }
+}
+
+/**
+ * Live "time left" for the alarm's time limit. When the limit runs out the
+ * challenge is over: [onMissed] is called and the screen is closed.
+ */
+@Composable
+private fun DeadlineBar(onMissed: () -> Unit) {
+    val context = LocalContext.current
+    val currentOnMissed by rememberUpdatedState(onMissed)
+    var msLeft by remember { mutableStateOf(ChallengeSession.msLeftToFinish(context)) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (ChallengeSession.phase(context) == ChallengeSession.Phase.MISSED) {
+                currentOnMissed()
+                break
+            }
+            msLeft = ChallengeSession.msLeftToFinish(context)
+            delay(1000)
+        }
+    }
+
+    val sec = (msLeft / 1000).toInt()
+    val text = if (sec >= 3600) {
+        String.format(Locale.US, "%d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60)
+    } else {
+        String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60)
+    }
+    Text(
+        text = "Time left to finish: $text",
+        color = if (sec < 60) Danger else TextMuted,
+        fontWeight = FontWeight.SemiBold,
+        style = MaterialTheme.typography.labelLarge
+    )
+}
+
+/**
+ * Leaving the app mid-challenge is allowed for [ChallengeSession.AWAY_GRACE_MS]
+ * (an emergency). Return later than that and the progress is reset to zero
+ * (the saved progress is cleared here; [onReset] clears what is on screen).
+ */
+@Composable
+private fun AwayWatcher(onReset: () -> Unit) {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    val currentOnReset by rememberUpdatedState(onReset)
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> ChallengeSession.markLeft(context)
+                Lifecycle.Event.ON_RESUME -> if (ChallengeSession.returnedAfterGrace(context)) currentOnReset()
+                else -> Unit
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
     }
 }
 
 @Composable
-private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplete: () -> Unit) {
+private fun AwayResetNote(visible: Boolean, onHide: () -> Unit) {
+    if (!visible) return
+    LaunchedEffect(Unit) {
+        delay(8000)
+        onHide()
+    }
+    Text(
+        text = "You were away for more than 5 minutes, so your progress started again from zero.",
+        color = Danger,
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.padding(top = 8.dp)
+    )
+}
+
+@Composable
+private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplete: () -> Unit, onMissed: () -> Unit) {
     val context = LocalContext.current
     val totalMs = durationMinutes.coerceAtLeast(1) * 60_000L
 
@@ -73,6 +148,12 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
         mutableStateOf(UserPrefs.getTimedProgressMs(context).coerceIn(0L, totalMs))
     }
     val isComplete = elapsedMs >= totalMs
+    var awayReset by remember { mutableStateOf(false) }
+
+    // Away for more than 5 minutes -> the timer starts again from zero.
+    if (!isComplete) {
+        AwayWatcher(onReset = { elapsedMs = 0L; awayReset = true })
+    }
 
     // Keep the screen awake while the timer is on screen.
     val view = LocalView.current
@@ -161,6 +242,9 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            DeadlineBar(onMissed)
+            AwayResetNote(awayReset) { awayReset = false }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -201,7 +285,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
 }
 
 @Composable
-private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Unit) {
+private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Unit, onMissed: () -> Unit) {
     val context = LocalContext.current
     val usesCamera = ExerciseKinds.isCamera(exerciseName)
 
@@ -217,6 +301,12 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
     var isTracking by remember(exerciseName) { mutableStateOf(false) }
     var debugText by remember(exerciseName) { mutableStateOf("") }
     val isComplete = reps >= target
+    var awayReset by remember { mutableStateOf(false) }
+
+    // Away for more than 5 minutes -> the count starts again from zero.
+    if (!isComplete) {
+        AwayWatcher(onReset = { reps = 0; awayReset = true })
+    }
 
     // Phone is propped on the floor during push-ups: don't let the screen time out.
     val view = LocalView.current
@@ -254,6 +344,9 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            DeadlineBar(onMissed)
+            AwayResetNote(awayReset) { awayReset = false }
 
             Spacer(modifier = Modifier.height(20.dp))
 

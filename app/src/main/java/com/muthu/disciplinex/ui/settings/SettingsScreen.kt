@@ -5,7 +5,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,11 +57,13 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
+            Button(
                 onClick = onOpenAllowedApps,
                 enabled = !locked,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Choose allowed apps", color = if (locked) TextMuted else OrangeEnd) }
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
+            ) { Text("Choose allowed apps", fontWeight = FontWeight.SemiBold) }
             if (locked) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(

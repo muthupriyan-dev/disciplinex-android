@@ -32,7 +32,7 @@ import java.util.Locale
 
 /**
  * Shown when an alarm fires. Displays over the lock screen with ONE big button
- * and a 10-minute countdown: start the challenge in time, or it counts as missed.
+ * and a countdown to the alarm's time limit: finish the challenge in time, or it counts as missed.
  *
  * The sound/vibration itself is owned by [AlarmService] (a foreground
  * service), NOT this Activity — some OEM ROMs (Vivo/OriginOS included) kill
@@ -100,13 +100,13 @@ class AlarmRingActivity : ComponentActivity() {
 private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     var phase by remember { mutableStateOf(ChallengeSession.phase(context)) }
-    var msLeft by remember { mutableStateOf(ChallengeSession.msLeftToStart(context)) }
+    var msLeft by remember { mutableStateOf(ChallengeSession.msLeftToFinish(context)) }
 
     // Tick every second so the countdown (and the "missed" state) stay live.
     LaunchedEffect(Unit) {
         while (true) {
             phase = ChallengeSession.phase(context)
-            msLeft = ChallengeSession.msLeftToStart(context)
+            msLeft = ChallengeSession.msLeftToFinish(context)
             delay(1000)
         }
     }
@@ -149,7 +149,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "left to start \u2014 after that the challenge is missed and your streak resets",
+                        text = "left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -180,7 +180,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Dismiss only stops the sound. Your challenge is still due and your apps stay locked.",
+                        text = "Dismiss only stops the sound. The time limit keeps running and your apps stay locked.",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
@@ -189,6 +189,13 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
 
                 ChallengeSession.Phase.IN_PROGRESS -> {
                     Text("Challenge in progress", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val secLeft = (msLeft / 1000).toInt()
+                    Text(
+                        text = String.format(Locale.US, "%d:%02d:%02d left to finish", secLeft / 3600, (secLeft % 3600) / 60, secLeft % 60),
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 16.sp
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = onStart,
@@ -203,7 +210,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     Text("Challenge missed", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "You didn't start within 10 minutes. Your streak is reset and your apps stay locked until $unlockAt.",
+                        text = "You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center

@@ -46,8 +46,8 @@ class AlarmService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var loopRunnable: Runnable? = null
 
-    // Stops the sound after the 10-minute start window. isLockActive() also
-    // marks the challenge as missed if it was never opened in that time.
+    // Stops the sound after at most 10 minutes (or at the time limit if that is shorter).
+    // isLockActive() also marks the challenge as missed once the time limit is over.
     private val autoStop = Runnable {
         ChallengeSession.isLockActive(this)
         stopEverything()
@@ -67,7 +67,7 @@ class AlarmService : Service() {
         safely("startAlarmSound") { startAlarmSound() }
         safely("startVibration") { startVibration() }
         handler.removeCallbacks(autoStop)
-        handler.postDelayed(autoStop, MAX_RING_MS)
+        handler.postDelayed(autoStop, minOf(MAX_RING_MS, ChallengeSession.windowMs(this)))
         return START_STICKY
     }
 
@@ -143,7 +143,7 @@ class AlarmService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(ChallengeSession.label(this).ifBlank { "Time for your challenge!" })
-            .setContentText("${ChallengeSession.exercise(this)} \u00b7 ${ChallengeSession.summary(this)} \u2014 start within 10 minutes or it counts as missed.")
+            .setContentText("${ChallengeSession.exercise(this)} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.")
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -307,7 +307,7 @@ class AlarmService : Service() {
         const val ACTION_STOP = "com.muthu.disciplinex.alarm.ACTION_STOP"
         private const val CHANNEL_ID = "alarm_channel"
         private const val NOTIFICATION_ID = 1001
-        private const val MAX_RING_MS = ChallengeSession.START_WINDOW_MS // 10 minutes
+        private const val MAX_RING_MS = ChallengeSession.MAX_RING_MS // sound stops after 10 minutes at most
 
         /** Called from AlarmReceiver (background context) — must use startForegroundService. */
         fun start(context: Context) {

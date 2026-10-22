@@ -10,7 +10,7 @@ import com.muthu.disciplinex.data.ChallengeSession
 /**
  * Fires when one of the alarms in the list goes off. Re-arms (or, for a
  * "once" alarm, switches off) that alarm, starts the challenge session (lock
- * ON + 10-minute start window) and starts [AlarmService]. If the service can't
+ * ON + the alarm's time limit starts) and starts [AlarmService]. If the service can't
  * start, a backup high-priority notification is posted instead so the alarm is
  * never silently lost.
  */

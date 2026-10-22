@@ -8,7 +8,7 @@ import java.time.LocalDate
 /**
  * Daily results for the streak. Each day keeps two counters: challenges done
  * and challenges missed. A day is a SUCCESS only if it has at least one done
- * and zero missed. One miss (never started within 10 minutes, or never
+ * and zero missed. One miss (never finished within the time limit, or never
  * finished) breaks the streak.
  */
 object StreakStore {

@@ -27,7 +27,7 @@ import java.util.Date
 
 /**
  * Decides what the challenge route shows, based on the running session:
- *  - started inside the 10-minute window -> the real challenge
+ *  - opened inside the alarm's time limit -> the real challenge
  *  - window already over -> "missed" message
  *  - nothing pending -> a short note
  * Opening this screen inside the window is what marks the challenge as started.
@@ -58,7 +58,8 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
                 onComplete = {
                     ChallengeSession.complete(context)
                     onComplete()
-                }
+                },
+                onMissed = onClose
             )
         }
 
@@ -68,7 +69,7 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
             GateMessage(
                 title = "Challenge missed",
                 titleColor = Danger,
-                body = "You didn't start within 10 minutes of the alarm, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt (your next alarm).",
+                body = "You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.",
                 buttonText = "Back to home",
                 onClick = onClose
             )

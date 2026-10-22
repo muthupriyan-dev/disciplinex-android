@@ -12,18 +12,26 @@ import java.time.ZoneId
  * The challenge that started when an alarm rang. It decides everything about
  * the app lock:
  *
- *  1. Alarm rings -> the lock turns ON and a 10-minute START window opens.
- *  2. Open the challenge inside that window -> the challenge is "in progress"
- *     (no time limit now) and finishing it unlocks the phone + counts for the streak.
- *  3. Don't open it in time -> the challenge is MISSED: the streak is broken and
- *     (if [MISSED_KEEPS_LOCK]) the phone stays locked until the next alarm.
- *  4. Whatever happens, the lock ends at the next alarm, or after 24 hours.
+ *  1. Alarm rings -> the lock turns ON and the alarm's own TIME LIMIT starts
+ *     ("finish within N minutes", chosen when the alarm is set).
+ *  2. Finish the challenge inside the time limit -> the phone unlocks and the day
+ *     counts for the streak. The limit covers the WHOLE challenge, also while it
+ *     is in progress.
+ *  3. Time limit over without finishing -> MISSED: the streak is broken and the
+ *     phone stays locked for 24 hours from the alarm.
+ *  4. While the challenge is in progress you may leave the app for up to
+ *     [AWAY_GRACE_MS] (an emergency). Come back later than that and the progress
+ *     starts again from zero.
  */
 object ChallengeSession {
-    const val START_WINDOW_MS = 10 * 60 * 1000L
+    /** The alarm sound stops after this long (or at the time limit, if shorter). */
+    const val MAX_RING_MS = 10 * 60 * 1000L
     const val MAX_LOCK_MS = 24 * 60 * 60 * 1000L
 
-    /** true = missing the 10-minute window keeps the phone locked until the next alarm. */
+    /** How long you may be away from an in-progress challenge before it restarts. */
+    const val AWAY_GRACE_MS = 5 * 60 * 1000L
+
+    /** true = missing the time limit keeps the phone locked (for 24 hours). */
     const val MISSED_KEEPS_LOCK = true
 
     enum class Phase { IDLE, WAITING, IN_PROGRESS, MISSED }
@@ -41,6 +49,10 @@ object ChallengeSession {
     private const val K_RING_ELAPSED = "ring_elapsed"
     private const val K_BOOT = "boot_count"
     private const val K_LOCK_MS = "lock_ms"
+    private const val K_WINDOW_MS = "window_ms"
+    private const val K_LEFT_ELAPSED = "left_elapsed"
+    private const val K_LEFT_WALL = "left_wall"
+    private const val K_LEFT_BOOT = "left_boot"
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -68,7 +80,8 @@ object ChallengeSession {
     private fun recordMiss(context: Context, p: SharedPreferences) {
         if (p.getBoolean(K_MISSED, false)) return
         StreakStore.record(context, ringDate(p), false)
-        p.edit().putBoolean(K_MISSED, true).apply()
+        // A missed day locks the phone for the full 24 hours from the alarm.
+        p.edit().putBoolean(K_MISSED, true).putLong(K_LOCK_MS, MAX_LOCK_MS).apply()
     }
 
     // ------------------------------------------------------------------
@@ -82,7 +95,9 @@ object ChallengeSession {
 
         val now = System.currentTimeMillis()
         val untilNext = (nextAlarmMillis ?: (now + MAX_LOCK_MS)) - now
-        val lockMs = untilNext.coerceIn(START_WINDOW_MS, MAX_LOCK_MS)
+        val windowMs = (alarm.windowMinutes.coerceAtLeast(if (alarm.isTimed) alarm.minutes else 1) * 60_000L)
+            .coerceIn(60_000L, MAX_LOCK_MS)
+        val lockMs = untilNext.coerceIn(windowMs, MAX_LOCK_MS)
 
         UserPrefs.resetProgress(context)
         p.edit()
@@ -98,6 +113,8 @@ object ChallengeSession {
             .putLong(K_RING_ELAPSED, SystemClock.elapsedRealtime())
             .putInt(K_BOOT, bootCount(context))
             .putLong(K_LOCK_MS, lockMs)
+            .putLong(K_WINDOW_MS, windowMs)
+            .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
             .apply()
     }
 
@@ -111,21 +128,22 @@ object ChallengeSession {
         if (!p.getBoolean(K_ACTIVE, false)) return false
         val elapsed = elapsedSinceRing(context, p)
 
-        // Lock window is over (next alarm reached, or the 24-hour cap).
+        // Time limit over without finishing (whether or not it was ever opened): missed.
+        if (!p.getBoolean(K_MISSED, false) && elapsed > windowMs(p)) {
+            recordMiss(context, p) // also extends the lock to 24 hours
+            UserPrefs.resetProgress(context)
+            if (!MISSED_KEEPS_LOCK) {
+                p.edit().putBoolean(K_ACTIVE, false).apply()
+                return false
+            }
+        }
+
+        // Lock window is over (24 hours after a miss, or the next alarm for a finished-in-time day).
         if (elapsed > p.getLong(K_LOCK_MS, MAX_LOCK_MS)) {
             recordMiss(context, p) // started but never finished, or never started
             p.edit().putBoolean(K_ACTIVE, false).apply()
             UserPrefs.resetProgress(context)
             return false
-        }
-
-        // The 10-minute start window ran out without the challenge being opened.
-        if (!p.getBoolean(K_STARTED, false) && !p.getBoolean(K_MISSED, false) && elapsed > START_WINDOW_MS) {
-            recordMiss(context, p)
-            if (!MISSED_KEEPS_LOCK) {
-                p.edit().putBoolean(K_ACTIVE, false).apply()
-                return false
-            }
         }
         return true
     }
@@ -140,16 +158,58 @@ object ChallengeSession {
         }
     }
 
-    /** Milliseconds left to open the challenge (0 once the window is over). */
-    fun msLeftToStart(context: Context): Long {
-        if (phase(context) != Phase.WAITING) return 0L
+    private fun windowMs(p: SharedPreferences): Long = p.getLong(K_WINDOW_MS, 10 * 60 * 1000L)
+
+    /** The alarm's time limit in milliseconds. */
+    fun windowMs(context: Context): Long = windowMs(prefs(context))
+
+    /** Milliseconds left to finish the challenge (0 once the time limit is over). */
+    fun msLeftToFinish(context: Context): Long {
+        val ph = phase(context)
+        if (ph != Phase.WAITING && ph != Phase.IN_PROGRESS) return 0L
         val p = prefs(context)
-        return (START_WINDOW_MS - elapsedSinceRing(context, p)).coerceAtLeast(0L)
+        return (windowMs(p) - elapsedSinceRing(context, p)).coerceAtLeast(0L)
+    }
+
+    // ------------------------------------------------------------------
+    // Leaving the app mid-challenge (5-minute emergency grace)
+    // ------------------------------------------------------------------
+
+    /** Call when the challenge screen goes to the background. */
+    fun markLeft(context: Context) {
+        if (phase(context) != Phase.IN_PROGRESS) return
+        prefs(context).edit()
+            .putLong(K_LEFT_ELAPSED, SystemClock.elapsedRealtime())
+            .putLong(K_LEFT_WALL, System.currentTimeMillis())
+            .putInt(K_LEFT_BOOT, bootCount(context))
+            .apply()
+    }
+
+    /**
+     * Call when the challenge screen comes back. Returns true if you were away
+     * longer than [AWAY_GRACE_MS]; the saved progress has then been reset to zero.
+     */
+    fun returnedAfterGrace(context: Context): Boolean {
+        val p = prefs(context)
+        val leftElapsed = p.getLong(K_LEFT_ELAPSED, 0L)
+        val leftWall = p.getLong(K_LEFT_WALL, 0L)
+        if (leftElapsed == 0L && leftWall == 0L) return false
+
+        val sameBoot = bootCount(context) == p.getInt(K_LEFT_BOOT, Int.MIN_VALUE)
+        var away = if (sameBoot) SystemClock.elapsedRealtime() - leftElapsed else System.currentTimeMillis() - leftWall
+        if (away < 0) away = System.currentTimeMillis() - leftWall
+        p.edit().remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT).apply()
+
+        if (away > AWAY_GRACE_MS && phase(context) == Phase.IN_PROGRESS) {
+            UserPrefs.resetProgress(context)
+            return true
+        }
+        return false
     }
 
     /**
      * The user opened the challenge screen. If we are still inside the
-     * 10-minute window this marks the challenge as started.
+     * time limit this marks the challenge as started.
      */
     fun enterChallenge(context: Context): Phase {
         val ph = phase(context)
@@ -166,7 +226,9 @@ object ChallengeSession {
         if (p.getBoolean(K_ACTIVE, false) && !p.getBoolean(K_MISSED, false)) {
             StreakStore.record(context, ringDate(p), true)
         }
-        p.edit().putBoolean(K_ACTIVE, false).apply()
+        p.edit().putBoolean(K_ACTIVE, false)
+            .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
+            .apply()
         UserPrefs.resetProgress(context)
     }
 

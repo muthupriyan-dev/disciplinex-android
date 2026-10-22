@@ -27,7 +27,9 @@ data class AlarmEntry(
     val reps: Int,
     val minutes: Int,
     val enabled: Boolean,
-    val dates: List<Long> = emptyList()
+    val dates: List<Long> = emptyList(),
+    /** "Finish within" time limit, counted from the moment the alarm rings. */
+    val windowMinutes: Int = DEFAULT_WINDOW_MINUTES
 ) {
     val isCustom: Boolean get() = dates.isNotEmpty()
     val isOnce: Boolean get() = daysMask == 0 && dates.isEmpty()
@@ -63,26 +65,41 @@ data class AlarmEntry(
         .put("r", reps)
         .put("n", minutes)
         .put("on", enabled)
+        .put("w", windowMinutes)
         .put("dt", JSONArray().also { arr -> dates.forEach { arr.put(it) } })
 
     companion object {
         const val ALL_DAYS = 127
         val DAY_NAMES = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
-        fun fromJson(o: JSONObject): AlarmEntry = AlarmEntry(
-            id = o.optInt("id"),
-            hour24 = o.optInt("h", 5),
-            minute = o.optInt("m", 0),
-            daysMask = o.optInt("d", ALL_DAYS),
-            label = o.optString("l", ""),
-            exercise = o.optString("e", "Push-ups"),
-            reps = o.optInt("r", 10),
-            minutes = o.optInt("n", 15),
-            enabled = o.optBoolean("on", true),
-            dates = o.optJSONArray("dt")?.let { arr ->
-                (0 until arr.length()).map { arr.optLong(it) }.sorted()
-            } ?: emptyList()
-        )
+        const val DEFAULT_WINDOW_MINUTES = 15
+
+        fun fromJson(o: JSONObject): AlarmEntry {
+            val exercise = o.optString("e", "Push-ups")
+            val minutes = o.optInt("n", 15)
+            // Alarms saved before the time limit existed: a sensible limit for their exercise.
+            val savedWindow = o.optInt("w", -1)
+            val window = when {
+                savedWindow > 0 -> savedWindow
+                ExerciseKinds.isTimed(exercise) -> minutes + 10
+                else -> DEFAULT_WINDOW_MINUTES
+            }
+            return AlarmEntry(
+                id = o.optInt("id"),
+                hour24 = o.optInt("h", 5),
+                minute = o.optInt("m", 0),
+                daysMask = o.optInt("d", ALL_DAYS),
+                label = o.optString("l", ""),
+                exercise = exercise,
+                reps = o.optInt("r", 10),
+                minutes = minutes,
+                enabled = o.optBoolean("on", true),
+                dates = o.optJSONArray("dt")?.let { arr ->
+                    (0 until arr.length()).map { arr.optLong(it) }.sorted()
+                } ?: emptyList(),
+                windowMinutes = window
+            )
+        }
 
         private val DATE_FORMAT: DateTimeFormatter =
             DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault())

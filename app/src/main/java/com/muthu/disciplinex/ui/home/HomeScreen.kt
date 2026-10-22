@@ -73,7 +73,7 @@ private val tourSteps = listOf(
     ),
     TourStep(
         "status", "Status",
-        "Shows if your app lock is ready, and what is waiting after an alarm rings. You get 10 minutes to start after it rings."
+        "Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings."
     ),
     TourStep(
         "alarm", "An alarm",
@@ -125,11 +125,11 @@ fun HomeScreen(
     val best = remember(refreshTick) { StreakStore.bestStreak(context) }
     val week = remember(refreshTick) { StreakStore.lastSevenDays(context) }
     val nextText = remember(refreshTick) { nextAlarmText(context) }
-    val msLeft = remember(refreshTick) { ChallengeSession.msLeftToStart(context) }
+    val msLeft = remember(refreshTick) { ChallengeSession.msLeftToFinish(context) }
 
     // While a challenge is waiting to be started, tick once a second so the countdown moves.
     LaunchedEffect(phase) {
-        if (phase == ChallengeSession.Phase.WAITING) {
+        if (phase == ChallengeSession.Phase.WAITING || phase == ChallengeSession.Phase.IN_PROGRESS) {
             while (true) {
                 delay(1000)
                 refreshTick++
@@ -355,7 +355,7 @@ private fun StatusCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    String.format(Locale.US, "Start within %02d:%02d or it counts as missed.", sec / 60, sec % 60),
+                    String.format(Locale.US, "Finish within %02d:%02d or it counts as missed.", sec / 60, sec % 60),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -372,7 +372,7 @@ private fun StatusCard(
                 Text("Challenge in progress", fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "${ChallengeSession.exercise(context)} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone.",
+                    "${ChallengeSession.exercise(context)} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \u2014 ${msLeft / 60000} min left.",
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -391,7 +391,7 @@ private fun StatusCard(
                 Text("Challenge missed", fontWeight = FontWeight.SemiBold, color = Danger, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "You didn't start within 10 minutes, so your streak was reset. Apps stay locked until $unlockAt.",
+                    "You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.",
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -403,7 +403,7 @@ private fun StatusCard(
                 Text(
                     when {
                         !hasAlarms -> "No alarms yet \u2014 tap + to add one."
-                        nextText != null -> "Next alarm: $nextText. When it rings you have 10 minutes to start, and every app except Phone, Camera and your allowed apps stays locked until you finish."
+                        nextText != null -> "Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish."
                         else -> "All alarms are off. Switch one on to get started."
                     },
                     color = TextMuted,

@@ -15,7 +15,7 @@ import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
 
-/** Big number with -5 / -1 / +1 / +5 buttons, used for the reps or minutes target. */
+/** Big number with -big / -1 / +1 / +big buttons (big = 5 by default), used for the reps or minutes target. */
 @Composable
 fun TargetStepper(
     value: Int,
@@ -24,14 +24,15 @@ fun TargetStepper(
     max: Int,
     onValueChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    bigStep: Int = 5
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        StepButton("\u22125", enabled && value > min) { onValueChange((value - 5).coerceAtLeast(min)) }
+        StepButton("\u2212$bigStep", enabled && value > min) { onValueChange((value - bigStep).coerceAtLeast(min)) }
         StepButton("\u22121", enabled && value > min) { onValueChange((value - 1).coerceAtLeast(min)) }
         Column(
             modifier = Modifier.weight(1f),
@@ -41,7 +42,7 @@ fun TargetStepper(
             Text(unit, color = TextMuted, style = MaterialTheme.typography.labelMedium)
         }
         StepButton("+1", enabled && value < max) { onValueChange((value + 1).coerceAtMost(max)) }
-        StepButton("+5", enabled && value < max) { onValueChange((value + 5).coerceAtMost(max)) }
+        StepButton("+$bigStep", enabled && value < max) { onValueChange((value + bigStep).coerceAtMost(max)) }
     }
 }
 

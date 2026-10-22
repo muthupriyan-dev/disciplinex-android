@@ -91,6 +91,10 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
         var reps by remember { mutableStateOf(existing?.reps ?: 10) }
         var minutes by remember { mutableStateOf(existing?.minutes ?: 15) }
         val isTimed = ExerciseKinds.isTimed(selected.name)
+        var windowMin by remember { mutableStateOf(existing?.windowMinutes ?: AlarmEntry.DEFAULT_WINDOW_MINUTES) }
+        // A timed exercise (e.g. 2 hours of reading) needs at least that long to finish it.
+        val minWindow = if (isTimed) minutes else 1
+        LaunchedEffect(minWindow) { if (windowMin < minWindow) windowMin = minWindow }
 
         // Fixed at first composition: the wheel keeps its own state after that.
         val initHour12 = remember { ((hour24 + 11) % 12) + 1 }
@@ -253,6 +257,36 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 }
             }
 
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ---- Time limit ----
+            SectionCard {
+                Text("Time limit", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.",
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                TargetStepper(
+                    value = windowMin.coerceAtLeast(minWindow),
+                    unit = if (windowMin >= 60) "minutes \u00b7 ${windowMin / 60} h ${windowMin % 60} min" else "minutes",
+                    min = minWindow,
+                    max = 600,
+                    bigStep = 15,
+                    onValueChange = { windowMin = it }
+                )
+                if (isTimed) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Can't be shorter than your $minutes-minute ${selected.name.lowercase()} target.",
+                        color = TextMuted,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             saveError?.let {
@@ -272,7 +306,8 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         reps = reps,
                         minutes = minutes,
                         enabled = true,
-                        dates = customDates.sorted()
+                        dates = customDates.sorted(),
+                        windowMinutes = windowMin.coerceAtLeast(minWindow)
                     )
                     // A custom alarm whose chosen dates/time are all in the past would never ring.
                     if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {

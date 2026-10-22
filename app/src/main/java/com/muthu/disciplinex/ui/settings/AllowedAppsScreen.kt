@@ -2,6 +2,18 @@ package com.muthu.disciplinex.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +48,42 @@ private fun loadLaunchableApps(context: Context): List<AppEntry> {
         .sortedBy { it.label.lowercase() }
 }
 
+/** Drawable -> small bitmap (96 px is plenty for a 40 dp icon). */
+private fun Drawable.toIconBitmap(sizePx: Int = 96): ImageBitmap {
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    setBounds(0, 0, sizePx, sizePx)
+    draw(canvas)
+    return bitmap.asImageBitmap()
+}
+
+/** Icons are decoded off the main thread, once per app, and reused while scrolling. */
+private val iconCache = ConcurrentHashMap<String, ImageBitmap>()
+
+@Composable
+private fun AppIcon(packageName: String, size: Dp) {
+    val context = LocalContext.current
+    val icon by produceState<ImageBitmap?>(iconCache[packageName], packageName) {
+        if (value == null) {
+            value = withContext(Dispatchers.IO) {
+                try {
+                    context.packageManager.getApplicationIcon(packageName).toIconBitmap()
+                        .also { iconCache[packageName] = it }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+    val shape = RoundedCornerShape(10.dp)
+    val bmp = icon
+    if (bmp != null) {
+        Image(bitmap = bmp, contentDescription = null, modifier = Modifier.size(size).clip(shape))
+    } else {
+        Spacer(modifier = Modifier.size(size))
+    }
+}
+
 /**
  * Pick which apps stay usable while the app lock is on. Phone, Camera,
  * keyboards, the home screen and system screens are always allowed and are
@@ -46,7 +94,11 @@ private fun loadLaunchableApps(context: Context): List<AppEntry> {
 fun AllowedAppsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val locked = remember { ChallengeSession.isLockActive(context) }
-    val apps = remember { loadLaunchableApps(context) }
+    // The app list is read on a background thread, so this screen opens instantly
+    // (reading every app's name on the main thread is what made the button feel slow).
+    val apps by produceState<List<AppEntry>?>(null) {
+        value = withContext(Dispatchers.Default) { loadLaunchableApps(context) }
+    }
     var allowed by remember { mutableStateOf(UserPrefs.getAllowedApps(context)) }
 
     Scaffold(
@@ -84,8 +136,13 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(apps, key = { it.packageName }) { app ->
+            val list = apps
+            if (list == null) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = OrangeEnd)
+                }
+            } else LazyColumn(modifier = Modifier.weight(1f)) {
+                items(list, key = { it.packageName }) { app ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -101,14 +158,14 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(app.label, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                app.packageName,
-                                color = TextMuted,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
+                        AppIcon(app.packageName, 40.dp)
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Text(
+                            app.label,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1
+                        )
                         Checkbox(
                             checked = app.packageName in allowed,
                             onCheckedChange = null,
