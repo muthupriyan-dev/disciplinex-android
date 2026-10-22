@@ -10,7 +10,9 @@ data class RepUpdate(
     /** 0f (bottom of rep) .. 1f (top of rep) — drives the progress ring during a live rep. */
     val liveProgress: Float,
     /** True when a real body is being tracked. False shows a "get in frame" hint. */
-    val isTracking: Boolean
+    val isTracking: Boolean,
+    /** Short live readout (angle / state) shown under the camera while testing. */
+    val debug: String = ""
 )
 
 /**
@@ -47,15 +49,20 @@ private fun Pose.landmarkOrNull(type: Int): PoseLandmark? {
  * a meaningless angle, so joints are never taken from different sides. Sticks
  * with the side used last frame so it doesn't flip back and forth.
  */
-private class SidePicker(private val left: IntArray, private val right: IntArray) {
+private class SidePicker(
+    private val left: IntArray,
+    private val right: IntArray,
+    /** The first [required] landmarks must be visible; the rest are optional (null if hidden). */
+    private val required: Int = left.size
+) {
     private var preferLeft = true
 
-    fun pick(pose: Pose?): List<PoseLandmark>? {
+    fun pick(pose: Pose?): List<PoseLandmark?>? {
         if (pose == null) return null
         val l = left.map { pose.landmarkOrNull(it) }
         val r = right.map { pose.landmarkOrNull(it) }
-        val leftOk = l.all { it != null }
-        val rightOk = r.all { it != null }
+        val leftOk = l.take(required).all { it != null }
+        val rightOk = r.take(required).all { it != null }
         val useLeft = when {
             leftOk && rightOk -> preferLeft
             leftOk -> true
@@ -63,8 +70,19 @@ private class SidePicker(private val left: IntArray, private val right: IntArray
             else -> return null
         }
         preferLeft = useLeft
-        return (if (useLeft) l else r).filterNotNull()
+        return if (useLeft) l else r
     }
+}
+
+/** Average of the last few angle readings, so one noisy frame can't fake or cancel a rep. */
+private class AngleSmoother(private val size: Int = 3) {
+    private val values = ArrayDeque<Double>()
+    fun add(v: Double): Double {
+        values.addLast(v)
+        while (values.size > size) values.removeFirst()
+        return values.average()
+    }
+    fun clear() = values.clear()
 }
 
 /**
@@ -77,6 +95,9 @@ private class SidePicker(private val left: IntArray, private val right: IntArray
  *    be closer together than [MIN_REP_INTERVAL_MS]
  */
 class PushUpRepCounter : RepCounter {
+    // Shoulder, elbow and wrist must be visible. The hip is optional: with the
+    // phone close to the floor the hip is often out of frame, and requiring it
+    // used to stop every rep from being counted.
     private val sides = SidePicker(
         intArrayOf(
             PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_ELBOW,
@@ -85,14 +106,21 @@ class PushUpRepCounter : RepCounter {
         intArrayOf(
             PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_ELBOW,
             PoseLandmark.RIGHT_WRIST, PoseLandmark.RIGHT_HIP
-        )
+        ),
+        required = 3
     )
+    private val smoother = AngleSmoother(3)
     private var state = State.UP
     private var reps = 0
     private var trackingLossFrames = 0
     private var shoulderYAtDown: Float? = null
     private var downAtMs = 0L
     private var lastRepAtMs = 0L
+
+    // Highest (most extended) elbow angle seen lately. The "arms straight again"
+    // line adapts to it, so someone whose arms only read ~150 degrees on camera
+    // still gets counted instead of being stuck in the DOWN state forever.
+    private var peakAngle = 150.0
 
     private enum class State { UP, DOWN }
 
@@ -106,28 +134,45 @@ class PushUpRepCounter : RepCounter {
             if (trackingLossFrames > TRACKING_LOSS_GRACE_FRAMES) {
                 state = State.UP
                 shoulderYAtDown = null
-                return RepUpdate(reps, 0f, isTracking = false)
+                smoother.clear()
+                return RepUpdate(reps, 0f, isTracking = false, debug = "no body")
             }
-            return RepUpdate(reps, if (state == State.DOWN) 0.5f else 0f, isTracking = false)
+            return RepUpdate(reps, if (state == State.DOWN) 0.5f else 0f, isTracking = false, debug = "flicker")
         }
         trackingLossFrames = 0
 
-        val (shoulder, elbow, wrist, hip) = joints
+        val shoulder = joints[0]!!
+        val elbow = joints[1]!!
+        val wrist = joints[2]!!
+        val hip = joints[3]
 
-        val elbowAngle = jointAngle(shoulder.position3D, elbow.position3D, wrist.position3D)
-        val plankTilt = tiltFromHorizontal(shoulder.position3D, hip.position3D)
-        val torsoLength = kotlin.math.abs(hip.position.y - shoulder.position.y).coerceAtLeast(1f)
+        val rawAngle = jointAngle(shoulder.position3D, elbow.position3D, wrist.position3D)
+        val elbowAngle = smoother.add(rawAngle)
+
         // Loose on purpose: with the phone just propped on the floor the
         // shoulder-hip line rarely reads as truly horizontal. This only
-        // rejects someone sitting bolt upright.
-        val isPlank = plankTilt < 65.0
+        // rejects someone sitting bolt upright. If the hip isn't visible the
+        // check is skipped rather than blocking the rep.
+        val plankTilt = hip?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
+        val isPlank = plankTilt == null || plankTilt < 65.0
 
-        val liveProgress = ((elbowAngle - 70.0) / (160.0 - 70.0)).toFloat().coerceIn(0f, 1f)
+        // Upper-arm length on screen is a stable ruler for "did the shoulder really move".
+        val upperArm = kotlin.math.hypot(
+            (shoulder.position.x - elbow.position.x).toDouble(),
+            (shoulder.position.y - elbow.position.y).toDouble()
+        ).toFloat().coerceAtLeast(1f)
+
+        if (elbowAngle > peakAngle) peakAngle = elbowAngle else peakAngle -= 0.02
+        peakAngle = peakAngle.coerceIn(140.0, 175.0)
+        val upThreshold = (peakAngle - 12.0).coerceIn(128.0, 145.0)
+        val downThreshold = 105.0
+
+        val liveProgress = ((elbowAngle - 70.0) / (peakAngle - 70.0)).toFloat().coerceIn(0f, 1f)
         val now = SystemClock.elapsedRealtime()
 
         when (state) {
             State.UP -> {
-                if (elbowAngle < 100.0 && isPlank) {
+                if (elbowAngle < downThreshold && isPlank) {
                     state = State.DOWN
                     shoulderYAtDown = shoulder.position.y
                     downAtMs = now
@@ -136,8 +181,8 @@ class PushUpRepCounter : RepCounter {
             State.DOWN -> {
                 val downY = shoulderYAtDown
                 val movedEnough = downY == null ||
-                    kotlin.math.abs(shoulder.position.y - downY) > torsoLength * 0.04f
-                if (elbowAngle > 145.0 && isPlank) {
+                    kotlin.math.abs(shoulder.position.y - downY) > upperArm * 0.10f
+                if (elbowAngle > upThreshold && isPlank) {
                     val believable = now - downAtMs >= MIN_DOWN_TO_UP_MS &&
                         now - lastRepAtMs >= MIN_REP_INTERVAL_MS
                     if (movedEnough && believable) {
@@ -155,7 +200,9 @@ class PushUpRepCounter : RepCounter {
             }
         }
 
-        return RepUpdate(reps, liveProgress, isTracking = true)
+        val debug = "elbow ${elbowAngle.toInt()}\u00b0 \u00b7 up>${upThreshold.toInt()} down<${downThreshold.toInt()} \u00b7 " +
+            "${state.name}" + if (plankTilt == null) " \u00b7 hip hidden" else " \u00b7 tilt ${plankTilt.toInt()}\u00b0"
+        return RepUpdate(reps, liveProgress, isTracking = true, debug = debug)
     }
 }
 
@@ -174,7 +221,8 @@ class SquatRepCounter : RepCounter {
         intArrayOf(
             PoseLandmark.RIGHT_HIP, PoseLandmark.RIGHT_KNEE,
             PoseLandmark.RIGHT_ANKLE, PoseLandmark.RIGHT_SHOULDER
-        )
+        ),
+        required = 3
     )
     private var state = State.UP
     private var reps = 0
@@ -199,7 +247,9 @@ class SquatRepCounter : RepCounter {
         }
         trackingLossFrames = 0
 
-        val (hip, knee, ankle, _) = joints
+        val hip = joints[0]!!
+        val knee = joints[1]!!
+        val ankle = joints[2]!!
 
         val kneeAngle = jointAngle(hip.position3D, knee.position3D, ankle.position3D)
         val legLength = kotlin.math.abs(ankle.position.y - hip.position.y).coerceAtLeast(1f)

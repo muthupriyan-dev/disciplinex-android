@@ -71,6 +71,15 @@ object AlarmScheduler {
     fun nextTriggerMillis(alarm: AlarmEntry, after: Long): Long? {
         val zone = ZoneId.systemDefault()
         val nowDt = Instant.ofEpochMilli(after).atZone(zone).toLocalDateTime()
+
+        // "Custom" alarm: the earliest chosen date whose time is still ahead.
+        if (alarm.dates.isNotEmpty()) {
+            return alarm.dates.sorted()
+                .map { java.time.LocalDate.ofEpochDay(it).atTime(alarm.hour24, alarm.minute) }
+                .firstOrNull { it.isAfter(nowDt) }
+                ?.atZone(zone)?.toInstant()?.toEpochMilli()
+        }
+
         for (offset in 0..7) {
             val date = nowDt.toLocalDate().plusDays(offset.toLong())
             val dayBit = (alarm.daysMask shr (date.dayOfWeek.value - 1)) and 1

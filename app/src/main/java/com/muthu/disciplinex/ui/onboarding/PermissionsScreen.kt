@@ -93,17 +93,50 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val notificationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { refreshTick++ }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { refreshTick++ }
-
     val settingsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { refreshTick++ }
+
+    // If the user denied with "Don't ask again", Android never shows the pop-up again
+    // and Continue would be stuck. In that case send them to this app's settings page.
+    fun openAppSettings(action: String) {
+        val intent = Intent(action).apply {
+            if (action == Settings.ACTION_APP_NOTIFICATION_SETTINGS) {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            } else {
+                data = Uri.parse("package:${context.packageName}")
+            }
+        }
+        settingsLauncher.launch(intent)
+    }
+
+    val notificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        refreshTick++
+        val activity = context.findActivity()
+        if (!granted && activity != null &&
+            !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                activity, Manifest.permission.POST_NOTIFICATIONS
+            )
+        ) {
+            openAppSettings(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        refreshTick++
+        val activity = context.findActivity()
+        if (!granted && activity != null &&
+            !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                activity, Manifest.permission.CAMERA
+            )
+        ) {
+            openAppSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        }
+    }
 
     val notificationGranted = remember(refreshTick) { hasNotificationPermission(context) }
     val fullScreenGranted = remember(refreshTick) { hasFullScreenIntentPermission(context) }
@@ -172,6 +205,9 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         )
     }
 
+    // Continue only unlocks once EVERY permission above is granted.
+    val allGranted = permissions.all { it.isGranted }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -236,10 +272,10 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                     }
                 }
 
-                if (!accessibilityGranted) {
+                if (!allGranted) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        "Heads up: until Accessibility is switched on, the app lock won't block anything. You can still turn it on later from the Home screen.",
+                        "DisciplineX can't work without these. Allow every item above to continue.",
                         color = OrangeEnd,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -247,7 +283,13 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            PrimaryPillButton(text = "Continue", onClick = onFinish)
+            PrimaryPillButton(text = "Continue", onClick = onFinish, enabled = allGranted)
         }
     }
+}
+
+private tailrec fun Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

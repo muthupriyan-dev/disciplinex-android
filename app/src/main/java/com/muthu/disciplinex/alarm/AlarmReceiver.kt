@@ -21,8 +21,9 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarm = AlarmStore.get(context, alarmId) ?: return
         if (!alarm.enabled) return // switched off after this system alarm was queued
 
-        if (alarm.daysMask == 0) {
-            // "Once" alarm: it has rung, so switch it off.
+        val nextRing = AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis() + 60_000L)
+        if (alarm.isOnce || (alarm.isCustom && nextRing == null)) {
+            // "Once" alarm, or the last "Custom" date: it has rung, so switch it off.
             AlarmStore.save(context, alarm.copy(enabled = false))
         } else {
             // Re-arm for the next matching day first, in case starting the service is delayed.

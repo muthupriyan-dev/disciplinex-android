@@ -38,6 +38,9 @@ import com.muthu.disciplinex.ui.theme.*
 import kotlinx.coroutines.delay
 import java.util.Locale
 
+/** Small live angle readout under the camera. Set to false to hide it. */
+private const val SHOW_REP_DEBUG = true
+
 /**
  * Two kinds of challenge:
  *  - Timed (Reading / Meditation / Walking): a countdown that only runs while
@@ -212,6 +215,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
     var lastCounterReps by remember(exerciseName) { mutableStateOf(0) }
     var liveProgress by remember(exerciseName) { mutableStateOf(0f) }
     var isTracking by remember(exerciseName) { mutableStateOf(false) }
+    var debugText by remember(exerciseName) { mutableStateOf("") }
     val isComplete = reps >= target
 
     // Phone is propped on the floor during push-ups: don't let the screen time out.
@@ -257,7 +261,9 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 CameraRepTracker(
                     exerciseName = exerciseName,
                     onUpdate = { update ->
-                        val newReps = update.reps - lastCounterReps
+                        // If the camera counter was restarted it counts from 0 again: don't
+                        // let the old total swallow the new reps.
+                        val newReps = if (update.reps >= lastCounterReps) update.reps - lastCounterReps else update.reps
                         lastCounterReps = update.reps
                         if (newReps > 0) {
                             reps = (reps + newReps).coerceAtMost(target)
@@ -265,6 +271,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         }
                         liveProgress = update.liveProgress
                         isTracking = update.isTracking
+                        debugText = update.debug
                     }
                 )
             } else {
@@ -295,6 +302,14 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                     )
                 }
                 usesCamera -> {
+                    if (SHOW_REP_DEBUG && debugText.isNotBlank()) {
+                        Text(
+                            text = debugText,
+                            color = TextMuted,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
                     Text(
                         text = if (isTracking) "Keep going \u2014 full range of motion counts."
                         else "Get your whole body in frame to start counting.",

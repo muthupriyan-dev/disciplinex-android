@@ -1,12 +1,19 @@
 package com.muthu.disciplinex.data
 
+import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * One alarm in the alarm list (like a normal clock app).
  *
  * @param daysMask bit0 = Monday ... bit6 = Sunday. 0 means "once" (rings at the
  *                 next occurrence of the time, then switches itself off).
+ * @param dates    "Custom" repeat: specific calendar dates (as epoch days) the alarm
+ *                 rings on. When not empty it replaces [daysMask]; after the last
+ *                 date has rung the alarm switches itself off.
  * @param reps     target for rep exercises (push-ups, squats, jumping jacks)
  * @param minutes  target for timed exercises (walking, meditation, reading)
  */
@@ -19,8 +26,12 @@ data class AlarmEntry(
     val exercise: String,
     val reps: Int,
     val minutes: Int,
-    val enabled: Boolean
+    val enabled: Boolean,
+    val dates: List<Long> = emptyList()
 ) {
+    val isCustom: Boolean get() = dates.isNotEmpty()
+    val isOnce: Boolean get() = daysMask == 0 && dates.isEmpty()
+
     val isTimed: Boolean get() = ExerciseKinds.isTimed(exercise)
     val summary: String get() = if (isTimed) "$minutes min" else "$reps reps"
 
@@ -30,6 +41,12 @@ data class AlarmEntry(
     val periodText: String get() = if (isAm) "AM" else "PM"
 
     val repeatText: String
+        get() = when {
+            dates.isNotEmpty() -> datesText(dates)
+            else -> weekdayText
+        }
+
+    private val weekdayText: String
         get() = when (daysMask) {
             0 -> "Once"
             ALL_DAYS -> "Every day"
@@ -46,6 +63,7 @@ data class AlarmEntry(
         .put("r", reps)
         .put("n", minutes)
         .put("on", enabled)
+        .put("dt", JSONArray().also { arr -> dates.forEach { arr.put(it) } })
 
     companion object {
         const val ALL_DAYS = 127
@@ -60,8 +78,21 @@ data class AlarmEntry(
             exercise = o.optString("e", "Push-ups"),
             reps = o.optInt("r", 10),
             minutes = o.optInt("n", 15),
-            enabled = o.optBoolean("on", true)
+            enabled = o.optBoolean("on", true),
+            dates = o.optJSONArray("dt")?.let { arr ->
+                (0 until arr.length()).map { arr.optLong(it) }.sorted()
+            } ?: emptyList()
         )
+
+        private val DATE_FORMAT: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault())
+
+        fun dateText(epochDay: Long): String =
+            LocalDate.ofEpochDay(epochDay).format(DATE_FORMAT)
+
+        /** "Fri, 24 Oct" for one date, "3 dates" for several. */
+        fun datesText(dates: List<Long>): String =
+            if (dates.size == 1) dateText(dates[0]) else "${dates.size} dates"
 
         /** "5:30 AM" -> hour24 and minute. Returns null if malformed. */
         fun parseClock(text: String): Pair<Int, Int>? {

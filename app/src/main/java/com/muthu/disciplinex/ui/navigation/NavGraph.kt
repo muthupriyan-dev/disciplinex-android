@@ -98,10 +98,6 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onOpenAllowedApps = { navController.navigate(Routes.ALLOWED_APPS) },
-                onReplayGuide = {
-                    UserPrefs.setTourSeen(context, false)
-                    navController.popBackStack()
-                },
                 onBack = { navController.popBackStack() }
             )
         }

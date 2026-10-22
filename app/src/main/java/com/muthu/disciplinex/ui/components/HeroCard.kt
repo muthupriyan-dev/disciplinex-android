@@ -50,15 +50,19 @@ fun GradientHeroCard(
 fun PrimaryPillButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     androidx.compose.material3.Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(26.dp),
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
             containerColor = Surface,
-            contentColor = OrangeEnd
+            contentColor = OrangeEnd,
+            disabledContainerColor = androidx.compose.ui.graphics.Color(0xFFE4E4EA),
+            disabledContentColor = androidx.compose.ui.graphics.Color(0xFF9A9AA3)
         )
     ) {
         Text(text, fontWeight = FontWeight.SemiBold)

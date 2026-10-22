@@ -16,14 +16,13 @@ import com.muthu.disciplinex.ui.theme.TextMuted
 
 /**
  * App settings. Alarms are added and edited from the Home list; this screen only
- * has the allowed-apps list and a way to replay the guide.
+ * has the allowed-apps list (the guide is replayed from the (i) button on Home).
  * Read-only while the phone is locked.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onOpenAllowedApps: () -> Unit,
-    onReplayGuide: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -70,19 +69,6 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
-            Text("Guide", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "Not sure what a button does? Replay the quick tour of the Home screen.",
-                color = TextMuted,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onReplayGuide,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Show the guide again", color = OrangeEnd) }
         }
     }
 }

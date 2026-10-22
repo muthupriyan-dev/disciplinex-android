@@ -60,7 +60,12 @@ object StreakStore {
 
     /** A day with no result only breaks the streak if one of your repeating alarms was due that day. */
     private fun wasScheduled(alarms: List<AlarmEntry>, date: LocalDate): Boolean =
-        alarms.any { it.enabled && it.daysMask != 0 && ((it.daysMask shr (date.dayOfWeek.value - 1)) and 1) == 1 }
+        alarms.any {
+            it.enabled && (
+                date.toEpochDay() in it.dates ||
+                    (it.daysMask != 0 && ((it.daysMask shr (date.dayOfWeek.value - 1)) and 1) == 1)
+                )
+        }
 
     private fun earliest(obj: JSONObject): LocalDate? {
         var best: LocalDate? = null

@@ -1,7 +1,5 @@
 package com.muthu.disciplinex.ui.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -10,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -18,11 +15,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -95,10 +94,13 @@ fun WheelTimePicker(
 }
 
 /**
- * A single scrollable, snapping wheel column used by [WheelTimePicker].
- * Centers the selected item, scales/fades items based on distance from center.
+ * A single scrollable wheel column used by [WheelTimePicker].
+ *
+ * The selected row is read straight from the scroll position, and when the
+ * wheel stops moving it is explicitly settled onto the nearest row. That keeps
+ * the hour, minute and AM/PM columns on exactly the same line (before, a
+ * column could stop half a row higher or lower than its neighbours).
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun WheelColumn(
     items: List<String>,
@@ -108,24 +110,33 @@ private fun WheelColumn(
     val itemHeight = 48.dp
     val visibleItems = 5 // must be odd: 2 above, center, 2 below
     val paddingCount = visibleItems / 2
+    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 
-    // Pad the list conceptually by centering via contentPadding instead of fake items,
-    // so index math stays simple and matches the real data.
+    // contentPadding lets the first/last real item sit in the centre row.
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
 
-    // Determine the item currently closest to the center of the column.
-    val currentCenterItem by remember {
+    // With the padding above, "scroll position" == the row sitting in the centre.
+    val centerIndex by remember {
         derivedStateOf {
-            val info = listState.layoutInfo
-            val viewportCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2
-            info.visibleItemsInfo.minByOrNull { item ->
-                abs((item.offset + item.size / 2) - viewportCenter)
-            }?.index ?: initialIndex
+            val extra = if (listState.firstVisibleItemScrollOffset > itemHeightPx / 2) 1 else 0
+            (listState.firstVisibleItemIndex + extra).coerceIn(0, items.lastIndex)
         }
     }
 
-    LaunchedEffect(currentCenterItem) {
-        onSelected(currentCenterItem.coerceIn(0, items.lastIndex))
+    LaunchedEffect(centerIndex) { onSelected(centerIndex) }
+
+    // Whenever the wheel comes to rest, glide onto the nearest row.
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }.collect { scrolling ->
+            if (!scrolling) {
+                val target = centerIndex
+                if (listState.firstVisibleItemIndex != target ||
+                    listState.firstVisibleItemScrollOffset != 0
+                ) {
+                    listState.animateScrollToItem(target)
+                }
+            }
+        }
     }
 
     Box(
@@ -135,14 +146,13 @@ private fun WheelColumn(
     ) {
         LazyColumn(
             state = listState,
-            flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                 vertical = itemHeight * paddingCount
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             itemsIndexed(items) { index, label ->
-                val distance = abs(index - currentCenterItem)
+                val distance = abs(index - centerIndex)
                 val isSelected = distance == 0
 
                 Box(

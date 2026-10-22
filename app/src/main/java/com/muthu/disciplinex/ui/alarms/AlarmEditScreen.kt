@@ -33,12 +33,14 @@ import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 /**
  * Add or edit one alarm: time, repeat days, label, exercise and target.
  * [alarmId] = -1 means "new alarm".
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
     val context = LocalContext.current
@@ -78,6 +80,10 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
         var hour24 by remember { mutableStateOf(existing?.hour24 ?: 6) }
         var minute by remember { mutableStateOf(existing?.minute ?: 0) }
         var daysMask by remember { mutableStateOf(existing?.daysMask ?: AlarmEntry.ALL_DAYS) }
+        // "Custom" repeat: specific dates (epoch days). Not empty = custom mode.
+        var customDates by remember { mutableStateOf(existing?.dates ?: emptyList<Long>()) }
+        var showDatePicker by remember { mutableStateOf(false) }
+        var saveError by remember { mutableStateOf<String?>(null) }
         var label by remember { mutableStateOf(existing?.label ?: "") }
         var selected by remember {
             mutableStateOf(exerciseOptions.firstOrNull { it.name == existing?.exercise } ?: exerciseOptions[0])
@@ -117,8 +123,11 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text("Repeat", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    if (daysMask == 0) "Once \u2014 rings the next time this clock time comes, then switches itself off."
-                    else "Tap the days you want. Selected: ${repeatSummary(daysMask)}.",
+                    when {
+                        customDates.isNotEmpty() -> "Custom \u2014 rings only on the dates you pick below."
+                        daysMask == 0 -> "Once \u2014 rings the next time this clock time comes, then switches itself off."
+                        else -> "Tap the days you want. Selected: ${repeatSummary(daysMask)}."
+                    },
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -128,13 +137,22 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     AlarmEntry.DAY_NAMES.forEachIndexed { i, name ->
-                        val on = (daysMask shr i) and 1 == 1
+                        val on = customDates.isEmpty() && (daysMask shr i) and 1 == 1
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(if (on) OrangeEnd else Color(0xFFF1F1F5))
-                                .clickable { daysMask = daysMask xor (1 shl i) },
+                                .clickable {
+                                    // Picking weekdays leaves "Custom" mode.
+                                    if (customDates.isNotEmpty()) {
+                                        customDates = emptyList()
+                                        daysMask = 1 shl i
+                                    } else {
+                                        daysMask = daysMask xor (1 shl i)
+                                    }
+                                    saveError = null
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -147,8 +165,48 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(onClick = { daysMask = AlarmEntry.ALL_DAYS }, label = { Text("Every day") })
-                    AssistChip(onClick = { daysMask = 0 }, label = { Text("Once") })
+                    FilterChip(
+                        selected = customDates.isEmpty() && daysMask == AlarmEntry.ALL_DAYS,
+                        onClick = { customDates = emptyList(); daysMask = AlarmEntry.ALL_DAYS; saveError = null },
+                        label = { Text("Every day") }
+                    )
+                    FilterChip(
+                        selected = customDates.isEmpty() && daysMask == 0,
+                        onClick = { customDates = emptyList(); daysMask = 0; saveError = null },
+                        label = { Text("Once") }
+                    )
+                    FilterChip(
+                        selected = customDates.isNotEmpty(),
+                        onClick = { showDatePicker = true },
+                        label = { Text("Custom") }
+                    )
+                }
+
+                if (customDates.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        customDates.forEach { d ->
+                            InputChip(
+                                selected = false,
+                                onClick = { customDates = customDates - d; saveError = null },
+                                label = { Text(AlarmEntry.dateText(d)) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Remove this date",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                        }
+                        AssistChip(
+                            onClick = { showDatePicker = true },
+                            label = { Text("+ Add date") }
+                        )
+                    }
                 }
             }
 
@@ -197,6 +255,11 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            saveError?.let {
+                Text(it, color = Danger, style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Button(
                 onClick = {
                     val alarm = AlarmEntry(
@@ -208,8 +271,14 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         exercise = selected.name,
                         reps = reps,
                         minutes = minutes,
-                        enabled = true
+                        enabled = true,
+                        dates = customDates.sorted()
                     )
+                    // A custom alarm whose chosen dates/time are all in the past would never ring.
+                    if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {
+                        saveError = "That time has already passed on the date(s) you picked. Pick a later date or time."
+                        return@Button
+                    }
                     AlarmStore.save(context, alarm)
                     AlarmScheduler.schedule(context, alarm)
                     onClose()
@@ -236,6 +305,39 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        if (showDatePicker) {
+            val todayUtcMillis = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            val pickerState = rememberDatePickerState(
+                selectableDates = object : SelectableDates {
+                    // No dates in the past.
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                        utcTimeMillis >= todayUtcMillis
+                }
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        enabled = pickerState.selectedDateMillis != null,
+                        onClick = {
+                            pickerState.selectedDateMillis?.let { millis ->
+                                // Picker gives UTC midnight of the chosen day.
+                                val day = millis / 86_400_000L
+                                if (day !in customDates) customDates = (customDates + day).sorted()
+                                saveError = null
+                            }
+                            showDatePicker = false
+                        }
+                    ) { Text("Add", color = OrangeEnd, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = TextMuted) }
+                }
+            ) {
+                DatePicker(state = pickerState)
+            }
         }
     }
 }
