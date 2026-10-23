@@ -242,7 +242,7 @@ object ChallengeSession {
     fun label(context: Context): String = prefs(context).getString(K_LABEL, "") ?: ""
 
     fun summary(context: Context): String =
-        if (ExerciseKinds.isTimed(exercise(context))) "${minutes(context)} min" else "${reps(context)} reps"
+        if (ExerciseKinds.isTimed(exercise(context))) tr("${minutes(context)} min", "${minutes(context)} நிமிடம்") else tr("${reps(context)} reps", "${reps(context)} முறை")
 
     /** Wall-clock time the lock is due to end (for display only). */
     fun lockEndsAtMillis(context: Context): Long {

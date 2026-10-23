@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.alarm
 
+import com.muthu.disciplinex.data.tr
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -24,6 +25,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.muthu.disciplinex.data.ChallengeSession
+import com.muthu.disciplinex.data.ExerciseKinds
+import com.muthu.disciplinex.data.AppSettings
 
 /**
  * Owns the alarm sound + vibration for as long as the alarm is ringing.
@@ -61,11 +64,12 @@ class AlarmService : Service() {
             return START_NOT_STICKY
         }
 
+        AppSettings.load(this)
         startForeground(NOTIFICATION_ID, buildNotification())
         launchRingActivity()
         safely("acquireWakeLock") { acquireWakeLock() }
         safely("startAlarmSound") { startAlarmSound() }
-        safely("startVibration") { startVibration() }
+        safely("startVibration") { if (AppSettings.vibrate(this)) startVibration() }
         handler.removeCallbacks(autoStop)
         handler.postDelayed(autoStop, minOf(MAX_RING_MS, ChallengeSession.windowMs(this)))
         return START_STICKY
@@ -142,15 +146,20 @@ class AlarmService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(ChallengeSession.label(this).ifBlank { "Time for your challenge!" })
-            .setContentText("${ChallengeSession.exercise(this)} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.")
+            .setContentTitle(ChallengeSession.label(this).ifBlank { tr("Time for your challenge!", "உங்கள் சேலஞ்ச் நேரம்!") })
+            .setContentText(
+                tr(
+                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.",
+                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு."
+                )
+            )
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(ringPendingIntent)
             .setFullScreenIntent(ringPendingIntent, true)
-            .addAction(0, "Start challenge", dismissPendingIntent)
+            .addAction(0, tr("Start challenge", "சேலஞ்சை தொடங்கு"), dismissPendingIntent)
             .build()
     }
 
@@ -169,7 +178,9 @@ class AlarmService : Service() {
             Log.e("AlarmService", "raising alarm volume failed", e)
         }
 
-        val alarmUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+        // The ringtone picked in Settings, or the phone's own alarm sound.
+        val alarmUri = AppSettings.ringtoneUri(this)?.let { android.net.Uri.parse(it) }
+            ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: run { startFallbackTone(); return }
 

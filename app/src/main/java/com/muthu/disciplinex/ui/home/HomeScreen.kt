@@ -1,5 +1,8 @@
 package com.muthu.disciplinex.ui.home
 
+import com.muthu.disciplinex.data.tr
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.data.ExerciseKinds
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -41,6 +44,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.muthu.disciplinex.alarm.AlarmScheduler
 import com.muthu.disciplinex.data.AlarmEntry
 import com.muthu.disciplinex.data.AlarmStore
+import com.muthu.disciplinex.data.PermissionChecks
 import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.data.StreakStore
 import com.muthu.disciplinex.data.UserPrefs
@@ -68,32 +72,32 @@ import java.util.Locale
 
 private val tourSteps = listOf(
     TourStep(
-        "streak", "Your streak \uD83D\uDD25",
-        "Finish every challenge on time and this number grows. Miss one and it goes back to 0."
+        "streak", tr("Your streak \uD83D\uDD25", "உங்கள் ஸ்ட்ரீக் \uD83D\uDD25"),
+        tr("Finish every challenge on time and this number grows. Miss one and it goes back to 0.", "ஒவ்வொரு சேலஞ்சையும் நேரத்துக்கு முடித்தால் இந்த எண் உயரும். ஒன்றைத் தவறவிட்டால் 0-க்கு திரும்பும்.")
     ),
     TourStep(
-        "status", "Status",
-        "Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings."
+        "status", tr("Status", "நிலை"),
+        tr("Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings.", "ஆப் லாக் தயாரா என்றும், அலாரம் அடித்த பின் என்ன காத்திருக்கிறது என்றும் காட்டும். அலாரம் அடித்த பின் முடிக்க நீங்கள் வைத்த நேர வரம்பு உண்டு.")
     ),
     TourStep(
-        "alarm", "An alarm",
-        "Each card is one alarm. Tap it to change the time, repeat days, exercise and target. Add as many as you like \u2014 morning, evening, any time."
+        "alarm", tr("An alarm", "ஒரு அலாரம்"),
+        tr("Each card is one alarm. Tap it to change the time, repeat days, exercise and target. Add as many as you like \u2014 morning, evening, any time.", "ஒவ்வொரு கார்டும் ஒரு அலாரம். நேரம், நாட்கள், பயிற்சி, இலக்கு மாற்ற தட்டுங்கள். காலை, மாலை, எப்போது வேண்டுமானாலும் எத்தனை வேண்டுமானாலும் சேர்க்கலாம்.")
     ),
     TourStep(
-        "switch", "On / off",
-        "Switch an alarm on or off without deleting it."
+        "switch", tr("On / off", "ஆன் / ஆஃப்"),
+        tr("Switch an alarm on or off without deleting it.", "அலாரத்தை நீக்காமல் ஆன் அல்லது ஆஃப் செய்யலாம்.")
     ),
     TourStep(
-        "fab", "Add an alarm",
-        "Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\u2026) and how many reps or minutes."
+        "fab", tr("Add an alarm", "அலாரம் சேர்"),
+        tr("Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\u2026) and how many reps or minutes.", "புதிய அலாரம் சேர்க்க + தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், நடைப்பயிற்சி\u2026) மற்றும் எத்தனை முறை / நிமிடங்கள் என தேர்ந்தெடுங்கள்.")
     ),
     TourStep(
-        "settings", "Settings",
-        "Choose which apps stay open while your phone is locked. Phone and Camera are always open."
+        "settings", tr("Settings", "அமைப்புகள்"),
+        tr("Choose which apps stay open while your phone is locked. Phone and Camera are always open.", "போன் பூட்டியிருக்கும்போது எந்த ஆப்கள் திறந்திருக்க வேண்டும் என்பதை தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் திறந்திருக்கும்.")
     ),
     TourStep(
-        "help", "Need this again?",
-        "Tap this button any time to see this guide again."
+        "help", tr("Need this again?", "மீண்டும் வேண்டுமா?"),
+        tr("Tap this button any time to see this guide again.", "இந்த வழிகாட்டியை மீண்டும் காண எப்போது வேண்டுமானாலும் இந்த பட்டனை தட்டுங்கள்.")
     )
 )
 
@@ -102,7 +106,8 @@ fun HomeScreen(
     onAddAlarm: () -> Unit,
     onEditAlarm: (Int) -> Unit,
     onOpenSettings: () -> Unit,
-    onStartChallenge: () -> Unit
+    onStartChallenge: () -> Unit,
+    onOpenHistory: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -121,6 +126,10 @@ fun HomeScreen(
     val phase = remember(refreshTick) { ChallengeSession.phase(context) }
     val locked = phase != ChallengeSession.Phase.IDLE
     val serviceEnabled = remember(refreshTick) { LockAccessibilityService.isEnabled(context) }
+    // Other switched-off permissions (the app lock itself has its own card in the status box).
+    val missingPermissions = remember(refreshTick) {
+        PermissionChecks.missing(context).filter { it != PermissionChecks.Kind.ACCESSIBILITY }
+    }
     val streak = remember(refreshTick) { StreakStore.currentStreak(context) }
     val best = remember(refreshTick) { StreakStore.bestStreak(context) }
     val week = remember(refreshTick) { StreakStore.lastSevenDays(context) }
@@ -158,7 +167,7 @@ fun HomeScreen(
                         contentColor = Color.White,
                         shape = CircleShape,
                         modifier = Modifier.tourTarget(tour, "fab")
-                    ) { Icon(Icons.Default.Add, contentDescription = "Add alarm") }
+                    ) { Icon(Icons.Default.Add, contentDescription = tr("Add alarm", "அலாரம் சேர்")) }
                 }
             },
             floatingActionButtonPosition = FabPosition.Center
@@ -190,18 +199,18 @@ fun HomeScreen(
                     IconButton(
                         onClick = { showTour = true },
                         modifier = Modifier.tourTarget(tour, "help")
-                    ) { Icon(Icons.Default.Info, contentDescription = "Show guide", tint = TextMuted) }
+                    ) { Icon(Icons.Default.Info, contentDescription = tr("Show guide", "வழிகாட்டியை காட்டு"), tint = TextMuted) }
                     IconButton(
                         onClick = onOpenSettings,
                         modifier = Modifier.tourTarget(tour, "settings")
-                    ) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = TextMuted) }
+                    ) { Icon(Icons.Default.Settings, contentDescription = tr("Settings", "அமைப்புகள்"), tint = TextMuted) }
                 }
 
                 // ---- Streak ----
                 GradientHeroCard(
-                    title = "\uD83D\uDD25 $streak day streak",
-                    subtitle = "Best: $best days",
-                    modifier = Modifier.fillMaxWidth().tourTarget(tour, "streak")
+                    title = tr("\uD83D\uDD25 $streak day streak", "\uD83D\uDD25 $streak நாள் ஸ்ட்ரீக்"),
+                    subtitle = tr("Best: $best days", "சிறந்தது: $best நாட்கள்"),
+                    modifier = Modifier.fillMaxWidth().tourTarget(tour, "streak").clickable { onOpenHistory() }
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -227,12 +236,20 @@ fun HomeScreen(
                     }
                 )
 
+                if (missingPermissions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    PermissionWarningCard(
+                        names = missingPermissions.joinToString(", ") { PermissionChecks.title(it) },
+                        onReview = onOpenSettings
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
-                Text("Alarms", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Alarms", "அலாரங்கள்"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 if (locked) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Alarms can't be changed while your phone is locked. Finish the challenge, or wait for the next alarm.",
+                        tr("Alarms can't be changed while your phone is locked. Finish the challenge, or wait for the next alarm.", "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது. சேலஞ்சை முடியுங்கள், அல்லது அடுத்த அலாரம் வரை காத்திருங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -241,7 +258,7 @@ fun HomeScreen(
 
                 if (alarms.isEmpty()) {
                     Text(
-                        "No alarms yet. Tap the + button to add your first one.",
+                        tr("No alarms yet. Tap the + button to add your first one.", "இன்னும் அலாரம் இல்லை. முதல் அலாரத்தை சேர்க்க + பட்டனை தட்டுங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -293,7 +310,7 @@ private fun DayDot(date: LocalDate, status: StreakStore.DayStatus) {
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+            date.dayOfWeek.getDisplayName(TextStyle.NARROW, AppSettings.locale),
             color = Color.White.copy(alpha = 0.9f),
             style = MaterialTheme.typography.labelSmall
         )
@@ -328,10 +345,10 @@ private fun StatusCard(
     ) {
         when {
             !serviceEnabled -> {
-                Text("App lock is OFF", fontWeight = FontWeight.SemiBold, color = Warning, style = MaterialTheme.typography.titleMedium)
+                Text(tr("App lock is OFF", "ஆப் லாக் அணைந்துள்ளது"), fontWeight = FontWeight.SemiBold, color = Warning, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "Turn on the DisciplineX App Lock accessibility service. Without it, apps stay open even if you skip the challenge.",
+                    tr("Turn on the DisciplineX App Lock accessibility service. Without it, apps stay open even if you skip the challenge.", "DisciplineX App Lock அக்சசிபிலிட்டி சேவையை ஆன் செய்யுங்கள். இல்லையெனில் சேலஞ்சை தவிர்த்தாலும் ஆப்கள் திறந்தே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -341,21 +358,21 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
-                ) { Text("Turn on app lock") }
+                ) { Text(tr("Turn on app lock", "ஆப் லாக் ஆன் செய்")) }
             }
 
             phase == ChallengeSession.Phase.WAITING -> {
                 val sec = (msLeft / 1000).toInt()
-                Text("Challenge waiting", fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge waiting", "சேலஞ்ச் காத்திருக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "${ChallengeSession.exercise(context)} \u00b7 ${ChallengeSession.summary(context)}",
+                    "${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}",
                     color = TextPrimary,
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    String.format(Locale.US, "Finish within %02d:%02d or it counts as missed.", sec / 60, sec % 60),
+                    String.format(Locale.US, tr("Finish within %02d:%02d or it counts as missed.", "%02d:%02d-க்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு."), sec / 60, sec % 60),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -365,14 +382,14 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
-                ) { Text("Start now") }
+                ) { Text(tr("Start now", "இப்போது தொடங்கு")) }
             }
 
             phase == ChallengeSession.Phase.IN_PROGRESS -> {
-                Text("Challenge in progress", fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge in progress", "சேலஞ்ச் நடக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "${ChallengeSession.exercise(context)} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \u2014 ${msLeft / 60000} min left.",
+                    tr("${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \u2014 ${msLeft / 60000} min left.", "${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. முடித்தால் போன் திறக்கும் \u2014 ${msLeft / 60000} நிமிடம் மீதம்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -382,29 +399,29 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
-                ) { Text("Continue challenge") }
+                ) { Text(tr("Continue challenge", "சேலஞ்சை தொடர்")) }
             }
 
             phase == ChallengeSession.Phase.MISSED -> {
                 val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                     .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                Text("Challenge missed", fontWeight = FontWeight.SemiBold, color = Danger, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"), fontWeight = FontWeight.SemiBold, color = Danger, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.",
+                    tr("You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.", "நேர வரம்புக்குள் முடிக்கவில்லை, அதனால் ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது. $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
             else -> {
-                Text("Ready", fontWeight = FontWeight.SemiBold, color = Success, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Ready", "தயார்"), fontWeight = FontWeight.SemiBold, color = Success, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     when {
-                        !hasAlarms -> "No alarms yet \u2014 tap + to add one."
-                        nextText != null -> "Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish."
-                        else -> "All alarms are off. Switch one on to get started."
+                        !hasAlarms -> tr("No alarms yet \u2014 tap + to add one.", "இன்னும் அலாரம் இல்லை \u2014 சேர்க்க + தட்டுங்கள்.")
+                        nextText != null -> tr("Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish.", "அடுத்த அலாரம்: $nextText. அடித்ததும் முடிக்க உங்கள் நேர வரம்பு உண்டு; முடிக்கும் வரை போன், கேமரா, அனுமதித்த ஆப்கள் தவிர எல்லாம் பூட்டியிருக்கும்.")
+                        else -> tr("All alarms are off. Switch one on to get started.", "எல்லா அலாரங்களும் அணைந்துள்ளன. தொடங்க ஒன்றை ஆன் செய்யுங்கள்.")
                     },
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
@@ -448,7 +465,7 @@ private fun AlarmCard(
             Text(line, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                "${alarm.exercise} \u00b7 ${alarm.summary}",
+                "${ExerciseKinds.display(alarm.exercise)} \u00b7 ${alarm.summary}",
                 color = if (alarm.enabled) OrangeEnd else TextMuted,
                 style = MaterialTheme.typography.labelLarge
             )
@@ -468,10 +485,41 @@ private fun nextAlarmText(context: Context): String? {
     val date = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val day = when (date.toLocalDate()) {
-        today -> "today"
-        today.plusDays(1) -> "tomorrow"
-        else -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        today -> tr("today", "இன்று")
+        today.plusDays(1) -> tr("tomorrow", "நாளை")
+        else -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, AppSettings.locale)
     }
     val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(ms))
-    return "$day at $time"
+    return tr("$day at $time", "$day, $time")
+}
+
+/** Shown on Home when a permission other than the app lock has been switched off. */
+@Composable
+private fun PermissionWarningCard(names: String, onReview: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Surface)
+            .clickable { onReview() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                tr("Some permissions are off", "சில அனுமதிகள் அணைந்துள்ளன"),
+                fontWeight = FontWeight.Bold,
+                color = Danger
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                tr(
+                    "$names \u2014 the alarm may not work properly. Tap to fix.",
+                    "$names \u2014 அலாரம் சரியாக வேலை செய்யாமல் போகலாம். சரிசெய்ய தட்டுங்கள்."
+                ),
+                color = TextMuted,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
 }

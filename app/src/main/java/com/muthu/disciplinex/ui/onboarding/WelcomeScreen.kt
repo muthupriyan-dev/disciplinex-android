@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.onboarding
 
+import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,23 +41,23 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Show up before the world wakes up. Miss it, and the apps that distract you stay locked.",
+                text = tr("Show up before the world wakes up. Miss it, and the apps that distract you stay locked.", "உலகம் விழிப்பதற்கு முன் எழுங்கள். தவறினால், உங்களை திசைதிருப்பும் ஆப்கள் பூட்டியே இருக்கும்."),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(28.dp))
             GradientHeroCard(
-                title = "Morning Challenge",
-                subtitle = "Wake up, complete your set, earn your phone back."
+                title = tr("Morning Challenge", "காலை சேலஞ்ச்"),
+                subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் செட்டை முடியுங்கள், போனை திரும்பப் பெறுங்கள்.")
             ) {
                 Text(
-                    "5:00 AM  →  20 push-ups  →  unlocked",
+                    tr("5:00 AM  →  20 push-ups  →  unlocked", "காலை 5:00  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),
                     color = com.muthu.disciplinex.ui.theme.Surface,
                     style = MaterialTheme.typography.labelLarge
                 )
             }
             Spacer(modifier = Modifier.height(28.dp))
-            PrimaryPillButton(text = "Get started", onClick = onGetStarted)
+            PrimaryPillButton(text = tr("Get started", "தொடங்குவோம்"), onClick = onGetStarted)
         }
     }
 }

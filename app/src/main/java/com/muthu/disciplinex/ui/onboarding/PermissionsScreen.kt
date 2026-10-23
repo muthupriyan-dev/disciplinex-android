@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.onboarding
 
+import com.muthu.disciplinex.data.tr
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
@@ -147,8 +148,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
     val permissions = buildList {
         add(
             PermissionRow(
-                title = "Notifications",
-                reason = "Shows the wake-up alarm and keeps it running reliably.",
+                title = tr("Notifications", "அறிவிப்புகள்"),
+                reason = tr("Shows the wake-up alarm and keeps it running reliably.", "எழுப்பும் அலாரத்தை காட்டி, அது நம்பகமாக இயங்க உதவும்."),
                 isGranted = notificationGranted,
                 onRequest = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -160,8 +161,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             add(
                 PermissionRow(
-                    title = "Alarm over lock screen",
-                    reason = "So the alarm screen can appear on top when your phone is locked.",
+                    title = tr("Alarm over lock screen", "லாக் ஸ்கிரீன் மேல் அலாரம்"),
+                    reason = tr("So the alarm screen can appear on top when your phone is locked.", "போன் பூட்டியிருக்கும்போது அலாரம் திரை மேலே தோன்ற."),
                     isGranted = fullScreenGranted,
                     onRequest = {
                         val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
@@ -174,16 +175,16 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         }
         add(
             PermissionRow(
-                title = "Camera",
-                reason = "Only used live for pose detection during camera-based exercises — nothing is recorded or uploaded.",
+                title = tr("Camera", "கேமரா"),
+                reason = tr("Only used live for pose detection during camera-based exercises — nothing is recorded or uploaded.", "கேமரா பயிற்சிகளின்போது உடல் நிலையை கண்டறிய மட்டும் நேரடியாக பயன்படும் — எதுவும் பதிவு செய்யப்படாது, பதிவேற்றப்படாது."),
                 isGranted = cameraGranted,
                 onRequest = { cameraLauncher.launch(Manifest.permission.CAMERA) }
             )
         )
         add(
             PermissionRow(
-                title = "Run in background",
-                reason = "Stops your phone's battery saver from killing the alarm or the app lock. Choose \"Allow\".",
+                title = tr("Run in background", "பின்னணியில் இயங்கு"),
+                reason = tr("Stops your phone's battery saver from killing the alarm or the app lock. Choose \"Allow\".", "பேட்டரி சேவர் அலாரத்தையோ ஆப் லாக்கையோ நிறுத்தாமல் தடுக்கும். \"Allow\" என்பதை தேர்ந்தெடுங்கள்."),
                 isGranted = batteryGranted,
                 onRequest = {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
@@ -195,8 +196,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         )
         add(
             PermissionRow(
-                title = "Accessibility service",
-                reason = "Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on.",
+                title = tr("Accessibility service", "அக்சசிபிலிட்டி சேவை"),
+                reason = tr("Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on.", "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் சாளரங்கள் உட்பட) பார்க்க மட்டும் பயன்படும், அதனால் உங்களை சேலஞ்சுக்கு திருப்பி அனுப்ப முடியும். உங்கள் செய்திகளையோ தட்டச்சு செய்வதையோ படிக்காது. Allow தட்டி, \"DisciplineX App Lock\" திறந்து ஆன் செய்யுங்கள்."),
                 isGranted = accessibilityGranted,
                 onRequest = {
                     context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -214,7 +215,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
@@ -228,10 +229,10 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                Text("Why we ask for this", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(tr("Why we ask for this", "இதை ஏன் கேட்கிறோம்"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.",
+                    tr("DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.", "கீழுள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -259,12 +260,12 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                                 if (p.isGranted) {
                                     Icon(
                                         Icons.Default.Check,
-                                        contentDescription = "Granted",
+                                        contentDescription = tr("Granted", "வழங்கப்பட்டது"),
                                         tint = OrangeEnd
                                     )
                                 } else {
                                     TextButton(onClick = p.onRequest) {
-                                        Text("Allow", color = OrangeEnd, fontWeight = FontWeight.Bold)
+                                        Text(tr("Allow", "அனுமதி"), color = OrangeEnd, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -275,7 +276,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 if (!allGranted) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        "DisciplineX can't work without these. Allow every item above to continue.",
+                        tr("DisciplineX can't work without these. Allow every item above to continue.", "இவை இல்லாமல் DisciplineX செயல்படாது. தொடர மேலுள்ள எல்லாவற்றையும் அனுமதியுங்கள்."),
                         color = OrangeEnd,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -283,7 +284,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            PrimaryPillButton(text = "Continue", onClick = onFinish, enabled = allGranted)
+            PrimaryPillButton(text = tr("Continue", "தொடர்"), onClick = onFinish, enabled = allGranted)
         }
     }
 }

@@ -4,7 +4,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * One alarm in the alarm list (like a normal clock app).
@@ -35,7 +34,7 @@ data class AlarmEntry(
     val isOnce: Boolean get() = daysMask == 0 && dates.isEmpty()
 
     val isTimed: Boolean get() = ExerciseKinds.isTimed(exercise)
-    val summary: String get() = if (isTimed) "$minutes min" else "$reps reps"
+    val summary: String get() = if (isTimed) tr("$minutes min", "$minutes நிமிடம்") else tr("$reps reps", "$reps முறை")
 
     val hour12: Int get() = ((hour24 + 11) % 12) + 1
     val isAm: Boolean get() = hour24 < 12
@@ -50,8 +49,8 @@ data class AlarmEntry(
 
     private val weekdayText: String
         get() = when (daysMask) {
-            0 -> "Once"
-            ALL_DAYS -> "Every day"
+            0 -> tr("Once", "ஒருமுறை")
+            ALL_DAYS -> tr("Every day", "தினமும்")
             else -> DAY_NAMES.filterIndexed { i, _ -> (daysMask shr i) and 1 == 1 }.joinToString(", ")
         }
 
@@ -70,7 +69,18 @@ data class AlarmEntry(
 
     companion object {
         const val ALL_DAYS = 127
-        val DAY_NAMES = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        val DAY_NAMES: List<String>
+            get() = listOf(
+                tr("Mon", "திங்"), tr("Tue", "செவ்"), tr("Wed", "புதன்"), tr("Thu", "வியா"),
+                tr("Fri", "வெள்"), tr("Sat", "சனி"), tr("Sun", "ஞாயிறு")
+            )
+
+        /** One short label per weekday for the round day buttons. */
+        val DAY_LETTERS: List<String>
+            get() = listOf(
+                tr("M", "தி"), tr("T", "செ"), tr("W", "பு"), tr("T", "வி"),
+                tr("F", "வெ"), tr("S", "ச"), tr("S", "ஞா")
+            )
 
         const val DEFAULT_WINDOW_MINUTES = 15
 
@@ -101,15 +111,13 @@ data class AlarmEntry(
             )
         }
 
-        private val DATE_FORMAT: DateTimeFormatter =
-            DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault())
-
         fun dateText(epochDay: Long): String =
-            LocalDate.ofEpochDay(epochDay).format(DATE_FORMAT)
+            LocalDate.ofEpochDay(epochDay)
+                .format(DateTimeFormatter.ofPattern("EEE, d MMM", AppSettings.locale))
 
         /** "Fri, 24 Oct" for one date, "3 dates" for several. */
         fun datesText(dates: List<Long>): String =
-            if (dates.size == 1) dateText(dates[0]) else "${dates.size} dates"
+            if (dates.size == 1) dateText(dates[0]) else tr("${dates.size} dates", "${dates.size} தேதிகள்")
 
         /** "5:30 AM" -> hour24 and minute. Returns null if malformed. */
         fun parseClock(text: String): Pair<Int, Int>? {

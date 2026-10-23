@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.alarm
 
+import com.muthu.disciplinex.data.tr
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -23,6 +24,7 @@ object AlarmFallback {
 
     fun show(context: Context) {
         try {
+            com.muthu.disciplinex.data.AppSettings.load(context)
             val manager = context.getSystemService(NotificationManager::class.java) ?: return
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -53,8 +55,8 @@ object AlarmFallback {
             )
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setContentTitle("Wake up!")
-                .setContentText("Tap to start your DisciplineX challenge.")
+                .setContentTitle(tr("Wake up!", "எழுந்திரு!"))
+                .setContentText(tr("Tap to start your DisciplineX challenge.", "உங்கள் DisciplineX சேலஞ்சை தொடங்க தட்டுங்கள்."))
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)

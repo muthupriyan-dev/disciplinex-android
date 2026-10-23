@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.alarms
 
+import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,6 +34,7 @@ import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
+import com.muthu.disciplinex.ui.theme.ChipBackground
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -52,13 +54,13 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        if (existing == null) "New alarm" else "Edit alarm",
+                        if (existing == null) tr("New alarm", "புதிய அலாரம்") else tr("Edit alarm", "அலாரத்தை திருத்து"),
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Close without saving")
+                        Icon(Icons.Default.Close, contentDescription = tr("Close without saving", "சேமிக்காமல் மூடு"))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
@@ -68,7 +70,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
         if (locked) {
             Column(modifier = Modifier.padding(padding).padding(20.dp)) {
                 Text(
-                    "Alarms can't be changed while your phone is locked.",
+                    tr("Alarms can't be changed while your phone is locked.", "போன் பூட்டப்பட்டிருக்கும்போது அலாரங்களை மாற்ற முடியாது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -124,13 +126,13 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
             // ---- Repeat ----
             SectionCard {
-                Text("Repeat", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Repeat", "மீண்டும்"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     when {
-                        customDates.isNotEmpty() -> "Custom \u2014 rings only on the dates you pick below."
-                        daysMask == 0 -> "Once \u2014 rings the next time this clock time comes, then switches itself off."
-                        else -> "Tap the days you want. Selected: ${repeatSummary(daysMask)}."
+                        customDates.isNotEmpty() -> tr("Custom \u2014 rings only on the dates you pick below.", "தனிப்பயன் \u2014 கீழே தேர்ந்தெடுக்கும் தேதிகளில் மட்டும் அடிக்கும்.")
+                        daysMask == 0 -> tr("Once \u2014 rings the next time this clock time comes, then switches itself off.", "ஒருமுறை \u2014 இந்த நேரம் அடுத்து வரும்போது அடித்து, தானாக அணைந்துவிடும்.")
+                        else -> tr("Tap the days you want. Selected: ${repeatSummary(daysMask)}.", "வேண்டிய நாட்களை தட்டுங்கள். தேர்வு: ${repeatSummary(daysMask)}.")
                     },
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
@@ -140,13 +142,13 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    AlarmEntry.DAY_NAMES.forEachIndexed { i, name ->
+                    AlarmEntry.DAY_LETTERS.forEachIndexed { i, letter ->
                         val on = customDates.isEmpty() && (daysMask shr i) and 1 == 1
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(if (on) OrangeEnd else Color(0xFFF1F1F5))
+                                .background(if (on) OrangeEnd else ChipBackground)
                                 .clickable {
                                     // Picking weekdays leaves "Custom" mode.
                                     if (customDates.isNotEmpty()) {
@@ -160,7 +162,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                name.take(1),
+                                letter,
                                 color = if (on) Surface else TextPrimary,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -172,17 +174,17 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     FilterChip(
                         selected = customDates.isEmpty() && daysMask == AlarmEntry.ALL_DAYS,
                         onClick = { customDates = emptyList(); daysMask = AlarmEntry.ALL_DAYS; saveError = null },
-                        label = { Text("Every day") }
+                        label = { Text(tr("Every day", "தினமும்")) }
                     )
                     FilterChip(
                         selected = customDates.isEmpty() && daysMask == 0,
                         onClick = { customDates = emptyList(); daysMask = 0; saveError = null },
-                        label = { Text("Once") }
+                        label = { Text(tr("Once", "ஒருமுறை")) }
                     )
                     FilterChip(
                         selected = customDates.isNotEmpty(),
                         onClick = { showDatePicker = true },
-                        label = { Text("Custom") }
+                        label = { Text(tr("Custom", "தனிப்பயன்")) }
                     )
                 }
 
@@ -200,7 +202,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                                 trailingIcon = {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "Remove this date",
+                                        contentDescription = tr("Remove this date", "இந்த தேதியை நீக்கு"),
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -208,7 +210,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         }
                         AssistChip(
                             onClick = { showDatePicker = true },
-                            label = { Text("+ Add date") }
+                            label = { Text(tr("+ Add date", "+ தேதி சேர்")) }
                         )
                     }
                 }
@@ -218,12 +220,12 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
             // ---- Label ----
             SectionCard {
-                Text("Label", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Label", "பெயர்"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = label,
                     onValueChange = { if (it.length <= 30) label = it },
-                    placeholder = { Text("e.g. Morning workout") },
+                    placeholder = { Text(tr("e.g. Morning workout", "எ.கா. காலை உடற்பயிற்சி")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -233,10 +235,10 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
             // ---- Exercise + target ----
             SectionCard {
-                Text("Exercise", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Push-ups and squats are counted by the camera. Walking, meditation and reading run on a timer you can't skip.",
+                    tr("Push-ups and squats are counted by the camera. Walking, meditation and reading run on a timer you can't skip.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -245,15 +247,15 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(
-                    if (isTimed) "How many minutes?" else "How many reps?",
+                    if (isTimed) tr("How many minutes?", "எத்தனை நிமிடங்கள்?") else tr("How many reps?", "எத்தனை முறை?"),
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 if (isTimed) {
-                    TargetStepper(value = minutes, unit = "minutes", min = 1, max = 180, onValueChange = { minutes = it })
+                    TargetStepper(value = minutes, unit = tr("minutes", "நிமிடங்கள்"), min = 1, max = 180, onValueChange = { minutes = it })
                 } else {
-                    TargetStepper(value = reps, unit = "reps", min = 1, max = 200, onValueChange = { reps = it })
+                    TargetStepper(value = reps, unit = tr("reps", "முறை"), min = 1, max = 200, onValueChange = { reps = it })
                 }
             }
 
@@ -261,17 +263,17 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
             // ---- Time limit ----
             SectionCard {
-                Text("Time limit", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Time limit", "நேர வரம்பு"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.",
+                    tr("How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.", "அலாரம் அடித்த பிறகு முடிக்க உங்களுக்கு எவ்வளவு நேரம் உண்டு. நேரத்துக்குள் முடிக்காவிட்டால் அன்றைய நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 TargetStepper(
                     value = windowMin.coerceAtLeast(minWindow),
-                    unit = if (windowMin >= 60) "minutes \u00b7 ${windowMin / 60} h ${windowMin % 60} min" else "minutes",
+                    unit = if (windowMin >= 60) tr("minutes \u00b7 ${windowMin / 60} h ${windowMin % 60} min", "நிமிடங்கள் \u00b7 ${windowMin / 60} மணி ${windowMin % 60} நிமி") else tr("minutes", "நிமிடங்கள்"),
                     min = minWindow,
                     max = 600,
                     bigStep = 15,
@@ -280,7 +282,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 if (isTimed) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        "Can't be shorter than your $minutes-minute ${selected.name.lowercase()} target.",
+                        tr("Can't be shorter than your $minutes-minute ${selected.name.lowercase()} target.", "உங்கள் $minutes நிமிட இலக்கை விட குறைவாக இருக்க முடியாது."),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelSmall
                     )
@@ -311,7 +313,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     )
                     // A custom alarm whose chosen dates/time are all in the past would never ring.
                     if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {
-                        saveError = "That time has already passed on the date(s) you picked. Pick a later date or time."
+                        saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
                         return@Button
                     }
                     AlarmStore.save(context, alarm)
@@ -324,7 +326,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Save alarm", fontWeight = FontWeight.SemiBold)
+                Text(tr("Save alarm", "அலாரத்தை சேமி"), fontWeight = FontWeight.SemiBold)
             }
 
             if (existing != null) {
@@ -336,7 +338,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         onClose()
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Delete this alarm", color = Danger) }
+                ) { Text(tr("Delete this alarm", "இந்த அலாரத்தை நீக்கு"), color = Danger) }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -365,10 +367,10 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                             }
                             showDatePicker = false
                         }
-                    ) { Text("Add", color = OrangeEnd, fontWeight = FontWeight.Bold) }
+                    ) { Text(tr("Add", "சேர்"), color = OrangeEnd, fontWeight = FontWeight.Bold) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = TextMuted) }
+                    TextButton(onClick = { showDatePicker = false }) { Text(tr("Cancel", "ரத்து"), color = TextMuted) }
                 }
             ) {
                 DatePicker(state = pickerState)

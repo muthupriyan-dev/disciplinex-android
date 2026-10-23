@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.components
 
+import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -100,7 +101,7 @@ fun TourOverlay(steps: List<TourStep>, state: TourState, onFinish: () -> Unit) {
                 .padding(20.dp)
         ) {
             Text(
-                "${index + 1} of ${steps.size}",
+                tr("${index + 1} of ${steps.size}", "${index + 1} / ${steps.size}"),
                 color = TextMuted,
                 style = MaterialTheme.typography.labelMedium
             )
@@ -114,9 +115,9 @@ fun TourOverlay(steps: List<TourStep>, state: TourState, onFinish: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onFinish) { Text("Skip", color = TextMuted) }
+                TextButton(onClick = onFinish) { Text(tr("Skip", "தவிர்"), color = TextMuted) }
                 TextButton(onClick = { if (isLast) onFinish() else index++ }) {
-                    Text(if (isLast) "Got it" else "Next", color = OrangeEnd, fontWeight = FontWeight.Bold)
+                    Text(if (isLast) tr("Got it", "புரிந்தது") else tr("Next", "அடுத்து"), color = OrangeEnd, fontWeight = FontWeight.Bold)
                 }
             }
         }

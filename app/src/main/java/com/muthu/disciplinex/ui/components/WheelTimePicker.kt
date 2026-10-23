@@ -30,6 +30,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.muthu.disciplinex.ui.theme.TextPrimary
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -265,7 +266,7 @@ private fun WheelColumn(
                         text = items[index % size],
                         fontSize = fontSize,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Black,
+                        color = TextPrimary,
                         textAlign = TextAlign.Center
                     )
                 }

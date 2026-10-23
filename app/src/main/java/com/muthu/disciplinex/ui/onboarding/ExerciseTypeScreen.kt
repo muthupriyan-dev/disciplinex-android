@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.onboarding
 
+import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -109,9 +110,9 @@ internal fun ExerciseList(selected: ExerciseOption, onSelect: (ExerciseOption) -
         exerciseOptions.forEach { option ->
             val isSelected = option == selected
             val tag = when {
-                option.usesCamera -> "Camera"
-                ExerciseKinds.isTimed(option.name) -> "Timer"
-                else -> "Reps"
+                option.usesCamera -> tr("Camera", "கேமரா")
+                ExerciseKinds.isTimed(option.name) -> tr("Timer", "டைமர்")
+                else -> tr("Reps", "முறை")
             }
             Row(
                 modifier = Modifier
@@ -123,7 +124,7 @@ internal fun ExerciseList(selected: ExerciseOption, onSelect: (ExerciseOption) -
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    option.name,
+                    ExerciseKinds.display(option.name),
                     color = if (isSelected) Surface else TextPrimary,
                     fontWeight = FontWeight.SemiBold
                 )

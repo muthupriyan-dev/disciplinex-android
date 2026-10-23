@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.challenge
 
+import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,20 +68,20 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
             val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                 .format(Date(ChallengeSession.lockEndsAtMillis(context)))
             GateMessage(
-                title = "Challenge missed",
+                title = tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"),
                 titleColor = Danger,
-                body = "You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.",
-                buttonText = "Back to home",
+                body = tr("You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.", "நேர வரம்புக்குள் நீங்கள் முடிக்கவில்லை, அதனால் இன்றைய சேலஞ்ச் முடிந்தது, ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது.\n\n$unlockAt வரை உங்கள் ஆப்கள் பூட்டியே இருக்கும்."),
+                buttonText = tr("Back to home", "முகப்புக்கு திரும்பு"),
                 onClick = onClose
             )
         }
 
         else -> {
             GateMessage(
-                title = "Nothing to do right now",
+                title = tr("Nothing to do right now", "இப்போது எதுவும் இல்லை"),
                 titleColor = TextPrimary,
-                body = "A challenge appears here when one of your alarms rings.",
-                buttonText = "Back to home",
+                body = tr("A challenge appears here when one of your alarms rings.", "உங்கள் அலாரம் அடிக்கும்போது சேலஞ்ச் இங்கே தோன்றும்."),
+                buttonText = tr("Back to home", "முகப்புக்கு திரும்பு"),
                 onClick = onClose
             )
         }

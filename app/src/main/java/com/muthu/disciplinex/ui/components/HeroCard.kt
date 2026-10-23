@@ -61,8 +61,8 @@ fun PrimaryPillButton(
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
             containerColor = Surface,
             contentColor = OrangeEnd,
-            disabledContainerColor = androidx.compose.ui.graphics.Color(0xFFE4E4EA),
-            disabledContentColor = androidx.compose.ui.graphics.Color(0xFF9A9AA3)
+            disabledContainerColor = com.muthu.disciplinex.ui.theme.ChipBackground,
+            disabledContentColor = com.muthu.disciplinex.ui.theme.TextMuted
         )
     ) {
         Text(text, fontWeight = FontWeight.SemiBold)

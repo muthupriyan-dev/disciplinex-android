@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.challenge
 
+import com.muthu.disciplinex.data.tr
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.SystemClock
@@ -93,7 +94,7 @@ private fun DeadlineBar(onMissed: () -> Unit) {
         String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60)
     }
     Text(
-        text = "Time left to finish: $text",
+        text = tr("Time left to finish: $text", "முடிக்க மீதமுள்ள நேரம்: $text"),
         color = if (sec < 60) Danger else TextMuted,
         fontWeight = FontWeight.SemiBold,
         style = MaterialTheme.typography.labelLarge
@@ -131,7 +132,7 @@ private fun AwayResetNote(visible: Boolean, onHide: () -> Unit) {
         onHide()
     }
     Text(
-        text = "You were away for more than 5 minutes, so your progress started again from zero.",
+        text = tr("You were away for more than 5 minutes, so your progress started again from zero.", "நீங்கள் 5 நிமிடத்துக்கு மேல் வெளியே இருந்ததால், முன்னேற்றம் மீண்டும் பூஜ்யத்திலிருந்து தொடங்கியது."),
         color = Danger,
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier.padding(top = 8.dp)
@@ -231,14 +232,14 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = exerciseName,
+                text = ExerciseKinds.display(exerciseName),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$durationMinutes min \u00b7 stay on this screen until the timer ends",
+                text = tr("$durationMinutes min \u00b7 stay on this screen until the timer ends", "$durationMinutes நிமிடம் \u00b7 டைமர் முடியும் வரை இந்த திரையிலேயே இருங்கள்"),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -259,19 +260,19 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
 
             if (isComplete) {
                 Text(
-                    text = "Challenge complete!",
+                    text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
                     color = Success,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-                PrimaryPillButton(text = "Finish & Unlock Phone", onClick = onComplete)
+                PrimaryPillButton(text = tr("Finish & Unlock Phone", "முடித்து போனை திற"), onClick = onComplete)
             } else {
                 Text(
                     text = when {
-                        !isResumed -> "Paused \u2014 come back to this screen to continue."
-                        !windowActive -> "Paused \u2014 another window is open on top. Close it to continue."
-                        else -> "Timer running \u2014 leaving the app pauses it, and there's no skipping."
+                        !isResumed -> tr("Paused \u2014 come back to this screen to continue.", "இடைநிறுத்தம் \u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.")
+                        !windowActive -> tr("Paused \u2014 another window is open on top. Close it to continue.", "இடைநிறுத்தம் \u2014 மேலே வேறொரு சாளரம் திறந்துள்ளது. தொடர அதை மூடுங்கள்.")
+                        else -> tr("Timer running \u2014 leaving the app pauses it, and there's no skipping.", "டைமர் ஓடுகிறது \u2014 ஆப்பை விட்டு சென்றால் நிற்கும், தவிர்க்க முடியாது.")
                     },
                     color = if (isResumed && windowActive) TextMuted else OrangeEnd,
                     style = MaterialTheme.typography.labelMedium,
@@ -333,14 +334,14 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = exerciseName,
+                text = ExerciseKinds.display(exerciseName),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$target reps \u00b7 complete to unlock your phone",
+                text = tr("$target reps \u00b7 complete to unlock your phone", "$target முறை \u00b7 முடித்தால் போன் திறக்கும்"),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -374,7 +375,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
             ProgressRing(
                 progress = progress,
                 centerText = "$reps",
-                subText = "of $target reps",
+                subText = tr("of $target reps", "/ $target முறை"),
                 isComplete = isComplete
             )
 
@@ -383,14 +384,14 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
             when {
                 isComplete -> {
                     Text(
-                        text = "Challenge complete!",
+                        text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
                         color = Success,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     PrimaryPillButton(
-                        text = "Finish & Unlock Phone",
+                        text = tr("Finish & Unlock Phone", "முடித்து போனை திற"),
                         onClick = onComplete
                     )
                 }
@@ -404,8 +405,8 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         )
                     }
                     Text(
-                        text = if (isTracking) "Keep going \u2014 full range of motion counts."
-                        else "Get your whole body in frame to start counting.",
+                        text = if (isTracking) tr("Keep going \u2014 full range of motion counts.", "தொடருங்கள் \u2014 முழு அசைவுதான் கணக்கில் வரும்.")
+                        else tr("Get your whole body in frame to start counting.", "எண்ணத் தொடங்க உங்கள் முழு உடலும் கேமராவில் தெரிய வேண்டும்."),
                         color = if (isTracking) TextMuted else OrangeEnd,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -413,13 +414,13 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 }
                 else -> {
                     Text(
-                        text = "Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.",
+                        text = tr("Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.", "இந்த பயிற்சிக்கான மோஷன் சென்சார் விரைவில் வரும் \u2014 இப்போது தட்டி எண்ணுங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     PrimaryPillButton(
-                        text = "+1 Rep",
+                        text = tr("+1 Rep", "+1 முறை"),
                         onClick = {
                             reps = (reps + 1).coerceAtMost(target)
                             UserPrefs.setRepProgress(context, reps)
@@ -430,7 +431,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         reps = 0
                         UserPrefs.setRepProgress(context, 0)
                     }) {
-                        Text("Reset", color = TextMuted)
+                        Text(tr("Reset", "மீட்டமை"), color = TextMuted)
                     }
                 }
             }
@@ -475,13 +476,13 @@ private fun CameraRepTracker(exerciseName: String, onUpdate: (RepUpdate) -> Unit
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "Camera access is needed to count reps",
+                    tr("Camera access is needed to count reps", "எண்ணிக்கைக்கு கேமரா அனுமதி தேவை"),
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 PrimaryPillButton(
-                    text = "Grant Camera Access",
+                    text = tr("Grant Camera Access", "கேமரா அனுமதி வழங்கு"),
                     onClick = { launcher.launch(Manifest.permission.CAMERA) }
                 )
             }

@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.alarm
 
+import com.muthu.disciplinex.data.tr
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.muthu.disciplinex.MainActivity
 import com.muthu.disciplinex.data.ChallengeSession
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.data.ExerciseKinds
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import kotlinx.coroutines.delay
 import java.text.DateFormat
@@ -42,6 +45,7 @@ class AlarmRingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppSettings.load(this)
 
         safely("showOverLockScreen") { showOverLockScreen() }
 
@@ -111,7 +115,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
         }
     }
 
-    val exercise = ChallengeSession.exercise(context)
+    val exercise = ExerciseKinds.display(ChallengeSession.exercise(context))
     val summary = ChallengeSession.summary(context)
     val label = ChallengeSession.label(context)
 
@@ -128,7 +132,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
             when (phase) {
                 ChallengeSession.Phase.WAITING -> {
                     Text(
-                        text = if (label.isBlank()) "Time to move!" else label,
+                        text = if (label.isBlank()) tr("Time to move!", "எழுந்து இயங்குங்கள்!") else label,
                         color = Color.White,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
@@ -149,7 +153,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours",
+                        text = tr("left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours", "முடிக்க மீதம் \u2014 அதன் பிறகு சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்"),
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -165,7 +169,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                             .fillMaxWidth()
                             .height(56.dp)
                     ) {
-                        Text("Start challenge", fontWeight = FontWeight.Bold)
+                        Text(tr("Start challenge", "சேலஞ்சை தொடங்கு"), fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
@@ -176,11 +180,11 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                             .fillMaxWidth()
                             .height(56.dp)
                     ) {
-                        Text("Dismiss", fontWeight = FontWeight.Bold)
+                        Text(tr("Dismiss", "நிறுத்து"), fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Dismiss only stops the sound. The time limit keeps running and your apps stay locked.",
+                        text = tr("Dismiss only stops the sound. The time limit keeps running and your apps stay locked.", "இது ஒலியை மட்டும் நிறுத்தும். நேர வரம்பு ஓடிக்கொண்டிருக்கும், ஆப்கள் பூட்டியே இருக்கும்."),
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
@@ -188,11 +192,11 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 }
 
                 ChallengeSession.Phase.IN_PROGRESS -> {
-                    Text("Challenge in progress", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge in progress", "சேலஞ்ச் நடக்கிறது"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     val secLeft = (msLeft / 1000).toInt()
                     Text(
-                        text = String.format(Locale.US, "%d:%02d:%02d left to finish", secLeft / 3600, (secLeft % 3600) / 60, secLeft % 60),
+                        text = String.format(Locale.US, tr("%d:%02d:%02d left to finish", "முடிக்க %d:%02d:%02d மீதம்"), secLeft / 3600, (secLeft % 3600) / 60, secLeft % 60),
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 16.sp
                     )
@@ -201,16 +205,16 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         onClick = onStart,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
-                    ) { Text("Continue challenge", fontWeight = FontWeight.Bold) }
+                    ) { Text(tr("Continue challenge", "சேலஞ்சை தொடர்"), fontWeight = FontWeight.Bold) }
                 }
 
                 ChallengeSession.Phase.MISSED -> {
                     val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                         .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                    Text("Challenge missed", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.",
+                        text = tr("You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.", "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது; $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்."),
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center
@@ -224,13 +228,13 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 }
 
                 ChallengeSession.Phase.IDLE -> {
-                    Text("Nothing pending", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Nothing pending", "நிலுவையில் எதுவும் இல்லை"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = onClose,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
-                    ) { Text("Close", fontWeight = FontWeight.Bold) }
+                    ) { Text(tr("Close", "மூடு"), fontWeight = FontWeight.Bold) }
                 }
             }
         }

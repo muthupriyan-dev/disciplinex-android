@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.settings
 
+import com.muthu.disciplinex.data.tr
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -104,10 +105,10 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Allowed apps", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
@@ -122,14 +123,14 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                "Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.",
+                tr("Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.", "டிக் செய்த ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்."),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
             if (locked) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "Locked until you finish today's challenge.",
+                    tr("Locked until you finish today's challenge.", "இன்றைய சேலஞ்சை முடிக்கும் வரை பூட்டப்பட்டுள்ளது."),
                     color = OrangeEnd,
                     style = MaterialTheme.typography.labelMedium
                 )
