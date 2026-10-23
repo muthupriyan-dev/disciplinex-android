@@ -44,6 +44,7 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="DisciplineX"
         android:theme="@style/Theme.DisciplineX"
         android:supportsRtl="true">
