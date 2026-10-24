@@ -54,6 +54,8 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
     val context = LocalContext.current
     val existing = remember { if (alarmId >= 0) AlarmStore.get(context, alarmId) else null }
     val locked = remember { ChallengeSession.isLockActive(context) }
+    // An alarm that rings within 2 hours is committed: no edit, no delete, no switching off.
+    val committed = remember { existing != null && AlarmScheduler.isCommitted(existing) }
 
     // Defaults for a new alarm: 6:00 AM, every day, push-ups x10.
     var hour24 by remember { mutableStateOf(existing?.hour24 ?: 6) }
@@ -126,7 +128,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 },
                 actions = {
                     GuideButton(onClick = { showTour = true })
-                    if (!locked) {
+                    if (!locked && !committed) {
                         IconButton(
                             onClick = saveAlarm,
                             modifier = Modifier.tourTarget(tour, "save")
@@ -143,10 +145,11 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             )
         }
     ) { padding ->
-        if (locked) {
+        if (locked || committed) {
             Column(modifier = Modifier.padding(padding).padding(20.dp)) {
                 Text(
-                    tr("Alarms can't be changed while your phone is locked.", "போன் பூட்டப்பட்டிருக்கும்போது அலாரங்களை மாற்ற முடியாது."),
+                    if (locked) tr("Alarms can't be changed while your phone is locked.", "போன் பூட்டப்பட்டிருக்கும்போது அலாரங்களை மாற்ற முடியாது.")
+                    else tr("This alarm rings within 2 hours, so it can't be changed or deleted now. That keeps tomorrow's alarm from being switched off at the last minute.", "இந்த அலாரம் 2 மணி நேரத்துக்குள் அடிக்கும், அதனால் இப்போது மாற்றவோ நீக்கவோ முடியாது. நாளைய அலாரத்தை கடைசி நிமிடத்தில் அணைப்பதை இது தடுக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -301,7 +304,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("Push-ups and squats are counted by the camera. Walking, meditation and reading run on a timer you can't skip.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்."),
+                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking, meditation and reading run on a timer you can't skip. Walking also checks your steps.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும். நடைப்பயிற்சியில் உங்கள் அடிகளும் சரிபார்க்கப்படும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -457,8 +460,8 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "exercise", tr("Exercise and target", "பயிற்சி மற்றும் இலக்கு"),
-        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups and squats are counted by the camera. Walking, meditation and reading run on a timer you can't skip.",
-            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.")
+        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups, squats and jumping jacks are counted by the camera. Walking, meditation and reading run on a timer you can't skip. Walking also checks your steps.",
+            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும். நடைப்பயிற்சியில் உங்கள் அடிகளும் சரிபார்க்கப்படும்.")
     ),
     TourStep(
         "limit", tr("Time limit", "நேர வரம்பு"),

@@ -158,6 +158,9 @@ object ChallengeSession {
         }
     }
 
+    /** Identifies the current alarm session (the moment the alarm rang). */
+    fun sessionId(context: Context): Long = prefs(context).getLong(K_RING_WALL, 0L)
+
     private fun windowMs(p: SharedPreferences): Long = p.getLong(K_WINDOW_MS, 10 * 60 * 1000L)
 
     /** The alarm's time limit in milliseconds. */
@@ -202,6 +205,7 @@ object ChallengeSession {
 
         if (away > AWAY_GRACE_MS && phase(context) == Phase.IN_PROGRESS) {
             UserPrefs.resetProgress(context)
+            WalkSteps.reset(context)
             return true
         }
         return false

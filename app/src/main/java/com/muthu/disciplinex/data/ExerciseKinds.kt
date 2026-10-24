@@ -5,10 +5,10 @@ package com.muthu.disciplinex.data
  *  - CAMERA: reps are counted by pose detection (target = number of reps)
  *  - TIMED:  a countdown that only runs while the challenge screen is open
  *            (target = minutes). There is NO way to add progress by tapping.
- *  - anything else: rep-based with manual +1 (motion sensors arrive later)
+ *  - anything else: not offered any more (there is no manual +1 button to cheat with)
  */
 object ExerciseKinds {
-    val CAMERA = setOf("Push-ups", "Squats")
+    val CAMERA = setOf("Push-ups", "Squats", "Jumping Jacks")
     val TIMED = setOf("Reading", "Meditation", "Walking")
 
     /** The name shown to the user. The stored name stays English, it is only an id. */

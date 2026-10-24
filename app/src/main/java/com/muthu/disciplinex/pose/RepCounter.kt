@@ -181,7 +181,7 @@ class PushUpRepCounter : RepCounter {
             State.DOWN -> {
                 val downY = shoulderYAtDown
                 val movedEnough = downY == null ||
-                    kotlin.math.abs(shoulder.position.y - downY) > upperArm * 0.10f
+                    kotlin.math.abs(shoulder.position.y - downY) > upperArm * (if (hip == null) 0.22f else 0.10f)
                 if (elbowAngle > upThreshold && isPlank) {
                     val believable = now - downAtMs >= MIN_DOWN_TO_UP_MS &&
                         now - lastRepAtMs >= MIN_REP_INTERVAL_MS
@@ -286,8 +286,67 @@ class SquatRepCounter : RepCounter {
     }
 }
 
+/**
+ * Jumping jacks, counted from the front camera. One rep = arms up above the
+ * shoulders AND feet wide apart ("open"), then arms back down AND feet back
+ * together ("closed"). Needs the whole body in frame. Widths are measured in
+ * shoulder-widths, so it doesn't matter how far the phone is.
+ */
+class JumpingJackRepCounter : RepCounter {
+    private var open = false
+    private var reps = 0
+    private var trackingLossFrames = 0
+    private var openedAtMs = 0L
+    private var lastRepAtMs = 0L
+
+    override fun onFrame(pose: Pose?): RepUpdate {
+        val ls = pose?.landmarkOrNull(PoseLandmark.LEFT_SHOULDER)
+        val rs = pose?.landmarkOrNull(PoseLandmark.RIGHT_SHOULDER)
+        val lw = pose?.landmarkOrNull(PoseLandmark.LEFT_WRIST)
+        val rw = pose?.landmarkOrNull(PoseLandmark.RIGHT_WRIST)
+        val la = pose?.landmarkOrNull(PoseLandmark.LEFT_ANKLE)
+        val ra = pose?.landmarkOrNull(PoseLandmark.RIGHT_ANKLE)
+
+        if (ls == null || rs == null || lw == null || rw == null || la == null || ra == null) {
+            trackingLossFrames++
+            if (trackingLossFrames > TRACKING_LOSS_GRACE_FRAMES) {
+                open = false
+                return RepUpdate(reps, 0f, isTracking = false, debug = "no body")
+            }
+            return RepUpdate(reps, if (open) 1f else 0f, isTracking = false, debug = "flicker")
+        }
+        trackingLossFrames = 0
+
+        val shoulderWidth = kotlin.math.abs(ls.position.x - rs.position.x).coerceAtLeast(1f)
+        val shoulderY = (ls.position.y + rs.position.y) / 2f
+        val wristY = (lw.position.y + rw.position.y) / 2f
+        // > 0: hands above the shoulders. Hanging arms read about -1.5.
+        val armLift = (shoulderY - wristY) / shoulderWidth
+        val feetGap = kotlin.math.abs(la.position.x - ra.position.x) / shoulderWidth
+
+        val now = SystemClock.elapsedRealtime()
+        if (!open) {
+            if (armLift > 0.5f && feetGap > 1.5f) {
+                open = true
+                openedAtMs = now
+            }
+        } else if (armLift < -0.5f && feetGap < 1.1f) {
+            if (now - openedAtMs >= 150L && now - lastRepAtMs >= 450L) {
+                reps++
+                lastRepAtMs = now
+            }
+            open = false
+        }
+
+        val progress = ((armLift + 0.5f) / 1.5f).coerceIn(0f, 1f)
+        val debug = "arms ${"%.1f".format(armLift)} \u00b7 feet ${"%.1f".format(feetGap)} \u00b7 " + if (open) "OPEN" else "CLOSED"
+        return RepUpdate(reps, progress, isTracking = true, debug = debug)
+    }
+}
+
 fun repCounterFor(exerciseName: String): RepCounter? = when (exerciseName) {
     "Push-ups" -> PushUpRepCounter()
     "Squats" -> SquatRepCounter()
+    "Jumping Jacks" -> JumpingJackRepCounter()
     else -> null
 }

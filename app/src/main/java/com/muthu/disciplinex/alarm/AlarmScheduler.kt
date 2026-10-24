@@ -52,6 +52,20 @@ object AlarmScheduler {
         alarmManager.cancel(alarmPendingIntent(context, alarmId))
     }
 
+    /** An alarm ringing within this long can no longer be switched off, edited or deleted. */
+    const val COMMIT_WINDOW_MS = 2 * 60 * 60 * 1000L
+
+    /**
+     * True if this alarm is switched on and will ring within [COMMIT_WINDOW_MS].
+     * Otherwise "turn tomorrow's alarm off tonight" would beat the whole app.
+     */
+    fun isCommitted(alarm: AlarmEntry): Boolean {
+        if (!alarm.enabled) return false
+        val now = System.currentTimeMillis()
+        val next = nextTriggerMillis(alarm, now) ?: return false
+        return next - now <= COMMIT_WINDOW_MS
+    }
+
     /** The soonest time any enabled alarm will ring (null if none). */
     fun nextAlarmMillis(context: Context): Long? =
         AlarmStore.getAll(context)

@@ -1,5 +1,7 @@
 package com.muthu.disciplinex.ui.challenge
 
+import com.muthu.disciplinex.data.rememberWalkSteps
+import com.muthu.disciplinex.data.WalkSteps
 import com.muthu.disciplinex.data.AppSettings
 import com.muthu.disciplinex.ui.components.tour
 import com.muthu.disciplinex.ui.components.LocalTourState
@@ -201,12 +203,33 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
     var elapsedMs by remember {
         mutableStateOf(UserPrefs.getTimedProgressMs(context).coerceIn(0L, totalMs))
     }
-    val isComplete = elapsedMs >= totalMs
+    // Walking also needs real steps (if the phone can count them).
+    val isWalking = exerciseName == "Walking"
+    var permissionTick by remember { mutableStateOf(0) }
+    val stepPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) permissionTick++
+    }
+    LaunchedEffect(isWalking) {
+        if (isWalking && !WalkSteps.hasPermission(context)) {
+            stepPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        }
+    }
+    val walkSteps = rememberWalkSteps(enabled = isWalking, refresh = permissionTick)
+    val stepsNow = walkSteps.value
+    val requiredSteps = WalkSteps.required(durationMinutes)
+    val stepsMissing = if (isWalking && stepsNow != null) (requiredSteps - stepsNow).coerceAtLeast(0) else 0
+
+    val timerDone = elapsedMs >= totalMs
+    val isComplete = timerDone && stepsMissing == 0
     var awayReset by remember { mutableStateOf(false) }
 
-    // Away for more than 5 minutes -> the timer starts again from zero.
+    // Away for more than 5 minutes -> the timer (and the step count) start again from zero.
     if (!isComplete) {
-        AwayWatcher(onReset = { elapsedMs = 0L; awayReset = true })
+        AwayWatcher(onReset = {
+            elapsedMs = 0L
+            awayReset = true
+            if (walkSteps.value != null) walkSteps.value = 0
+        })
     }
 
     // Keep the screen awake while the timer is on screen.
@@ -299,6 +322,19 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
             Spacer(modifier = Modifier.height(6.dp))
             Box(modifier = Modifier.tour("deadline")) { DeadlineBar(onMissed) }
             AwayResetNote(awayReset) { awayReset = false }
+            if (isWalking) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = if (stepsNow != null) {
+                        tr("Steps: $stepsNow / $requiredSteps", "அடிகள்: $stepsNow / $requiredSteps")
+                    } else {
+                        tr("Allow \"Physical activity\" so your steps can be checked.", "உங்கள் அடிகளை சரிபார்க்க \"Physical activity\" அனுமதியுங்கள்.")
+                    },
+                    color = TextMuted,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -324,6 +360,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
             } else {
                 Text(
                     text = when {
+                        timerDone && stepsMissing > 0 -> tr("Timer done \u2014 keep walking: $stepsMissing more steps.", "டைமர் முடிந்தது \u2014 தொடர்ந்து நடங்கள்: இன்னும் $stepsMissing அடிகள்.")
                         !isResumed -> tr("Paused \u2014 come back to this screen to continue.", "இடைநிறுத்தம் \u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.")
                         !windowActive -> tr("Paused \u2014 another window is open on top. Close it to continue.", "இடைநிறுத்தம் \u2014 மேலே வேறொரு சாளரம் திறந்துள்ளது. தொடர அதை மூடுங்கள்.")
                         else -> tr("Timer running \u2014 leaving the app pauses it, and there's no skipping.", "டைமர் ஓடுகிறது \u2014 ஆப்பை விட்டு சென்றால் நிற்கும், தவிர்க்க முடியாது.")

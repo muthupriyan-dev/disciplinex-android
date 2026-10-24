@@ -25,7 +25,7 @@ data class ExerciseOption(val name: String, val usesCamera: Boolean)
 internal val exerciseOptions = listOf(
     ExerciseOption("Push-ups", usesCamera = true),
     ExerciseOption("Squats", usesCamera = true),
-    ExerciseOption("Jumping Jacks", usesCamera = false),
+    ExerciseOption("Jumping Jacks", usesCamera = true),
     ExerciseOption("Walking", usesCamera = false),
     ExerciseOption("Meditation", usesCamera = false),
     ExerciseOption("Reading", usesCamera = false)

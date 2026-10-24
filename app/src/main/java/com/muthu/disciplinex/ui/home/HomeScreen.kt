@@ -287,9 +287,11 @@ fun HomeScreen(
                 }
 
                 alarms.forEachIndexed { index, alarm ->
+                    val committed = AlarmScheduler.isCommitted(alarm)
                     AlarmCard(
                         alarm = alarm,
-                        locked = locked,
+                        locked = locked || committed,
+                        committed = committed && !locked,
                         modifier = if (index == 0) Modifier.tourTarget(tour, "alarm") else Modifier,
                         switchModifier = if (index == 0) Modifier.tourTarget(tour, "switch") else Modifier,
                         onClick = { onEditAlarm(alarm.id) },
@@ -456,6 +458,7 @@ private fun StatusCard(
 private fun AlarmCard(
     alarm: AlarmEntry,
     locked: Boolean,
+    committed: Boolean,
     modifier: Modifier,
     switchModifier: Modifier,
     onClick: () -> Unit,
@@ -490,6 +493,15 @@ private fun AlarmCard(
                 color = if (alarm.enabled) OrangeEnd else TextMuted,
                 style = MaterialTheme.typography.labelLarge
             )
+            if (committed) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    tr("\uD83D\uDD12 Rings within 2 hours \u2014 it can't be changed or switched off now.",
+                        "\uD83D\uDD12 2 மணி நேரத்துக்குள் அடிக்கும் \u2014 இப்போது மாற்றவோ அணைக்கவோ முடியாது."),
+                    color = TextMuted,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
         }
         Switch(
             checked = alarm.enabled,
