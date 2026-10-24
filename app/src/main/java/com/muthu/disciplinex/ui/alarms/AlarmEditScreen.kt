@@ -311,7 +311,6 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
 
             Button(
-                modifier = Modifier.tourTarget(tour, "save"),
                 onClick = {
                     val alarm = AlarmEntry(
                         id = existing?.id ?: AlarmStore.nextId(context),
@@ -335,7 +334,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     AlarmScheduler.schedule(context, alarm)
                     onClose()
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.tourTarget(tour, "save").fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
             ) {
