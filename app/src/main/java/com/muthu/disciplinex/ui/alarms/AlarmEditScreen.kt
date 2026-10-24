@@ -1,5 +1,11 @@
 package com.muthu.disciplinex.ui.alarms
 
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.ui.components.tourTarget
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +55,11 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
     val existing = remember { if (alarmId >= 0) AlarmStore.get(context, alarmId) else null }
     val locked = remember { ChallengeSession.isLockActive(context) }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val steps = remember(showTour, AppSettings.language) { alarmEditTourSteps().filter { tour.bounds.containsKey(it.key) } }
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -63,6 +74,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         Icon(Icons.Default.Close, contentDescription = tr("Close without saving", "சேமிக்காமல் மூடு"))
                     }
                 },
+                actions = { GuideButton(onClick = { showTour = true }) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -107,11 +119,12 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 .padding(padding)
                 .padding(horizontal = 20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // ---- Time ----
+            Box(modifier = Modifier.tourTarget(tour, "time")) {
             WheelTimePicker(
                 initialHour = initHour12,
                 initialMinute = minute,
@@ -121,11 +134,12 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     minute = m
                 }
             )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // ---- Repeat ----
-            SectionCard {
+            SectionCard(Modifier.tourTarget(tour, "repeat")) {
                 Text(tr("Repeat", "மீண்டும்"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -219,7 +233,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // ---- Label ----
-            SectionCard {
+            SectionCard(Modifier.tourTarget(tour, "label")) {
                 Text(tr("Label", "பெயர்"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -234,7 +248,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // ---- Exercise + target ----
-            SectionCard {
+            SectionCard(Modifier.tourTarget(tour, "exercise")) {
                 Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -262,7 +276,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // ---- Time limit ----
-            SectionCard {
+            SectionCard(Modifier.tourTarget(tour, "limit")) {
                 Text(tr("Time limit", "நேர வரம்பு"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -297,6 +311,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
 
             Button(
+                modifier = Modifier.tourTarget(tour, "save"),
                 onClick = {
                     val alarm = AlarmEntry(
                         id = existing?.id ?: AlarmStore.nextId(context),
@@ -377,12 +392,16 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
         }
     }
+        if (showTour) {
+            TourOverlay(steps, tour, onFinish = { showTour = false }, scrollState = scroll)
+        }
+    }
 }
 
 @Composable
-private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+private fun SectionCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Surface)
@@ -393,3 +412,36 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
 
 private fun repeatSummary(mask: Int): String =
     AlarmEntry(0, 0, 0, mask, "", "", 0, 0, true).repeatText
+
+private fun alarmEditTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "time", tr("Time", "நேரம்"),
+        tr("Scroll the hour, minute and AM / PM wheels to choose when the alarm rings.",
+            "அலாரம் அடிக்க வேண்டிய நேரத்தை மணி, நிமிடம், AM / PM சக்கரங்களை உருட்டி தேர்ந்தெடுங்கள்.")
+    ),
+    TourStep(
+        "repeat", tr("Repeat", "மீண்டும்"),
+        tr("Every day, only once, or tap the days you want. Custom lets you pick exact dates from a calendar.",
+            "தினமும், ஒருமுறை, அல்லது வேண்டிய நாட்களை தட்டுங்கள். தனிப்பயன் மூலம் காலெண்டரில் குறிப்பிட்ட தேதிகளை தேர்ந்தெடுக்கலாம்.")
+    ),
+    TourStep(
+        "label", tr("Label", "பெயர்"),
+        tr("An optional name for this alarm, like Morning workout. It shows on the alarm.",
+            "இந்த அலாரத்துக்கு விருப்பமான பெயர், உதாரணம் காலை உடற்பயிற்சி. அலாரத்தில் தெரியும்.")
+    ),
+    TourStep(
+        "exercise", tr("Exercise and target", "பயிற்சி மற்றும் இலக்கு"),
+        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups and squats are counted by the camera. Walking, meditation and reading run on a timer you can't skip.",
+            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.")
+    ),
+    TourStep(
+        "limit", tr("Time limit", "நேர வரம்பு"),
+        tr("How long after the alarm rings you have to finish. Miss it and the day counts as missed, your streak resets and every app stays locked for 24 hours.",
+            "அலாரம் அடித்த பிறகு முடிக்க எவ்வளவு நேரம் உண்டு. தவறினால் அந்த நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்.")
+    ),
+    TourStep(
+        "save", tr("Save", "சேமி"),
+        tr("Tap to save. The alarm is set straight away.",
+            "சேமிக்க தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
+    )
+)

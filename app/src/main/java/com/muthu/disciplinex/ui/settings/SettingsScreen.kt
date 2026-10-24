@@ -1,5 +1,11 @@
 package com.muthu.disciplinex.ui.settings
 
+import androidx.compose.foundation.layout.Box
+import com.muthu.disciplinex.ui.components.tourTarget
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -124,6 +130,11 @@ fun SettingsScreen(
         }
     }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val steps = remember(showTour, AppSettings.language) { settingsTourSteps().filter { tour.bounds.containsKey(it.key) } }
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Background,
         topBar = {
@@ -134,6 +145,7 @@ fun SettingsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
+                actions = { GuideButton(onClick = { showTour = true }) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -143,13 +155,13 @@ fun SettingsScreen(
                 .padding(padding)
                 .padding(horizontal = 20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scroll),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Spacer(modifier = Modifier.height(2.dp))
 
             // ---- Theme ----
-            SettingsCard(tr("Theme", "தீம்")) {
+            SettingsCard(tr("Theme", "தீம்"), Modifier.tourTarget(tour, "theme")) {
                 ChoiceRow(
                     options = listOf(
                         AppSettings.THEME_SYSTEM to tr("System", "சிஸ்டம்"),
@@ -162,7 +174,7 @@ fun SettingsScreen(
             }
 
             // ---- Language ----
-            SettingsCard(tr("Language", "மொழி")) {
+            SettingsCard(tr("Language", "மொழி"), Modifier.tourTarget(tour, "language")) {
                 ChoiceRow(
                     options = listOf(
                         AppSettings.LANG_EN to "English",
@@ -174,7 +186,7 @@ fun SettingsScreen(
             }
 
             // ---- Alarm sound ----
-            SettingsCard(tr("Alarm sound", "அலாரம் ஒலி")) {
+            SettingsCard(tr("Alarm sound", "அலாரம் ஒலி"), Modifier.tourTarget(tour, "sound")) {
                 Text(ringtoneTitle, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
@@ -238,7 +250,7 @@ fun SettingsScreen(
             }
 
             // ---- Allowed apps ----
-            SettingsCard(tr("Apps that stay open while locked", "பூட்டியிருக்கும்போது திறந்திருக்கும் ஆப்கள்")) {
+            SettingsCard(tr("Apps that stay open while locked", "பூட்டியிருக்கும்போது திறந்திருக்கும் ஆப்கள்"), Modifier.tourTarget(tour, "apps")) {
                 Text(
                     tr(
                         "Phone and Camera are always open. Pick any other apps you still need, like WhatsApp.",
@@ -269,7 +281,7 @@ fun SettingsScreen(
             }
 
             // ---- Permissions ----
-            SettingsCard(tr("Permissions", "அனுமதிகள்")) {
+            SettingsCard(tr("Permissions", "அனுமதிகள்"), Modifier.tourTarget(tour, "permissions")) {
                 permissions.forEach { (kind, granted) ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
@@ -319,7 +331,7 @@ fun SettingsScreen(
             }
 
             // ---- Streak history ----
-            SettingsCard(tr("Streak history", "ஸ்ட்ரீக் வரலாறு")) {
+            SettingsCard(tr("Streak history", "ஸ்ட்ரீக் வரலாறு"), Modifier.tourTarget(tour, "history")) {
                 Text(
                     tr(
                         "See which days you finished and which you missed.",
@@ -335,7 +347,7 @@ fun SettingsScreen(
             }
 
             // ---- About ----
-            SettingsCard(tr("About", "பற்றி")) {
+            SettingsCard(tr("About", "பற்றி"), Modifier.tourTarget(tour, "about")) {
                 Text(
                     "DisciplineX" + if (version.isNotBlank()) "  v$version" else "",
                     fontWeight = FontWeight.SemiBold
@@ -354,12 +366,16 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+        if (showTour) {
+            TourOverlay(steps, tour, onFinish = { showTour = false }, scrollState = scroll)
+        }
+    }
 }
 
 @Composable
-private fun SettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun SettingsCard(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Surface)
@@ -402,3 +418,41 @@ private fun ringtoneTitleOf(context: Context): String {
         fallback
     }
 }
+
+private fun settingsTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "theme", tr("Theme", "தீம்"),
+        tr("Pick Light, Dark, or System to follow your phone. It changes the whole app straight away.",
+            "ஒளி, இருள், அல்லது உங்கள் போனை பின்பற்ற சிஸ்டம் என தேர்ந்தெடுங்கள். முழு ஆப்பும் உடனே மாறும்.")
+    ),
+    TourStep(
+        "language", tr("Language", "மொழி"),
+        tr("Switch the whole app between English and Tamil.",
+            "முழு ஆப்பையும் ஆங்கிலம் அல்லது தமிழுக்கு மாற்றுங்கள்.")
+    ),
+    TourStep(
+        "sound", tr("Alarm sound", "அலாரம் ஒலி"),
+        tr("Choose the ringtone, turn vibration on or off, and press Test to hear it for a few seconds. Testing never starts a challenge or locks anything.",
+            "ரிங்டோனை தேர்ந்தெடுங்கள், அதிர்வை ஆன் / ஆஃப் செய்யுங்கள், சில வினாடிகள் கேட்க Test அழுத்துங்கள். சோதனை சேலஞ்சை தொடங்காது, எதையும் பூட்டாது.")
+    ),
+    TourStep(
+        "apps", tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"),
+        tr("Choose which apps still work while your phone is locked, like WhatsApp. Phone and Camera always work. This list can't be changed while a challenge is pending.",
+            "போன் பூட்டியிருக்கும்போதும் WhatsApp போன்ற எந்த ஆப்கள் வேலை செய்ய வேண்டும் என தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் வேலை செய்யும். சேலஞ்ச் நிலுவையில் இருக்கும்போது இந்த பட்டியலை மாற்ற முடியாது.")
+    ),
+    TourStep(
+        "permissions", tr("Permissions", "அனுமதிகள்"),
+        tr("A tick means it is on. A cross means it is off, and the alarm or app lock may not work. Tap Fix to open the right screen.",
+            "டிக் என்றால் ஆன். குறுக்கு என்றால் ஆஃப், அலாரம் அல்லது ஆப் லாக் வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க Fix தட்டுங்கள்.")
+    ),
+    TourStep(
+        "history", tr("Streak history", "ஸ்ட்ரீக் வரலாறு"),
+        tr("Open a calendar of the days you finished and the days you missed.",
+            "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் காலெண்டரை திறக்கவும்.")
+    ),
+    TourStep(
+        "about", tr("About", "பற்றி"),
+        tr("Shows the app version. Everything stays on your phone.",
+            "ஆப் பதிப்பை காட்டும். எல்லாம் உங்கள் போனிலேயே இருக்கும்.")
+    )
+)

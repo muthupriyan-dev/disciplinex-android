@@ -6,6 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.ScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +49,28 @@ class TourState {
 @Composable
 fun rememberTourState(): TourState = remember { TourState() }
 
+/** Lets deeper composables tag themselves for the guide without passing the state down. */
+val LocalTourState = staticCompositionLocalOf<TourState?> { null }
+
+/** Same as [tourTarget] but takes the state from [LocalTourState]. */
+@Composable
+fun Modifier.tour(key: String): Modifier {
+    val state = LocalTourState.current ?: return this
+    return this.tourTarget(state, key)
+}
+
+/** The (i) button every screen has: it opens that screen's guide. */
+@Composable
+fun GuideButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            Icons.Default.Info,
+            contentDescription = tr("Show guide", "வழிகாட்டியை காட்டு"),
+            tint = TextMuted
+        )
+    }
+}
+
 /** Tag a composable so the guide can highlight it. */
 fun Modifier.tourTarget(state: TourState, key: String): Modifier =
     this.onGloballyPositioned { state.bounds[key] = it.boundsInRoot() }
@@ -53,7 +80,13 @@ fun Modifier.tourTarget(state: TourState, key: String): Modifier =
  * explanation, a Next button and a Skip button.
  */
 @Composable
-fun TourOverlay(steps: List<TourStep>, state: TourState, onFinish: () -> Unit) {
+fun TourOverlay(
+    steps: List<TourStep>,
+    state: TourState,
+    onFinish: () -> Unit,
+    /** If the screen scrolls, pass its state so the guide can scroll each element into view. */
+    scrollState: ScrollState? = null
+) {
     if (steps.isEmpty()) {
         LaunchedEffect(Unit) { onFinish() }
         return
@@ -66,6 +99,15 @@ fun TourOverlay(steps: List<TourStep>, state: TourState, onFinish: () -> Unit) {
         LocalConfiguration.current.screenHeightDp.dp.toPx()
     }
     val cardAtTop = target != null && target.center.y > screenHeightPx / 2f
+
+    // Bring the highlighted element into the upper part of the screen (the card sits below it).
+    LaunchedEffect(index) {
+        val t = state.bounds[step.key]
+        if (scrollState != null && t != null && (t.top < screenHeightPx * 0.12f || t.bottom > screenHeightPx * 0.55f)) {
+            val delta = t.top - screenHeightPx * 0.16f
+            scrollState.animateScrollTo((scrollState.value + delta).toInt().coerceAtLeast(0))
+        }
+    }
 
     Box(
         modifier = Modifier

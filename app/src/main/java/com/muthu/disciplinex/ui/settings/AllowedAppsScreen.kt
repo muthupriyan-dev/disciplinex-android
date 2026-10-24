@@ -1,5 +1,12 @@
 package com.muthu.disciplinex.ui.settings
 
+import androidx.compose.foundation.rememberScrollState
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.ui.components.tourTarget
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import com.muthu.disciplinex.data.tr
 import android.content.Context
 import android.content.Intent
@@ -102,6 +109,11 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
     }
     var allowed by remember { mutableStateOf(UserPrefs.getAllowedApps(context)) }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val steps = remember(showTour, AppSettings.language) { allowedAppsTourSteps().filter { tour.bounds.containsKey(it.key) } }
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,6 +123,7 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
+                actions = { GuideButton(onClick = { showTour = true }) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -123,7 +136,8 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                tr("Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.", "டிக் செய்த ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்."),
+                modifier = Modifier.tourTarget(tour, "intro"),
+                text = tr("Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.", "டிக் செய்த ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்."),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -139,10 +153,10 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
 
             val list = apps
             if (list == null) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth().tourTarget(tour, "list"), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = OrangeEnd)
                 }
-            } else LazyColumn(modifier = Modifier.weight(1f)) {
+            } else LazyColumn(modifier = Modifier.weight(1f).tourTarget(tour, "list")) {
                 items(list, key = { it.packageName }) { app ->
                     Row(
                         modifier = Modifier
@@ -177,4 +191,21 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
             }
         }
     }
+        if (showTour) {
+            TourOverlay(steps, tour, onFinish = { showTour = false }, scrollState = scroll)
+        }
+    }
 }
+
+private fun allowedAppsTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "intro", tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"),
+        tr("Apps you tick keep working while your phone is locked. Phone, Camera, keyboards and system screens are always allowed.",
+            "நீங்கள் டிக் செய்யும் ஆப்கள் போன் பூட்டியிருக்கும்போதும் வேலை செய்யும். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.")
+    ),
+    TourStep(
+        "list", tr("Your apps", "உங்கள் ஆப்கள்"),
+        tr("Tap an app to tick or untick it. Only tick what you really need, like WhatsApp or a bank app, so distractions stay locked.",
+            "ஆப்பை தட்டி டிக் அல்லது நீக்கவும். WhatsApp, வங்கி ஆப் போல உண்மையில் தேவையானவற்றை மட்டும் டிக் செய்யுங்கள், அப்போதுதான் கவனச்சிதறல் பூட்டியிருக்கும்.")
+    )
+)

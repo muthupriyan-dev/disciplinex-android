@@ -1,5 +1,11 @@
 package com.muthu.disciplinex.ui.onboarding
 
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.ui.components.tourTarget
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import com.muthu.disciplinex.data.tr
 import android.Manifest
 import android.app.NotificationManager
@@ -209,6 +215,11 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
     // Continue only unlocks once EVERY permission above is granted.
     val allGranted = permissions.all { it.isGranted }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val steps = remember(showTour, AppSettings.language) { permissionsTourSteps().filter { tour.bounds.containsKey(it.key) } }
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -218,6 +229,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
+                actions = { GuideButton(onClick = { showTour = true }) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -227,9 +239,9 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
             ) {
-                Text(tr("Why we ask for this", "இதை ஏன் கேட்கிறோம்"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(tr("Why we ask for this", "இதை ஏன் கேட்கிறோம்"), modifier = Modifier.tourTarget(tour, "why"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     tr("DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.", "கீழுள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது."),
@@ -238,7 +250,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(modifier = Modifier.tourTarget(tour, "rows"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     permissions.forEach { p ->
                         Column(
                             modifier = Modifier
@@ -284,7 +296,11 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            PrimaryPillButton(text = tr("Continue", "தொடர்"), onClick = onFinish, enabled = allGranted)
+            PrimaryPillButton(text = tr("Continue", "தொடர்"), onClick = onFinish, enabled = allGranted, modifier = Modifier.tourTarget(tour, "continue"))
+        }
+    }
+        if (showTour) {
+            TourOverlay(steps, tour, onFinish = { showTour = false }, scrollState = scroll)
         }
     }
 }
@@ -294,3 +310,21 @@ private tailrec fun Context.findActivity(): android.app.Activity? = when (this) 
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
 }
+
+private fun permissionsTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "why", tr("Why these permissions", "இந்த அனுமதிகள் ஏன்"),
+        tr("DisciplineX only uses these for the features listed. It never reads your messages, OTPs or personal content.",
+            "பட்டியலிட்ட வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும். உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது.")
+    ),
+    TourStep(
+        "rows", tr("Allow each one", "ஒவ்வொன்றையும் அனுமதியுங்கள்"),
+        tr("Tap Allow next to each item. A tick means it is done. The app can't work properly until every one is on.",
+            "ஒவ்வொன்றின் அருகிலும் Allow தட்டுங்கள். டிக் என்றால் முடிந்தது. எல்லாம் ஆன் ஆகும் வரை ஆப் சரியாக வேலை செய்யாது.")
+    ),
+    TourStep(
+        "continue", tr("Continue", "தொடர்"),
+        tr("This unlocks only after every permission is allowed.",
+            "எல்லா அனுமதிகளும் கொடுத்த பிறகுதான் இது திறக்கும்.")
+    )
+)

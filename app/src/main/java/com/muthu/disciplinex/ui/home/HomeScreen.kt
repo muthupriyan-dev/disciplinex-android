@@ -70,7 +70,7 @@ import java.time.format.TextStyle
 import java.util.Date
 import java.util.Locale
 
-private val tourSteps = listOf(
+private fun homeTourSteps(): List<TourStep> = listOf(
     TourStep(
         "streak", tr("Your streak \uD83D\uDD25", "உங்கள் ஸ்ட்ரீக் \uD83D\uDD25"),
         tr("Finish every challenge on time and this number grows. Miss one and it goes back to 0.", "ஒவ்வொரு சேலஞ்சையும் நேரத்துக்கு முடித்தால் இந்த எண் உயரும். ஒன்றைத் தவறவிட்டால் 0-க்கு திரும்பும்.")
@@ -155,7 +155,7 @@ fun HomeScreen(
             showTour = true
         }
     }
-    val steps = remember(showTour) { tourSteps.filter { tour.bounds.containsKey(it.key) } }
+    val steps = remember(showTour, AppSettings.language) { homeTourSteps().filter { tour.bounds.containsKey(it.key) } }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

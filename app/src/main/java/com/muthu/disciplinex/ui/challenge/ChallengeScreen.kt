@@ -1,5 +1,12 @@
 package com.muthu.disciplinex.ui.challenge
 
+import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.ui.components.tour
+import com.muthu.disciplinex.ui.components.LocalTourState
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import com.muthu.disciplinex.data.tr
 import android.Manifest
 import android.content.pm.PackageManager
@@ -59,12 +66,58 @@ fun ChallengeScreen(
     onComplete: () -> Unit,
     onMissed: () -> Unit = {}
 ) {
-    if (ExerciseKinds.isTimed(exerciseName)) {
-        TimedChallenge(exerciseName, durationMinutes, onComplete, onMissed)
-    } else {
-        RepChallenge(exerciseName, targetReps, onComplete, onMissed)
+    val timed = ExerciseKinds.isTimed(exerciseName)
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val steps = remember(showTour, AppSettings.language) {
+        challengeTourSteps(timed).filter { tour.bounds.containsKey(it.key) }
+    }
+
+    CompositionLocalProvider(LocalTourState provides tour) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (timed) {
+                TimedChallenge(exerciseName, durationMinutes, onComplete, onMissed)
+            } else {
+                RepChallenge(exerciseName, targetReps, onComplete, onMissed)
+            }
+            GuideButton(
+                onClick = { showTour = true },
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding()
+            )
+            if (showTour) {
+                TourOverlay(steps, tour, onFinish = { showTour = false })
+            }
+        }
     }
 }
+
+private fun challengeTourSteps(timed: Boolean): List<TourStep> = listOf(
+    TourStep(
+        "deadline", tr("Time left", "மீதமுள்ள நேரம்"),
+        tr("This is how long you have to finish. When it reaches zero the challenge is missed, your streak resets and your apps stay locked for 24 hours.",
+            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. பூஜ்யம் ஆனால் சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்.")
+    ),
+    TourStep(
+        "ring", tr("Your progress", "உங்கள் முன்னேற்றம்"),
+        if (timed) {
+            tr("The ring fills while the timer runs. When it is full you can unlock your phone.",
+                "டைமர் ஓடும்போது வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+        } else {
+            tr("The number is your reps so far. The ring fills as you go. When it is full you can unlock your phone.",
+                "எண் என்பது இதுவரை செய்த முறை. நீங்கள் செய்ய செய்ய வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+        }
+    ),
+    TourStep(
+        "bottom", if (timed) tr("Stay on this screen", "இந்த திரையிலேயே இருங்கள்") else tr("How counting works", "எண்ணுதல் எப்படி"),
+        if (timed) {
+            tr("The timer only runs while this screen is open. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and the timer starts again from zero.",
+                "இந்த திரை திறந்திருக்கும்போது மட்டுமே டைமர் ஓடும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் டைமர் பூஜ்யத்திலிருந்து தொடங்கும்.")
+        } else {
+            tr("Keep your whole body in the camera. Only full reps count. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and your reps start again from zero.",
+                "உங்கள் முழு உடலும் கேமராவில் தெரியட்டும். முழு முறைகள் மட்டுமே கணக்கில் வரும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் எண்ணிக்கை பூஜ்யத்திலிருந்து தொடங்கும்.")
+        }
+    )
+)
 
 /**
  * Live "time left" for the alarm's time limit. When the limit runs out the
@@ -244,7 +297,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(6.dp))
-            DeadlineBar(onMissed)
+            Box(modifier = Modifier.tour("deadline")) { DeadlineBar(onMissed) }
             AwayResetNote(awayReset) { awayReset = false }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -252,8 +305,9 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
             ProgressRing(
                 progress = progress,
                 centerText = timeText,
-                subText = if (isComplete) "done" else "remaining",
-                isComplete = isComplete
+                subText = if (isComplete) tr("done", "முடிந்தது") else tr("remaining", "மீதம்"),
+                isComplete = isComplete,
+                modifier = Modifier.tour("ring")
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -264,7 +318,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                     color = Success,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
                 )
                 PrimaryPillButton(text = tr("Finish & Unlock Phone", "முடித்து போனை திற"), onClick = onComplete)
             } else {
@@ -276,7 +330,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                     },
                     color = if (isResumed && windowActive) TextMuted else OrangeEnd,
                     style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
                 )
             }
 
@@ -346,7 +400,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(6.dp))
-            DeadlineBar(onMissed)
+            Box(modifier = Modifier.tour("deadline")) { DeadlineBar(onMissed) }
             AwayResetNote(awayReset) { awayReset = false }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -376,7 +430,8 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 progress = progress,
                 centerText = "$reps",
                 subText = tr("of $target reps", "/ $target முறை"),
-                isComplete = isComplete
+                isComplete = isComplete,
+                modifier = Modifier.tour("ring")
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -388,7 +443,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         color = Success,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
                     )
                     PrimaryPillButton(
                         text = tr("Finish & Unlock Phone", "முடித்து போனை திற"),
@@ -409,7 +464,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         else tr("Get your whole body in frame to start counting.", "எண்ணத் தொடங்க உங்கள் முழு உடலும் கேமராவில் தெரிய வேண்டும்."),
                         color = if (isTracking) TextMuted else OrangeEnd,
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
                     )
                 }
                 else -> {
@@ -417,7 +472,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         text = tr("Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.", "இந்த பயிற்சிக்கான மோஷன் சென்சார் விரைவில் வரும் \u2014 இப்போது தட்டி எண்ணுங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
                     )
                     PrimaryPillButton(
                         text = tr("+1 Rep", "+1 முறை"),
@@ -496,12 +551,13 @@ private fun ProgressRing(
     progress: Float,
     centerText: String,
     subText: String,
-    isComplete: Boolean
+    isComplete: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val ringColor = if (isComplete) Success else OrangeEnd
 
     Box(
-        modifier = Modifier.size(220.dp),
+        modifier = modifier.size(220.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.size(220.dp)) {

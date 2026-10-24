@@ -1,5 +1,10 @@
 package com.muthu.disciplinex.ui.settings
 
+import com.muthu.disciplinex.ui.components.tourTarget
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.GuideButton
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -71,6 +76,11 @@ fun HistoryScreen(onBack: () -> Unit) {
     val streak = remember { StreakStore.currentStreak(context) }
     val best = remember { StreakStore.bestStreak(context) }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val steps = remember(showTour, AppSettings.language) { historyTourSteps().filter { tour.bounds.containsKey(it.key) } }
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Background,
         topBar = {
@@ -81,6 +91,7 @@ fun HistoryScreen(onBack: () -> Unit) {
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
                     }
                 },
+                actions = { GuideButton(onClick = { showTour = true }) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -90,12 +101,12 @@ fun HistoryScreen(onBack: () -> Unit) {
                 .padding(padding)
                 .padding(horizontal = 20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // ---- Streak numbers ----
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.tourTarget(tour, "stats"), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatBox(
                     value = "\uD83D\uDD25 $streak",
                     label = tr("Current streak", "தற்போதைய ஸ்ட்ரீக்"),
@@ -113,6 +124,7 @@ fun HistoryScreen(onBack: () -> Unit) {
             // ---- Calendar ----
             Column(
                 modifier = Modifier
+                    .tourTarget(tour, "calendar")
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .background(Surface)
@@ -181,13 +193,17 @@ fun HistoryScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // ---- Legend ----
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.tourTarget(tour, "legend"), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 LegendDot(Success, tr("Finished", "முடித்தது"))
                 LegendDot(Danger, tr("Missed", "தவறியது"))
                 LegendDot(ChipBackground, tr("No result", "முடிவு இல்லை"))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+        if (showTour) {
+            TourOverlay(steps, tour, onFinish = { showTour = false }, scrollState = scroll)
         }
     }
 }
@@ -242,3 +258,21 @@ private fun LegendDot(color: Color, label: String) {
         Text(label, color = TextMuted, style = MaterialTheme.typography.labelMedium)
     }
 }
+
+private fun historyTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "stats", tr("Your streaks", "உங்கள் ஸ்ட்ரீக்"),
+        tr("Current streak is how many days in a row you finished. Best streak is your longest run ever.",
+            "தற்போதைய ஸ்ட்ரீக் என்பது தொடர்ச்சியாக முடித்த நாட்கள். சிறந்த ஸ்ட்ரீக் என்பது இதுவரை உங்கள் நீண்ட தொடர்.")
+    ),
+    TourStep(
+        "calendar", tr("Calendar", "காலெண்டர்"),
+        tr("Green is a day you finished, red is a day you missed. The orange ring is today. Use the arrows to move between months.",
+            "பச்சை என்றால் முடித்த நாள், சிவப்பு என்றால் தவறிய நாள். ஆரஞ்சு வளையம் இன்று. மாதங்களுக்கு இடையே செல்ல அம்புகளை பயன்படுத்துங்கள்.")
+    ),
+    TourStep(
+        "legend", tr("Colours", "நிறங்கள்"),
+        tr("A grey day means there is no result: no alarm was due, or it hasn't come yet.",
+            "சாம்பல் நாள் என்றால் முடிவு இல்லை: அலாரம் இல்லை அல்லது இன்னும் வரவில்லை.")
+    )
+)
