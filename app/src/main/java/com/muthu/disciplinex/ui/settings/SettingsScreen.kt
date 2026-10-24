@@ -189,7 +189,7 @@ fun SettingsScreen(
             SettingsCard(tr("Alarm sound", "அலாரம் ஒலி"), Modifier.tourTarget(tour, "sound")) {
                 Text(ringtoneTitle, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
+                Button(
                     onClick = {
                         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                             putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
@@ -202,8 +202,10 @@ fun SettingsScreen(
                         }
                         ringtoneLauncher.launch(intent)
                     },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text(tr("Change ringtone", "ரிங்டோனை மாற்று"), color = OrangeEnd) }
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
+                ) { Text(tr("Change ringtone", "ரிங்டோனை மாற்று"), fontWeight = FontWeight.SemiBold) }
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
@@ -226,15 +228,16 @@ fun SettingsScreen(
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                Button(
+                OutlinedButton(
                     onClick = { if (AlarmTest.isPlaying) AlarmTest.stop() else AlarmTest.start(context) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, OrangeEnd)
                 ) {
                     Text(
                         if (AlarmTest.isPlaying) tr("Stop test", "சோதனையை நிறுத்து")
                         else tr("Test alarm sound", "அலாரம் ஒலியை சோதி"),
+                        color = OrangeEnd,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -341,9 +344,12 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedButton(onClick = onOpenHistory, modifier = Modifier.fillMaxWidth()) {
-                    Text(tr("Open calendar", "காலெண்டரை திற"), color = OrangeEnd)
-                }
+                Button(
+                    onClick = onOpenHistory,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
+                ) { Text(tr("Open calendar", "காலெண்டரை திற"), fontWeight = FontWeight.SemiBold) }
             }
 
             // ---- About ----

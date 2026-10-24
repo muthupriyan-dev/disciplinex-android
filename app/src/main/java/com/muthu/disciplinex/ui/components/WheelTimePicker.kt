@@ -124,7 +124,7 @@ fun WheelTimePicker(
 }
 
 private val ITEM_HEIGHT = 48.dp
-internal val WHEEL_HEIGHT = 264.dp
+internal val WHEEL_HEIGHT = 232.dp
 
 /** Each row sits 30 degrees (0.5236 rad) further round the drum than the one before. */
 private const val STEP_RADIANS = 0.5235988f

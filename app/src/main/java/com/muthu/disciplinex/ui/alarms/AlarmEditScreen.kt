@@ -55,6 +55,56 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
     val existing = remember { if (alarmId >= 0) AlarmStore.get(context, alarmId) else null }
     val locked = remember { ChallengeSession.isLockActive(context) }
 
+    // Defaults for a new alarm: 6:00 AM, every day, push-ups x10.
+    var hour24 by remember { mutableStateOf(existing?.hour24 ?: 6) }
+    var minute by remember { mutableStateOf(existing?.minute ?: 0) }
+    var daysMask by remember { mutableStateOf(existing?.daysMask ?: AlarmEntry.ALL_DAYS) }
+    // "Custom" repeat: specific dates (epoch days). Not empty = custom mode.
+    var customDates by remember { mutableStateOf(existing?.dates ?: emptyList<Long>()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
+    var label by remember { mutableStateOf(existing?.label ?: "") }
+    var selected by remember {
+        mutableStateOf(exerciseOptions.firstOrNull { it.name == existing?.exercise } ?: exerciseOptions[0])
+    }
+    var reps by remember { mutableStateOf(existing?.reps ?: 10) }
+    var minutes by remember { mutableStateOf(existing?.minutes ?: 15) }
+    val isTimed = ExerciseKinds.isTimed(selected.name)
+    var windowMin by remember { mutableStateOf(existing?.windowMinutes ?: AlarmEntry.DEFAULT_WINDOW_MINUTES) }
+    // A timed exercise (e.g. 2 hours of reading) needs at least that long to finish it.
+    val minWindow = if (isTimed) minutes else 1
+    LaunchedEffect(minWindow) { if (windowMin < minWindow) windowMin = minWindow }
+
+    // Fixed at first composition: the wheel keeps its own state after that.
+    val initHour12 = remember { ((hour24 + 11) % 12) + 1 }
+    val initIsAm = remember { hour24 < 12 }
+
+
+    // Used by the tick in the top bar and by the Save button at the bottom.
+    val saveAlarm: () -> Unit = save@{
+        val alarm = AlarmEntry(
+            id = existing?.id ?: AlarmStore.nextId(context),
+            hour24 = hour24,
+            minute = minute,
+            daysMask = daysMask,
+            label = label.trim(),
+            exercise = selected.name,
+            reps = reps,
+            minutes = minutes,
+            enabled = true,
+            dates = customDates.sorted(),
+            windowMinutes = windowMin.coerceAtLeast(minWindow)
+        )
+        // A custom alarm whose chosen dates/time are all in the past would never ring.
+        if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {
+            saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
+            return@save
+        }
+        AlarmStore.save(context, alarm)
+        AlarmScheduler.schedule(context, alarm)
+        onClose()
+    }
+
     val tour = rememberTourState()
     var showTour by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
@@ -74,7 +124,21 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                         Icon(Icons.Default.Close, contentDescription = tr("Close without saving", "சேமிக்காமல் மூடு"))
                     }
                 },
-                actions = { GuideButton(onClick = { showTour = true }) },
+                actions = {
+                    GuideButton(onClick = { showTour = true })
+                    if (!locked) {
+                        IconButton(
+                            onClick = saveAlarm,
+                            modifier = Modifier.tourTarget(tour, "save")
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = tr("Save alarm", "அலாரத்தை சேமி"),
+                                tint = OrangeEnd
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
@@ -89,30 +153,6 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
             return@Scaffold
         }
-
-        // Defaults for a new alarm: 6:00 AM, every day, push-ups x10.
-        var hour24 by remember { mutableStateOf(existing?.hour24 ?: 6) }
-        var minute by remember { mutableStateOf(existing?.minute ?: 0) }
-        var daysMask by remember { mutableStateOf(existing?.daysMask ?: AlarmEntry.ALL_DAYS) }
-        // "Custom" repeat: specific dates (epoch days). Not empty = custom mode.
-        var customDates by remember { mutableStateOf(existing?.dates ?: emptyList<Long>()) }
-        var showDatePicker by remember { mutableStateOf(false) }
-        var saveError by remember { mutableStateOf<String?>(null) }
-        var label by remember { mutableStateOf(existing?.label ?: "") }
-        var selected by remember {
-            mutableStateOf(exerciseOptions.firstOrNull { it.name == existing?.exercise } ?: exerciseOptions[0])
-        }
-        var reps by remember { mutableStateOf(existing?.reps ?: 10) }
-        var minutes by remember { mutableStateOf(existing?.minutes ?: 15) }
-        val isTimed = ExerciseKinds.isTimed(selected.name)
-        var windowMin by remember { mutableStateOf(existing?.windowMinutes ?: AlarmEntry.DEFAULT_WINDOW_MINUTES) }
-        // A timed exercise (e.g. 2 hours of reading) needs at least that long to finish it.
-        val minWindow = if (isTimed) minutes else 1
-        LaunchedEffect(minWindow) { if (windowMin < minWindow) windowMin = minWindow }
-
-        // Fixed at first composition: the wheel keeps its own state after that.
-        val initHour12 = remember { ((hour24 + 11) % 12) + 1 }
-        val initIsAm = remember { hour24 < 12 }
 
         Column(
             modifier = Modifier
@@ -136,7 +176,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // ---- Repeat ----
             SectionCard(Modifier.tourTarget(tour, "repeat")) {
@@ -158,9 +198,10 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 ) {
                     AlarmEntry.DAY_LETTERS.forEachIndexed { i, letter ->
                         val on = customDates.isEmpty() && (daysMask shr i) and 1 == 1
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
                                 .background(if (on) OrangeEnd else ChipBackground)
                                 .clickable {
@@ -181,21 +222,29 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                val chipColors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = OrangeEnd,
+                    selectedLabelColor = Color.White
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
+                        colors = chipColors,
                         selected = customDates.isEmpty() && daysMask == AlarmEntry.ALL_DAYS,
                         onClick = { customDates = emptyList(); daysMask = AlarmEntry.ALL_DAYS; saveError = null },
                         label = { Text(tr("Every day", "தினமும்")) }
                     )
                     FilterChip(
+                        colors = chipColors,
                         selected = customDates.isEmpty() && daysMask == 0,
                         onClick = { customDates = emptyList(); daysMask = 0; saveError = null },
                         label = { Text(tr("Once", "ஒருமுறை")) }
                     )
                     FilterChip(
+                        colors = chipColors,
                         selected = customDates.isNotEmpty(),
                         onClick = { showDatePicker = true },
                         label = { Text(tr("Custom", "தனிப்பயன்")) }
@@ -311,30 +360,8 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             }
 
             Button(
-                onClick = {
-                    val alarm = AlarmEntry(
-                        id = existing?.id ?: AlarmStore.nextId(context),
-                        hour24 = hour24,
-                        minute = minute,
-                        daysMask = daysMask,
-                        label = label.trim(),
-                        exercise = selected.name,
-                        reps = reps,
-                        minutes = minutes,
-                        enabled = true,
-                        dates = customDates.sorted(),
-                        windowMinutes = windowMin.coerceAtLeast(minWindow)
-                    )
-                    // A custom alarm whose chosen dates/time are all in the past would never ring.
-                    if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {
-                        saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
-                        return@Button
-                    }
-                    AlarmStore.save(context, alarm)
-                    AlarmScheduler.schedule(context, alarm)
-                    onClose()
-                },
-                modifier = Modifier.tourTarget(tour, "save").fillMaxWidth().height(52.dp),
+                onClick = saveAlarm,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
             ) {
@@ -440,7 +467,7 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "save", tr("Save", "சேமி"),
-        tr("Tap to save. The alarm is set straight away.",
-            "சேமிக்க தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
+        tr("Tap the tick at the top any time to save. The alarm is set straight away.",
+            "சேமிக்க மேலே உள்ள டிக்கை எப்போது வேண்டுமானாலும் தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
     )
 )

@@ -57,6 +57,7 @@ import com.muthu.disciplinex.ui.components.tourTarget
 import com.muthu.disciplinex.ui.theme.Danger
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.Success
+import com.muthu.disciplinex.ui.theme.SuccessText
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
@@ -257,12 +258,32 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 if (alarms.isEmpty()) {
-                    Text(
-                        tr("No alarms yet. Tap the + button to add your first one.", "இன்னும் அலாரம் இல்லை. முதல் அலாரத்தை சேர்க்க + பட்டனை தட்டுங்கள்."),
-                        color = TextMuted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("\u23F0", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            tr("No alarms yet", "இன்னும் அலாரம் இல்லை"),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            tr("Set a wake-up time and a challenge. Miss it and your apps stay locked.", "எழுந்திருக்கும் நேரத்தையும் சேலஞ்சையும் அமையுங்கள். தவறினால் ஆப்கள் பூட்டியிருக்கும்."),
+                            color = TextMuted,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onAddAlarm,
+                            shape = RoundedCornerShape(26.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White),
+                            modifier = Modifier.height(48.dp)
+                        ) { Text(tr("Add your first alarm", "முதல் அலாரத்தை சேர்"), fontWeight = FontWeight.SemiBold) }
+                    }
                 }
 
                 alarms.forEachIndexed { index, alarm ->
@@ -415,7 +436,7 @@ private fun StatusCard(
             }
 
             else -> {
-                Text(tr("Ready", "தயார்"), fontWeight = FontWeight.SemiBold, color = Success, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Ready", "தயார்"), fontWeight = FontWeight.SemiBold, color = SuccessText, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     when {
