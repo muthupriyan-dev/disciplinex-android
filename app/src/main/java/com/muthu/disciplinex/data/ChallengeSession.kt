@@ -31,6 +31,9 @@ object ChallengeSession {
     /** How long you may be away from an in-progress challenge before it restarts. */
     const val AWAY_GRACE_MS = 5 * 60 * 1000L
 
+    /** After a MISSED challenge you can unlock early, but only after waiting this long. */
+    const val EMERGENCY_WAIT_MS = 10 * 60 * 1000L
+
     /** true = missing the time limit keeps the phone locked (for 24 hours). */
     const val MISSED_KEEPS_LOCK = true
 
@@ -53,6 +56,9 @@ object ChallengeSession {
     private const val K_LEFT_ELAPSED = "left_elapsed"
     private const val K_LEFT_WALL = "left_wall"
     private const val K_LEFT_BOOT = "left_boot"
+    private const val K_EM_ELAPSED = "em_elapsed"
+    private const val K_EM_WALL = "em_wall"
+    private const val K_EM_BOOT = "em_boot"
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -115,6 +121,7 @@ object ChallengeSession {
             .putLong(K_LOCK_MS, lockMs)
             .putLong(K_WINDOW_MS, windowMs)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
+            .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
             .apply()
     }
 
@@ -177,6 +184,53 @@ object ChallengeSession {
     // ------------------------------------------------------------------
     // Leaving the app mid-challenge (5-minute emergency grace)
     // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
+    // Emergency unlock (only after a missed challenge)
+    // ------------------------------------------------------------------
+
+    /** Starts the wait. Only possible once the challenge has been MISSED. */
+    fun startEmergencyUnlock(context: Context): Boolean {
+        if (phase(context) != Phase.MISSED) return false
+        prefs(context).edit()
+            .putLong(K_EM_ELAPSED, SystemClock.elapsedRealtime())
+            .putLong(K_EM_WALL, System.currentTimeMillis())
+            .putInt(K_EM_BOOT, bootCount(context))
+            .apply()
+        return true
+    }
+
+    fun cancelEmergencyUnlock(context: Context) {
+        prefs(context).edit().remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT).apply()
+    }
+
+    /** null = not started, 0 = the wait is over, otherwise milliseconds still to wait. */
+    fun emergencyMsLeft(context: Context): Long? {
+        val p = prefs(context)
+        val wall = p.getLong(K_EM_WALL, 0L)
+        val elapsed = p.getLong(K_EM_ELAPSED, 0L)
+        if (wall == 0L && elapsed == 0L) return null
+        val now = System.currentTimeMillis()
+        val sameBoot = bootCount(context) == p.getInt(K_EM_BOOT, Int.MIN_VALUE)
+        var passed = if (sameBoot) SystemClock.elapsedRealtime() - elapsed else now - wall
+        if (passed < 0) passed = now - wall
+        return (EMERGENCY_WAIT_MS - passed).coerceAtLeast(0L)
+    }
+
+    /**
+     * Unlocks the phone once the wait is over. The day stays missed and the
+     * streak stays reset - this only lifts the lock.
+     */
+    fun finishEmergencyUnlock(context: Context): Boolean {
+        if (phase(context) != Phase.MISSED) return false
+        val left = emergencyMsLeft(context) ?: return false
+        if (left > 0L) return false
+        prefs(context).edit()
+            .putBoolean(K_ACTIVE, false)
+            .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
+            .apply()
+        return true
+    }
 
     /** Call when the challenge screen goes to the background. */
     fun markLeft(context: Context) {

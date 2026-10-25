@@ -1,5 +1,8 @@
 package com.muthu.disciplinex.ui.home
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
 import com.muthu.disciplinex.data.tr
 import com.muthu.disciplinex.data.AppSettings
 import com.muthu.disciplinex.data.ExerciseKinds
@@ -243,6 +246,11 @@ fun HomeScreen(
                         names = missingPermissions.joinToString(", ") { PermissionChecks.title(it) },
                         onReview = onOpenSettings
                     )
+                }
+
+                if (phase == ChallengeSession.Phase.MISSED) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    EmergencyUnlockCard(onChanged = { refreshTick++ })
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -554,5 +562,92 @@ private fun PermissionWarningCard(names: String, onReview: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall
             )
         }
+    }
+}
+
+/**
+ * Shown on Home after a MISSED challenge: a real emergency can unlock the phone
+ * early, but only after a 10-minute wait. The day stays missed and the streak stays 0.
+ */
+@Composable
+private fun EmergencyUnlockCard(onChanged: () -> Unit) {
+    val context = LocalContext.current
+    var msLeft by remember { mutableStateOf(ChallengeSession.emergencyMsLeft(context)) }
+    var confirm by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            msLeft = ChallengeSession.emergencyMsLeft(context)
+            delay(1000)
+        }
+    }
+
+    val left = msLeft
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Surface)
+            .padding(16.dp)
+    ) {
+        Text(tr("Real emergency?", "உண்மையான அவசரமா?"), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(4.dp))
+        when {
+            left == null -> {
+                Text(
+                    tr("You can unlock early after a 10-minute wait. Today stays missed and your streak stays at 0.",
+                        "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும்."),
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(onClick = { confirm = true }) {
+                    Text(tr("Start emergency unlock", "அவசர அன்லாக் தொடங்கு"), color = OrangeEnd)
+                }
+            }
+            left > 0L -> {
+                val sec = (left / 1000).toInt()
+                Text(
+                    tr("Unlock available in ${sec / 60}:${"%02d".format(sec % 60)}",
+                        "${sec / 60}:${"%02d".format(sec % 60)} கழித்து திறக்கலாம்"),
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                TextButton(onClick = {
+                    ChallengeSession.cancelEmergencyUnlock(context)
+                    msLeft = null
+                }) { Text(tr("Cancel", "ரத்து"), color = OrangeEnd) }
+            }
+            else -> {
+                Button(
+                    onClick = { if (ChallengeSession.finishEmergencyUnlock(context)) onChanged() },
+                    shape = RoundedCornerShape(26.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
+                ) { Text(tr("Unlock my phone now", "போனை இப்போது திற"), fontWeight = FontWeight.SemiBold) }
+            }
+        }
+    }
+
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(tr("Start emergency unlock?", "அவசர அன்லாக் தொடங்கவா?")) },
+            text = {
+                Text(
+                    tr("Your apps unlock after 10 minutes. Today stays missed and your streak stays at 0. Only use this for a real emergency.",
+                        "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.")
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    ChallengeSession.startEmergencyUnlock(context)
+                    msLeft = ChallengeSession.emergencyMsLeft(context)
+                    confirm = false
+                }) { Text(tr("Start", "தொடங்கு"), color = OrangeEnd, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirm = false }) { Text(tr("Cancel", "ரத்து"), color = TextMuted) }
+            }
+        )
     }
 }

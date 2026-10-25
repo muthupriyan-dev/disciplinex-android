@@ -203,7 +203,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         add(
             PermissionRow(
                 title = tr("Accessibility service", "அக்சசிபிலிட்டி சேவை"),
-                reason = tr("Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on.", "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் சாளரங்கள் உட்பட) பார்க்க மட்டும் பயன்படும், அதனால் உங்களை சேலஞ்சுக்கு திருப்பி அனுப்ப முடியும். உங்கள் செய்திகளையோ தட்டச்சு செய்வதையோ படிக்காது. Allow தட்டி, \"DisciplineX App Lock\" திறந்து ஆன் செய்யுங்கள்."),
+                reason = tr("Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on. If the switch is greyed out: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.", "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் சாளரங்கள் உட்பட) பார்க்க மட்டும் பயன்படும், அதனால் உங்களை சேலஞ்சுக்கு திருப்பி அனுப்ப முடியும். உங்கள் செய்திகளையோ தட்டச்சு செய்வதையோ படிக்காது. Allow தட்டி, \"DisciplineX App Lock\" திறந்து ஆன் செய்யுங்கள். சுவிட்ச் சாம்பல் நிறமாக இருந்தால்: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings."),
                 isGranted = accessibilityGranted,
                 onRequest = {
                     context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
