@@ -46,3 +46,10 @@ Theme (system / light / dark), language (English / தமிழ்), alarm ringt
 - `pose/` — camera preview, ML Kit analyzer, rep counters (push-ups, squats, jumping jacks)
 - `data/` — alarms, `ChallengeSession` (lock, time limit, away rule, emergency unlock), streaks, settings, step check
 - `ui/` — Compose screens (home, alarm editor, challenge, settings, history, guide tour)
+
+## Changelog
+
+### 1.2.2
+- **Fixed:** a missed alarm's 24-hour lock could be lifted by finishing a *different* alarm. The penalty lock is now stored separately and only ends when 24 hours pass (or via the emergency unlock).
+- **Fixed:** the Welcome card was only as wide as its text and its text/button turned dark in the phone's dark mode. Card is full width, text is always white, main buttons are always orange.
+- Welcome, Challenge and Alarm-ring screens now scroll, so buttons can't be pushed off-screen on small phones or with large font sizes.

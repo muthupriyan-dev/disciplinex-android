@@ -2,6 +2,8 @@ package com.muthu.disciplinex.ui.onboarding
 
 import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,8 +22,9 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(20.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -47,12 +50,13 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(28.dp))
             GradientHeroCard(
+                modifier = Modifier.fillMaxWidth(),
                 title = tr("Morning Challenge", "காலை சேலஞ்ச்"),
                 subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் செட்டை முடியுங்கள், போனை திரும்பப் பெறுங்கள்.")
             ) {
                 Text(
                     tr("5:00 AM  →  20 push-ups  →  unlocked", "காலை 5:00  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),
-                    color = com.muthu.disciplinex.ui.theme.Surface,
+                    color = androidx.compose.ui.graphics.Color.White,
                     style = MaterialTheme.typography.labelLarge
                 )
             }

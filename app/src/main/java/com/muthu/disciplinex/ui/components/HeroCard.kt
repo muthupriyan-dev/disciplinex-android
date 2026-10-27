@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.muthu.disciplinex.ui.theme.OrangeEnd
 import com.muthu.disciplinex.ui.theme.OrangeStart
-import com.muthu.disciplinex.ui.theme.Surface
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun GradientHeroCard(
@@ -31,14 +31,14 @@ fun GradientHeroCard(
     ) {
         Text(
             text = title,
-            color = Surface,
+            color = Color.White,
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = subtitle,
-            color = Surface.copy(alpha = 0.85f),
+            color = Color.White.copy(alpha = 0.85f),
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -59,8 +59,8 @@ fun PrimaryPillButton(
         modifier = modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(26.dp),
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-            containerColor = Surface,
-            contentColor = OrangeEnd,
+            containerColor = OrangeEnd,
+            contentColor = Color.White,
             disabledContainerColor = com.muthu.disciplinex.ui.theme.ChipBackground,
             disabledContentColor = com.muthu.disciplinex.ui.theme.TextMuted
         )

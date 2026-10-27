@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.ui.challenge
 
+import android.widget.Toast
 import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -58,6 +59,19 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
                 durationMinutes = ChallengeSession.minutes(context),
                 onComplete = {
                     ChallengeSession.complete(context)
+                    // Finishing this alarm does not lift the 24-hour lock of an EARLIER missed alarm.
+                    if (ChallengeSession.isLockActive(context)) {
+                        val until = DateFormat.getTimeInstance(DateFormat.SHORT)
+                            .format(Date(ChallengeSession.lockEndsAtMillis(context)))
+                        Toast.makeText(
+                            context,
+                            tr(
+                                "Challenge done. Your phone stays locked until $until because an earlier alarm was missed.",
+                                "சேலஞ்ச் முடிந்தது. முந்தைய அலாரம் தவறியதால் $until வரை போன் பூட்டியே இருக்கும்."
+                            ),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                     onComplete()
                 },
                 onMissed = onClose
