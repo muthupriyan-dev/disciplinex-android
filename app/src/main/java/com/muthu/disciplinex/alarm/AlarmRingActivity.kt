@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +54,11 @@ class AlarmRingActivity : ComponentActivity() {
 
         safely("showOverLockScreen") { showOverLockScreen() }
 
+        // Draw the orange screen behind the status/navigation bars (no white strip on top).
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(OrangeEnd.toArgb()),
+            navigationBarStyle = SystemBarStyle.dark(OrangeEnd.toArgb())
+        )
         setContent {
             AlarmRingScreen(
                 onStart = {
@@ -129,7 +137,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(32.dp)
+            modifier = Modifier.systemBarsPadding().verticalScroll(rememberScrollState()).padding(32.dp)
         ) {
             when (phase) {
                 ChallengeSession.Phase.WAITING -> {

@@ -49,6 +49,9 @@ Theme (system / light / dark), language (English / தமிழ்), alarm ringt
 
 ## Changelog
 
+### 1.2.3
+- Alarm ring screen is drawn edge-to-edge: no white strip above the orange screen.
+
 ### 1.2.2
 - **Fixed:** a missed alarm's 24-hour lock could be lifted by finishing a *different* alarm. The penalty lock is now stored separately and only ends when 24 hours pass (or via the emergency unlock).
 - **Fixed:** the Welcome card was only as wide as its text and its text/button turned dark in the phone's dark mode. Card is full width, text is always white, main buttons are always orange.
