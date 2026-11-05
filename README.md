@@ -49,6 +49,11 @@ Theme (system / light / dark), language (English / தமிழ்), alarm ringt
 
 ## Changelog
 
+### 1.2.4
+- Rep counting is much more lenient: push-ups, squats and jumping jacks count when the movement looks like the normal exercise.
+- Push-ups also work from a front camera view (shoulder-to-wrist distance is used along with the elbow angle).
+- Jumping jacks still count if the legs are out of frame (arms only).
+
 ### 1.2.3
 - Alarm ring screen is drawn edge-to-edge: no white strip above the orange screen.
 

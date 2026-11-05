@@ -11,8 +11,8 @@ android {
         applicationId = "com.muthu.disciplinex"
         minSdk = 26
         targetSdk = 34
-        versionCode = 14
-        versionName = "1.2.3"
+        versionCode = 15
+        versionName = "1.2.4"
     }
 
     // Fixed signing key (committed in the repo) so every Codemagic build is signed
