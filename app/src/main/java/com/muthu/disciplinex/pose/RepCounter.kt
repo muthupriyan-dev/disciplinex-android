@@ -56,7 +56,7 @@ private fun angleAt(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark): Double {
  * Picks whichever body side (left / right) is visible, never mixing sides,
  * and sticks with it so it doesn't flip every frame.
  */
-private abstract class AngleRepCounter(
+private class AngleRepCounter(
     private val left: IntArray,
     private val right: IntArray,
     private val downBelow: Double,
