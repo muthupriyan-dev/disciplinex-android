@@ -3,6 +3,9 @@ package com.muthu.disciplinex.pose
 import android.os.SystemClock
 import com.google.mlkit.vision.pose.Pose
 import com.google.mlkit.vision.pose.PoseLandmark
+import kotlin.math.abs
+import kotlin.math.acos
+import kotlin.math.hypot
 
 /** Result of feeding one pose frame into a [RepCounter]. */
 data class RepUpdate(
@@ -16,279 +19,169 @@ data class RepUpdate(
 )
 
 /**
- * Base contract for a camera-based rep counter. One instance per challenge
- * session — feed it every analyzed frame's [Pose] via [onFrame].
+ * One instance per challenge session — feed it every analyzed frame's [Pose].
  *
- * Counting is deliberately lenient: if the movement looks like the normal
- * exercise (down, then back up) it counts. Only a very short wiggle is ignored.
- * A grace period absorbs single-frame tracking flicker.
+ * Same idea as the web version: ONE joint angle decides everything.
+ *   angle < DOWN  -> "down"
+ *   angle > UP    -> back up -> rep + 1
+ * No plank / displacement checks, so normal-looking reps always count.
  */
 interface RepCounter {
     fun onFrame(pose: Pose?): RepUpdate
 }
 
-private const val MIN_LANDMARK_CONFIDENCE = 0.5f
-private const val TRACKING_LOSS_GRACE_FRAMES = 10
+private const val MIN_CONFIDENCE = 0.4f
+private const val LOSS_GRACE_FRAMES = 10
+private const val MIN_REP_INTERVAL_MS = 400L
 
-/** Bottom -> top of one rep can't be faster than this. */
-private const val MIN_DOWN_TO_UP_MS = 200L
+private fun Pose.lm(type: Int): PoseLandmark? {
+    val l = getPoseLandmark(type) ?: return null
+    return if (l.inFrameLikelihood >= MIN_CONFIDENCE) l else null
+}
 
-/** Two counted reps can't be closer together than this. */
-private const val MIN_REP_INTERVAL_MS = 500L
-
-private fun Pose.landmarkOrNull(type: Int): PoseLandmark? {
-    val lm = getPoseLandmark(type) ?: return null
-    return if (lm.inFrameLikelihood >= MIN_LANDMARK_CONFIDENCE) lm else null
+/** Angle (degrees) at joint b, formed by a-b-c. */
+private fun angleAt(a: PoseLandmark, b: PoseLandmark, c: PoseLandmark): Double {
+    val abx = (a.position.x - b.position.x).toDouble()
+    val aby = (a.position.y - b.position.y).toDouble()
+    val cbx = (c.position.x - b.position.x).toDouble()
+    val cby = (c.position.y - b.position.y).toDouble()
+    val mag = hypot(abx, aby) * hypot(cbx, cby)
+    if (mag == 0.0) return 180.0
+    val cos = ((abx * cbx + aby * cby) / mag).coerceIn(-1.0, 1.0)
+    return Math.toDegrees(acos(cos))
 }
 
 /**
- * Picks ONE body side (left or right) on which every needed joint is
- * confidently visible. Mixing sides (e.g. left shoulder + right elbow) gives
- * a meaningless angle, so joints are never taken from different sides. Sticks
- * with the side used last frame so it doesn't flip back and forth.
+ * Shared engine for angle-based exercises (push-up = elbow, squat = knee).
+ * Picks whichever body side (left / right) is visible, never mixing sides,
+ * and sticks with it so it doesn't flip every frame.
  */
-private class SidePicker(
+private abstract class AngleRepCounter(
     private val left: IntArray,
     private val right: IntArray,
-    /** The first [required] landmarks must be visible; the rest are optional (null if hidden). */
-    private val required: Int = left.size
-) {
-    private var preferLeft = true
+    private val downBelow: Double,
+    private val upAbove: Double,
+    private val minDownToUpMs: Long,
+    private val label: String
+) : RepCounter {
 
-    fun pick(pose: Pose?): List<PoseLandmark?>? {
+    private var preferLeft = true
+    private var down = false
+    private var reps = 0
+    private var lossFrames = 0
+    private var downAtMs = 0L
+    private var lastRepMs = 0L
+    private val history = ArrayDeque<Double>()
+
+    private fun pickSide(pose: Pose?): List<PoseLandmark>? {
         if (pose == null) return null
-        val l = left.map { pose.landmarkOrNull(it) }
-        val r = right.map { pose.landmarkOrNull(it) }
-        val leftOk = l.take(required).all { it != null }
-        val rightOk = r.take(required).all { it != null }
+        val l = left.map { pose.lm(it) }
+        val r = right.map { pose.lm(it) }
+        val lOk = l.all { it != null }
+        val rOk = r.all { it != null }
         val useLeft = when {
-            leftOk && rightOk -> preferLeft
-            leftOk -> true
-            rightOk -> false
+            lOk && rOk -> preferLeft
+            lOk -> true
+            rOk -> false
             else -> return null
         }
         preferLeft = useLeft
-        return if (useLeft) l else r
+        return (if (useLeft) l else r).map { it!! }
     }
-}
-
-/** Average of the last few angle readings, so one noisy frame can't fake or cancel a rep. */
-private class AngleSmoother(private val size: Int = 4) {
-    private val values = ArrayDeque<Double>()
-    fun add(v: Double): Double {
-        values.addLast(v)
-        while (values.size > size) values.removeFirst()
-        return values.average()
-    }
-    fun clear() = values.clear()
-}
-
-/**
- * Push-up counter. Lenient: a rep = "bent" then "straight again".
- *
- * "Bend" (0..1) is the larger of two signals, so it works from the side AND
- * from the front (camera at the head end, like the stick-figure videos):
- *  - elbow angle (best from the side)
- *  - shoulder-to-wrist distance shrinking vs. its recent max (best from the front,
- *    where the elbow angle is foreshortened)
- * Only one sanity check stays: if the hip is visible and the body is bolt
- * upright (standing/sitting), nothing counts.
- */
-class PushUpRepCounter : RepCounter {
-    private val sides = SidePicker(
-        intArrayOf(
-            PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_ELBOW,
-            PoseLandmark.LEFT_WRIST, PoseLandmark.LEFT_HIP
-        ),
-        intArrayOf(
-            PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_ELBOW,
-            PoseLandmark.RIGHT_WRIST, PoseLandmark.RIGHT_HIP
-        ),
-        required = 3
-    )
-    private val smoother = AngleSmoother(4)
-    private var state = State.UP
-    private var reps = 0
-    private var trackingLossFrames = 0
-    private var downAtMs = 0L
-    private var lastRepAtMs = 0L
-    private var peakAngle = 150.0
-    private var maxReach = 0f
-
-    private enum class State { UP, DOWN }
 
     override fun onFrame(pose: Pose?): RepUpdate {
-        val joints = sides.pick(pose)
-
-        if (joints == null) {
-            trackingLossFrames++
-            if (trackingLossFrames > TRACKING_LOSS_GRACE_FRAMES) {
-                state = State.UP
-                smoother.clear()
-                maxReach = 0f
+        val j = pickSide(pose)
+        if (j == null) {
+            lossFrames++
+            if (lossFrames > LOSS_GRACE_FRAMES) {
+                down = false
+                history.clear()
                 return RepUpdate(reps, 0f, isTracking = false, debug = "no body")
             }
-            return RepUpdate(reps, if (state == State.DOWN) 0.5f else 1f, isTracking = false, debug = "flicker")
+            // brief flicker: keep state, don't reset, don't count
+            return RepUpdate(reps, if (down) 0.3f else 1f, isTracking = false, debug = "flicker")
         }
-        trackingLossFrames = 0
+        lossFrames = 0
 
-        val shoulder = joints[0]!!
-        val elbow = joints[1]!!
-        val wrist = joints[2]!!
-        val hip = joints[3]
-
-        val angle = smoother.add(jointAngle(shoulder.position3D, elbow.position3D, wrist.position3D))
-
-        // Shoulder-to-wrist distance on screen, relative to its recent maximum.
-        val reach = kotlin.math.hypot(
-            (shoulder.position.x - wrist.position.x).toDouble(),
-            (shoulder.position.y - wrist.position.y).toDouble()
-        ).toFloat()
-        maxReach = if (reach > maxReach) reach else maxReach * 0.9995f
-        val reachRatio = reach / maxReach.coerceAtLeast(1f)
-
-        if (angle > peakAngle) peakAngle = angle else peakAngle -= 0.02
-        peakAngle = peakAngle.coerceIn(140.0, 175.0)
-
-        val angleBend = ((peakAngle - angle) / (peakAngle - 95.0)).coerceIn(0.0, 1.0)
-        val reachBend = ((1.0 - reachRatio) / 0.30).coerceIn(0.0, 1.0)
-        val bend = kotlin.math.max(angleBend, reachBend)
-
-        val tilt = hip?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
-        val upright = tilt != null && tilt > 80.0
+        history.addLast(angleAt(j[0], j[1], j[2]))
+        if (history.size > 3) history.removeFirst()
+        val angle = history.average()
 
         val now = SystemClock.elapsedRealtime()
-        when (state) {
-            State.UP -> {
-                if (bend > 0.55 && !upright) {
-                    state = State.DOWN
-                    downAtMs = now
-                }
-            }
-            State.DOWN -> {
-                if (bend < 0.30) {
-                    if (now - downAtMs >= MIN_DOWN_TO_UP_MS && now - lastRepAtMs >= MIN_REP_INTERVAL_MS) {
-                        reps++
-                        lastRepAtMs = now
-                    }
-                    state = State.UP
-                }
+        if (!down && angle < downBelow) {
+            down = true
+            downAtMs = now
+        } else if (down && angle > upAbove) {
+            down = false
+            if (now - downAtMs >= minDownToUpMs && now - lastRepMs >= MIN_REP_INTERVAL_MS) {
+                reps++
+                lastRepMs = now
             }
         }
 
-        val debug = "elbow ${angle.toInt()}\u00b0 \u00b7 reach ${(reachRatio * 100).toInt()}% \u00b7 " +
-            "bend ${(bend * 100).toInt()}% \u00b7 ${state.name}"
-        return RepUpdate(reps, (1.0 - bend).toFloat(), isTracking = true, debug = debug)
+        val progress = ((angle - downBelow) / (upAbove - downBelow)).toFloat().coerceIn(0f, 1f)
+        val debug = "$label ${angle.toInt()}\u00b0 \u00b7 down<${downBelow.toInt()} up>${upAbove.toInt()} \u00b7 " +
+            if (down) "DOWN" else "UP"
+        return RepUpdate(reps, progress, isTracking = true, debug = debug)
     }
 }
 
-/**
- * Squat counter. Lenient: knee bends (below ~125 degrees), then stands back
- * up (above ~150 degrees) = 1 rep. No depth or hip-drop checks.
- */
-class SquatRepCounter : RepCounter {
-    private val sides = SidePicker(
-        intArrayOf(
-            PoseLandmark.LEFT_HIP, PoseLandmark.LEFT_KNEE,
-            PoseLandmark.LEFT_ANKLE, PoseLandmark.LEFT_SHOULDER
-        ),
-        intArrayOf(
-            PoseLandmark.RIGHT_HIP, PoseLandmark.RIGHT_KNEE,
-            PoseLandmark.RIGHT_ANKLE, PoseLandmark.RIGHT_SHOULDER
-        ),
-        required = 3
-    )
-    private val smoother = AngleSmoother(3)
-    private var state = State.UP
-    private var reps = 0
-    private var trackingLossFrames = 0
-    private var downAtMs = 0L
-    private var lastRepAtMs = 0L
+/** Push-up: shoulder–elbow–wrist angle. Bent below 100 = down, straight above 145 = up. */
+class PushUpRepCounter : RepCounter by AngleRepCounter(
+    left = intArrayOf(PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_ELBOW, PoseLandmark.LEFT_WRIST),
+    right = intArrayOf(PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_ELBOW, PoseLandmark.RIGHT_WRIST),
+    downBelow = 100.0,
+    upAbove = 145.0,
+    minDownToUpMs = 200L,
+    label = "elbow"
+)
 
-    private enum class State { UP, DOWN }
-
-    override fun onFrame(pose: Pose?): RepUpdate {
-        val joints = sides.pick(pose)
-
-        if (joints == null) {
-            trackingLossFrames++
-            if (trackingLossFrames > TRACKING_LOSS_GRACE_FRAMES) {
-                state = State.UP
-                smoother.clear()
-                return RepUpdate(reps, 0f, isTracking = false, debug = "no body")
-            }
-            return RepUpdate(reps, if (state == State.DOWN) 0.5f else 1f, isTracking = false, debug = "flicker")
-        }
-        trackingLossFrames = 0
-
-        val hip = joints[0]!!
-        val knee = joints[1]!!
-        val ankle = joints[2]!!
-
-        val kneeAngle = smoother.add(jointAngle(hip.position3D, knee.position3D, ankle.position3D))
-        val liveProgress = ((kneeAngle - 90.0) / (165.0 - 90.0)).toFloat().coerceIn(0f, 1f)
-        val now = SystemClock.elapsedRealtime()
-
-        when (state) {
-            State.UP -> {
-                if (kneeAngle < 125.0) {
-                    state = State.DOWN
-                    downAtMs = now
-                }
-            }
-            State.DOWN -> {
-                if (kneeAngle > 150.0) {
-                    if (now - downAtMs >= MIN_DOWN_TO_UP_MS && now - lastRepAtMs >= 600L) {
-                        reps++
-                        lastRepAtMs = now
-                    }
-                    state = State.UP
-                }
-            }
-        }
-
-        val debug = "knee ${kneeAngle.toInt()}\u00b0 \u00b7 down<125 up>150 \u00b7 ${state.name}"
-        return RepUpdate(reps, liveProgress, isTracking = true, debug = debug)
-    }
-}
+/** Squat: hip–knee–ankle angle. Bent below 105 = down, standing above 150 = up. */
+class SquatRepCounter : RepCounter by AngleRepCounter(
+    left = intArrayOf(PoseLandmark.LEFT_HIP, PoseLandmark.LEFT_KNEE, PoseLandmark.LEFT_ANKLE),
+    right = intArrayOf(PoseLandmark.RIGHT_HIP, PoseLandmark.RIGHT_KNEE, PoseLandmark.RIGHT_ANKLE),
+    downBelow = 105.0,
+    upAbove = 150.0,
+    minDownToUpMs = 200L,
+    label = "knee"
+)
 
 /**
- * Jumping jacks, lenient. Open = hands above the shoulders (and, if the feet
- * are visible, feet apart). Closed = hands back down (and feet together if
- * visible). If the legs are out of frame, arms alone are enough.
+ * Jumping jacks (not in the web version, kept lenient).
+ * Open = hands above shoulders (and feet apart if feet are visible).
+ * Closed = hands back down (and feet together if visible).
  */
 class JumpingJackRepCounter : RepCounter {
     private var open = false
     private var reps = 0
-    private var trackingLossFrames = 0
+    private var lossFrames = 0
     private var openedAtMs = 0L
-    private var lastRepAtMs = 0L
+    private var lastRepMs = 0L
 
     override fun onFrame(pose: Pose?): RepUpdate {
-        val ls = pose?.landmarkOrNull(PoseLandmark.LEFT_SHOULDER)
-        val rs = pose?.landmarkOrNull(PoseLandmark.RIGHT_SHOULDER)
-        val lw = pose?.landmarkOrNull(PoseLandmark.LEFT_WRIST)
-        val rw = pose?.landmarkOrNull(PoseLandmark.RIGHT_WRIST)
-        val la = pose?.landmarkOrNull(PoseLandmark.LEFT_ANKLE)
-        val ra = pose?.landmarkOrNull(PoseLandmark.RIGHT_ANKLE)
+        val ls = pose?.lm(PoseLandmark.LEFT_SHOULDER)
+        val rs = pose?.lm(PoseLandmark.RIGHT_SHOULDER)
+        val lw = pose?.lm(PoseLandmark.LEFT_WRIST)
+        val rw = pose?.lm(PoseLandmark.RIGHT_WRIST)
+        val la = pose?.lm(PoseLandmark.LEFT_ANKLE)
+        val ra = pose?.lm(PoseLandmark.RIGHT_ANKLE)
 
         if (ls == null || rs == null || lw == null || rw == null) {
-            trackingLossFrames++
-            if (trackingLossFrames > TRACKING_LOSS_GRACE_FRAMES) {
+            lossFrames++
+            if (lossFrames > LOSS_GRACE_FRAMES) {
                 open = false
                 return RepUpdate(reps, 0f, isTracking = false, debug = "no body")
             }
             return RepUpdate(reps, if (open) 1f else 0f, isTracking = false, debug = "flicker")
         }
-        trackingLossFrames = 0
+        lossFrames = 0
 
-        val shoulderWidth = kotlin.math.abs(ls.position.x - rs.position.x).coerceAtLeast(1f)
+        val shoulderWidth = abs(ls.position.x - rs.position.x).coerceAtLeast(1f)
         val shoulderY = (ls.position.y + rs.position.y) / 2f
         val wristY = (lw.position.y + rw.position.y) / 2f
-        // > 0: hands above the shoulders. Hanging arms read about -1.5.
-        val armLift = (shoulderY - wristY) / shoulderWidth
+        val armLift = (shoulderY - wristY) / shoulderWidth // >0 hands above shoulders
         val feetKnown = la != null && ra != null
-        val feetGap = if (feetKnown) kotlin.math.abs(la!!.position.x - ra!!.position.x) / shoulderWidth else 0f
+        val feetGap = if (feetKnown) abs(la!!.position.x - ra!!.position.x) / shoulderWidth else 0f
 
         val now = SystemClock.elapsedRealtime()
         if (!open) {
@@ -297,16 +190,16 @@ class JumpingJackRepCounter : RepCounter {
                 openedAtMs = now
             }
         } else if (armLift < -0.3f && (!feetKnown || feetGap < 1.6f)) {
-            if (now - openedAtMs >= 100L && now - lastRepAtMs >= 300L) {
+            if (now - openedAtMs >= 100L && now - lastRepMs >= 300L) {
                 reps++
-                lastRepAtMs = now
+                lastRepMs = now
             }
             open = false
         }
 
         val progress = ((armLift + 0.5f) / 1.5f).coerceIn(0f, 1f)
-        val debug = "arms ${"%.1f".format(armLift)} \u00b7 feet " + (if (feetKnown) "%.1f".format(feetGap) else "n/a") +
-            " \u00b7 " + if (open) "OPEN" else "CLOSED"
+        val debug = "arms ${"%.1f".format(armLift)} \u00b7 feet " +
+            (if (feetKnown) "%.1f".format(feetGap) else "n/a") + " \u00b7 " + if (open) "OPEN" else "CLOSED"
         return RepUpdate(reps, progress, isTracking = true, debug = debug)
     }
 }
