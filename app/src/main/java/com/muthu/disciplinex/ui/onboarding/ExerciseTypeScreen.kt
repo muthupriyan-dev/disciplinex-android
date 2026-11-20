@@ -111,6 +111,7 @@ internal fun ExerciseList(selected: ExerciseOption, onSelect: (ExerciseOption) -
             val isSelected = option == selected
             val tag = when {
                 option.usesCamera -> tr("Camera", "கேமரா")
+                ExerciseKinds.isDistance(option.name) -> tr("Steps", "அடிகள்")
                 ExerciseKinds.isTimed(option.name) -> tr("Timer", "டைமர்")
                 else -> tr("Reps", "முறை")
             }

@@ -71,10 +71,14 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
     }
     var reps by remember { mutableStateOf(existing?.reps ?: 10) }
     var minutes by remember { mutableStateOf(existing?.minutes ?: 15) }
+    var meters by remember { mutableStateOf(existing?.meters ?: AlarmEntry.DEFAULT_METERS) }
+    var strideCm by remember { mutableStateOf(com.muthu.disciplinex.data.WalkSteps.strideCm(context)) }
     val isTimed = ExerciseKinds.isTimed(selected.name)
+    val isDistance = ExerciseKinds.isDistance(selected.name)
     var windowMin by remember { mutableStateOf(existing?.windowMinutes ?: AlarmEntry.DEFAULT_WINDOW_MINUTES) }
     // A timed exercise (e.g. 2 hours of reading) needs at least that long to finish it.
-    val minWindow = if (isTimed) minutes else 1
+    // Walking needs at least ~1 m/s (a slow walk) to be possible inside the time limit.
+    val minWindow = if (isDistance) ((meters + 59) / 60).coerceAtLeast(5) else if (isTimed) minutes else 1
     LaunchedEffect(minWindow) { if (windowMin < minWindow) windowMin = minWindow }
 
     // Fixed at first composition: the wheel keeps its own state after that.
@@ -93,6 +97,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             exercise = selected.name,
             reps = reps,
             minutes = minutes,
+            meters = meters,
             enabled = true,
             dates = customDates.sorted(),
             windowMinutes = windowMin.coerceAtLeast(minWindow)
@@ -102,6 +107,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
             saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
             return@save
         }
+        if (alarm.isDistance) com.muthu.disciplinex.data.WalkSteps.setStrideCm(context, strideCm)
         AlarmStore.save(context, alarm)
         AlarmScheduler.schedule(context, alarm)
         onClose()
@@ -304,7 +310,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking, meditation and reading run on a timer you can't skip. Walking also checks your steps.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும். நடைப்பயிற்சியில் உங்கள் அடிகளும் சரிபார்க்கப்படும்."),
+                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (your phone's step counter x your step length). Meditation and reading run on a timer you can't skip.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டர் x உங்கள் அடி நீளம்). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -313,12 +319,27 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(
-                    if (isTimed) tr("How many minutes?", "எத்தனை நிமிடங்கள்?") else tr("How many reps?", "எத்தனை முறை?"),
+                    if (isDistance) tr("How far?", "எவ்வளவு தூரம்?") else if (isTimed) tr("How many minutes?", "எத்தனை நிமிடங்கள்?") else tr("How many reps?", "எத்தனை முறை?"),
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                if (isTimed) {
+                if (isDistance) {
+                    TargetStepper(
+                        value = meters, unit = tr("metres", "மீட்டர்"), min = 100, max = 10000,
+                        onValueChange = { meters = it }, bigStep = 250, smallStep = 50
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(tr("Your step length", "உங்கள் அடி நீளம்"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        tr("Distance = steps counted by your phone x step length, so it is an estimate. A normal step is about 70 cm. Adjust it until the distance matches a walk you know.", "தூரம் = போன் எண்ணும் அடிகள் x அடி நீளம், எனவே இது மதிப்பீடு. சாதாரண அடி சுமார் 70 செ.மீ. உங்களுக்குத் தெரிந்த தூரத்துடன் பொருந்தும்படி மாற்றுங்கள்."),
+                        color = TextMuted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    TargetStepper(value = strideCm, unit = tr("cm per step", "செ.மீ / அடி"), min = 40, max = 120, onValueChange = { strideCm = it })
+                } else if (isTimed) {
                     TargetStepper(value = minutes, unit = tr("minutes", "நிமிடங்கள்"), min = 1, max = 180, onValueChange = { minutes = it })
                 } else {
                     TargetStepper(value = reps, unit = tr("reps", "முறை"), min = 1, max = 200, onValueChange = { reps = it })
@@ -460,8 +481,8 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "exercise", tr("Exercise and target", "பயிற்சி மற்றும் இலக்கு"),
-        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups, squats and jumping jacks are counted by the camera. Walking, meditation and reading run on a timer you can't skip. Walking also checks your steps.",
-            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி, தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும். நடைப்பயிற்சியில் உங்கள் அடிகளும் சரிபார்க்கப்படும்.")
+        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (your phone's step counter x your step length). Meditation and reading run on a timer you can't skip.",
+            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டர் x உங்கள் அடி நீளம்). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.")
     ),
     TourStep(
         "limit", tr("Time limit", "நேர வரம்பு"),

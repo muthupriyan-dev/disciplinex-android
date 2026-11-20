@@ -56,6 +56,7 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
                 exerciseName = ChallengeSession.exercise(context),
                 targetReps = ChallengeSession.reps(context),
                 durationMinutes = ChallengeSession.minutes(context),
+                targetMeters = ChallengeSession.meters(context),
                 onComplete = {
                     ChallengeSession.complete(context)
                     onComplete()

@@ -29,7 +29,9 @@ object HistoryStore {
         /** Target reps, or target minutes for timed exercises. */
         val target: Int,
         /** Time from the alarm ringing to completion. */
-        val durationMs: Long
+        val durationMs: Long,
+        /** True for the Walking challenge: [target] is then metres. */
+        val distance: Boolean = false
     )
 
     private fun prefs(context: Context) =
@@ -48,7 +50,8 @@ object HistoryStore {
                     exercise = o.optString("e"),
                     timed = o.optBoolean("tm"),
                     target = o.optInt("n"),
-                    durationMs = o.optLong("ms")
+                    durationMs = o.optLong("ms"),
+                    distance = o.optBoolean("ds")
                 )
             }
         } catch (e: Exception) {
@@ -69,6 +72,7 @@ object HistoryStore {
                     .put("tm", it.timed)
                     .put("n", it.target)
                     .put("ms", it.durationMs)
+                    .put("ds", it.distance)
             )
         }
         prefs(context).edit().putString(KEY_ENTRIES, arr.toString()).apply()

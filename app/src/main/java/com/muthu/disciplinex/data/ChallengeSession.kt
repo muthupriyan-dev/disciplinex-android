@@ -47,6 +47,7 @@ object ChallengeSession {
     private const val K_EXERCISE = "exercise"
     private const val K_REPS = "reps"
     private const val K_MINUTES = "minutes"
+    private const val K_METERS = "meters"
     private const val K_LABEL = "label"
     private const val K_RING_WALL = "ring_wall"
     private const val K_RING_ELAPSED = "ring_elapsed"
@@ -129,6 +130,7 @@ object ChallengeSession {
             .putString(K_EXERCISE, alarm.exercise)
             .putInt(K_REPS, alarm.reps)
             .putInt(K_MINUTES, alarm.minutes)
+            .putInt(K_METERS, alarm.meters)
             .putString(K_LABEL, alarm.label)
             .putLong(K_RING_WALL, now)
             .putLong(K_RING_ELAPSED, SystemClock.elapsedRealtime())
@@ -307,8 +309,13 @@ object ChallengeSession {
                     date = ringDate(p).toString(),
                     exercise = ex,
                     timed = ExerciseKinds.isTimed(ex),
-                    target = if (ExerciseKinds.isTimed(ex)) minutes(context) else reps(context),
-                    durationMs = elapsedSinceRing(context, p).coerceAtLeast(0L)
+                    target = when {
+                        ExerciseKinds.isDistance(ex) -> meters(context)
+                        ExerciseKinds.isTimed(ex) -> minutes(context)
+                        else -> reps(context)
+                    },
+                    durationMs = elapsedSinceRing(context, p).coerceAtLeast(0L),
+                    distance = ExerciseKinds.isDistance(ex)
                 )
             )
         }
@@ -325,10 +332,12 @@ object ChallengeSession {
     fun exercise(context: Context): String = prefs(context).getString(K_EXERCISE, "Push-ups") ?: "Push-ups"
     fun reps(context: Context): Int = prefs(context).getInt(K_REPS, 10)
     fun minutes(context: Context): Int = prefs(context).getInt(K_MINUTES, 15)
+    fun meters(context: Context): Int = prefs(context).getInt(K_METERS, AlarmEntry.DEFAULT_METERS)
     fun label(context: Context): String = prefs(context).getString(K_LABEL, "") ?: ""
 
     fun summary(context: Context): String =
-        if (ExerciseKinds.isTimed(exercise(context))) tr("${minutes(context)} min", "${minutes(context)} நிமிடம்") else tr("${reps(context)} reps", "${reps(context)} முறை")
+        if (ExerciseKinds.isDistance(exercise(context))) ExerciseKinds.distanceText(meters(context))
+        else if (ExerciseKinds.isTimed(exercise(context))) tr("${minutes(context)} min", "${minutes(context)} நிமிடம்") else tr("${reps(context)} reps", "${reps(context)} முறை")
 
     /** Wall-clock time the lock is due to end (for display only). */
     fun lockEndsAtMillis(context: Context): Long {

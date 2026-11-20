@@ -12,7 +12,9 @@ data class ExerciseStat(
     val timed: Boolean,
     val completed: Int,
     /** Sum of reps (rep exercises) or minutes (timed exercises). */
-    val total: Int
+    val total: Int,
+    /** True for walking: [total] is metres. */
+    val distance: Boolean = false
 )
 
 data class Stats(
@@ -23,6 +25,7 @@ data class Stats(
     /** Reps/minutes only count challenges recorded by [HistoryStore]. */
     val totalReps: Int,
     val totalMinutes: Int,
+    val totalMeters: Int,
     val last7: List<DayBar>,
     val monthDone: Int,
     val monthMissed: Int,
@@ -65,7 +68,8 @@ object StatsCalculator {
             }
         }
 
-        val rep = history.filter { !it.timed }
+        val rep = history.filter { !it.timed && !it.distance }
+        val walk = history.filter { it.distance }
         val timed = history.filter { it.timed }
 
         val perExercise = history
@@ -75,7 +79,8 @@ object StatsCalculator {
                     exercise = name,
                     timed = list.first().timed,
                     completed = list.size,
-                    total = list.sumOf { it.target.coerceAtLeast(0) }
+                    total = list.sumOf { it.target.coerceAtLeast(0) },
+                    distance = list.first().distance
                 )
             }
             .sortedByDescending { it.completed }
@@ -86,6 +91,7 @@ object StatsCalculator {
             completionPercent = percent,
             totalReps = rep.sumOf { it.target.coerceAtLeast(0) },
             totalMinutes = timed.sumOf { it.target.coerceAtLeast(0) },
+            totalMeters = walk.sumOf { it.target.coerceAtLeast(0) },
             last7 = last7,
             monthDone = monthDone,
             monthMissed = monthMissed,

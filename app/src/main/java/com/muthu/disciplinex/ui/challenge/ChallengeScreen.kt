@@ -65,19 +65,23 @@ fun ChallengeScreen(
     exerciseName: String,
     targetReps: Int,
     durationMinutes: Int,
+    targetMeters: Int = 500,
     onComplete: () -> Unit,
     onMissed: () -> Unit = {}
 ) {
     val timed = ExerciseKinds.isTimed(exerciseName)
+    val distance = ExerciseKinds.isDistance(exerciseName)
     val tour = rememberTourState()
     var showTour by remember { mutableStateOf(false) }
     val steps = remember(showTour, AppSettings.language) {
-        challengeTourSteps(timed).filter { tour.bounds.containsKey(it.key) }
+        (if (distance) challengeTourStepsDistance() else challengeTourSteps(timed)).filter { tour.bounds.containsKey(it.key) }
     }
 
     CompositionLocalProvider(LocalTourState provides tour) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (timed) {
+            if (distance) {
+                WalkChallenge(targetMeters, onComplete, onMissed)
+            } else if (timed) {
                 TimedChallenge(exerciseName, durationMinutes, onComplete, onMissed)
             } else {
                 RepChallenge(exerciseName, targetReps, onComplete, onMissed)
@@ -640,4 +644,169 @@ private tailrec fun android.content.Context.findActivity(): android.app.Activity
     is android.app.Activity -> this
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+
+// ----------------------------------------------------------------------
+// Walking: finished by walking a distance (phone step counter x step length).
+// ----------------------------------------------------------------------
+
+private fun challengeTourStepsDistance(): List<TourStep> = listOf(
+    TourStep(
+        "deadline", tr("Time left", "மீதமுள்ள நேரம்"),
+        tr("This is how long you have to finish. When it reaches zero the challenge is missed, your streak resets and your apps stay locked for 24 hours.",
+            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. பூஜ்யம் ஆனால் சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்.")
+    ),
+    TourStep(
+        "ring", tr("Distance walked", "நடந்த தூரம்"),
+        tr("The ring fills as you walk. Distance is your phone's step count times your step length, so it is an estimate. When it is full you can unlock your phone.",
+            "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம் = போன் எண்ணும் அடிகள் x உங்கள் அடி நீளம், எனவே இது மதிப்பீடு. முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+    ),
+    TourStep(
+        "bottom", tr("Keep the phone with you", "போனை உங்களுடன் வைத்திருங்கள்"),
+        tr("Steps are counted even when the screen is off. Walk, then come back here to finish.",
+            "திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும். நடந்துவிட்டு இங்கே திரும்பி முடியுங்கள்.")
+    )
+)
+
+@Composable
+private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: () -> Unit) {
+    val context = LocalContext.current
+    val target = targetMeters.coerceAtLeast(10)
+
+    var permissionTick by remember { mutableStateOf(0) }
+    val stepPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) permissionTick++
+    }
+    LaunchedEffect(Unit) {
+        if (!WalkSteps.hasPermission(context)) {
+            stepPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        }
+    }
+
+    val sensorReady = remember(permissionTick) { WalkSteps.isAvailable(context) }
+    val walkSteps = rememberWalkSteps(enabled = sensorReady, refresh = permissionTick)
+    val steps = walkSteps.value ?: 0
+    val strideM = remember { WalkSteps.strideCm(context) / 100f }
+    val walkedM = steps * strideM
+
+    // Safety net: a phone with no step counter (or the permission refused) must never lock
+    // someone in, so the distance is replaced by a slow-walk timer (1 m per second).
+    val fallbackMs = target * 1000L
+    var fallbackElapsedMs by remember {
+        mutableStateOf(UserPrefs.getTimedProgressMs(context).coerceIn(0L, fallbackMs))
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(sensorReady) {
+        if (sensorReady) return@LaunchedEffect
+        var last = SystemClock.elapsedRealtime()
+        var sinceSave = 0L
+        try {
+            while (fallbackElapsedMs < fallbackMs) {
+                delay(500)
+                val now = SystemClock.elapsedRealtime()
+                val step = now - last
+                last = now
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    fallbackElapsedMs = (fallbackElapsedMs + step).coerceAtMost(fallbackMs)
+                }
+                sinceSave += step
+                if (sinceSave >= 5_000L) {
+                    UserPrefs.setTimedProgressMs(context, fallbackElapsedMs)
+                    sinceSave = 0L
+                }
+            }
+        } finally {
+            UserPrefs.setTimedProgressMs(context, fallbackElapsedMs)
+        }
+    }
+
+    val isComplete = if (sensorReady) walkedM >= target else fallbackElapsedMs >= fallbackMs
+    val rawProgress = if (sensorReady) walkedM / target else fallbackElapsedMs.toFloat() / fallbackMs
+    val progress by animateFloatAsState(
+        targetValue = rawProgress.coerceIn(0f, 1f),
+        animationSpec = tween(250),
+        label = "walkProgress"
+    )
+    val centerText = if (sensorReady) {
+        "${walkedM.toInt().coerceAtMost(target)} m"
+    } else {
+        val rem = ((fallbackMs - fallbackElapsedMs + 999) / 1000).coerceAtLeast(0)
+        String.format(Locale.US, "%02d:%02d", rem / 60, rem % 60)
+    }
+
+    Scaffold(containerColor = Background) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = ExerciseKinds.display("Walking"),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = tr("Walk ${ExerciseKinds.distanceText(target)} \u00b7 complete to unlock your phone", "${ExerciseKinds.distanceText(target)} நடங்கள் \u00b7 முடித்தால் போன் திறக்கும்"),
+                color = TextMuted,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Box(modifier = Modifier.tour("deadline")) { DeadlineBar(onMissed) }
+
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = if (sensorReady) {
+                    tr("Steps: $steps \u00b7 step length ${(strideM * 100).toInt()} cm (estimate)", "அடிகள்: $steps \u00b7 அடி நீளம் ${(strideM * 100).toInt()} செ.மீ (மதிப்பீடு)")
+                } else {
+                    tr("No step counter available \u2014 a timer replaces the distance.", "அடி கவுண்டர் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
+                },
+                color = TextMuted,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            ProgressRing(
+                progress = progress,
+                centerText = centerText,
+                subText = if (sensorReady) tr("of ${ExerciseKinds.distanceText(target)}", "/ ${ExerciseKinds.distanceText(target)}")
+                else tr("remaining", "மீதம்"),
+                isComplete = isComplete,
+                modifier = Modifier.tour("ring")
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (isComplete) {
+                Text(
+                    text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
+                    color = Success,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
+                )
+                PrimaryPillButton(text = tr("Finish & Unlock Phone", "முடித்து போனை திற"), onClick = onComplete)
+            } else {
+                Text(
+                    text = if (sensorReady) {
+                        tr("Walk with your phone \u2014 steps count even with the screen off.", "போனுடன் நடங்கள் \u2014 திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும்.")
+                    } else {
+                        tr("Keep this screen open until the timer ends.", "டைமர் முடியும் வரை இந்த திரையை திறந்து வையுங்கள்.")
+                    },
+                    color = TextMuted,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
 }

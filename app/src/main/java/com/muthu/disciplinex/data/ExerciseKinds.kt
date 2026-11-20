@@ -9,7 +9,10 @@ package com.muthu.disciplinex.data
  */
 object ExerciseKinds {
     val CAMERA = setOf("Push-ups", "Squats", "Jumping Jacks")
-    val TIMED = setOf("Reading", "Meditation", "Walking")
+    val TIMED = setOf("Reading", "Meditation")
+
+    /** Walking: finished by walking a distance, measured from the step counter. */
+    val DISTANCE = setOf("Walking")
 
     /** The name shown to the user. The stored name stays English, it is only an id. */
     fun display(name: String): String = when (name) {
@@ -24,4 +27,9 @@ object ExerciseKinds {
 
     fun isCamera(name: String) = name in CAMERA
     fun isTimed(name: String) = name in TIMED
+    fun isDistance(name: String) = name in DISTANCE
+
+    /** "350 m" or "1.5 km". */
+    fun distanceText(meters: Int): String =
+        if (meters >= 1000) String.format(java.util.Locale.US, "%.1f km", meters / 1000.0) else "$meters m"
 }

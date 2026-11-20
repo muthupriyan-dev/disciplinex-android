@@ -32,6 +32,23 @@ object WalkSteps {
 
     fun required(minutes: Int): Int = minutes.coerceAtLeast(1) * STEPS_PER_MINUTE
 
+    /** Average adult step is roughly 70 cm. The user can adjust it in the alarm editor. */
+    const val DEFAULT_STRIDE_CM = 70
+    private const val K_STRIDE = "stride_cm"
+
+    fun strideCm(context: Context): Int =
+        prefs(context).getInt(K_STRIDE, DEFAULT_STRIDE_CM).coerceIn(40, 120)
+
+    fun setStrideCm(context: Context, cm: Int) {
+        prefs(context).edit().putInt(K_STRIDE, cm.coerceIn(40, 120)).apply()
+    }
+
+    /** True if the phone has a step counter AND the Physical activity permission is granted. */
+    fun isAvailable(context: Context): Boolean {
+        val sm = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        return sm?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null && hasPermission(context)
+    }
+
     fun hasPermission(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) ==

@@ -25,7 +25,8 @@ fun TargetStepper(
     onValueChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    bigStep: Int = 5
+    bigStep: Int = 5,
+    smallStep: Int = 1
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -33,7 +34,7 @@ fun TargetStepper(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         StepButton("\u2212$bigStep", enabled && value > min) { onValueChange((value - bigStep).coerceAtLeast(min)) }
-        StepButton("\u22121", enabled && value > min) { onValueChange((value - 1).coerceAtLeast(min)) }
+        StepButton("\u2212$smallStep", enabled && value > min) { onValueChange((value - smallStep).coerceAtLeast(min)) }
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -41,7 +42,7 @@ fun TargetStepper(
             Text("$value", fontWeight = FontWeight.Bold, fontSize = 32.sp, color = TextPrimary)
             Text(unit, color = TextMuted, style = MaterialTheme.typography.labelMedium)
         }
-        StepButton("+1", enabled && value < max) { onValueChange((value + 1).coerceAtMost(max)) }
+        StepButton("+$smallStep", enabled && value < max) { onValueChange((value + smallStep).coerceAtMost(max)) }
         StepButton("+$bigStep", enabled && value < max) { onValueChange((value + bigStep).coerceAtMost(max)) }
     }
 }

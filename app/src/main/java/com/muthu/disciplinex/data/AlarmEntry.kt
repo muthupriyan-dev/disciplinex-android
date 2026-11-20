@@ -28,13 +28,16 @@ data class AlarmEntry(
     val enabled: Boolean,
     val dates: List<Long> = emptyList(),
     /** "Finish within" time limit, counted from the moment the alarm rings. */
-    val windowMinutes: Int = DEFAULT_WINDOW_MINUTES
+    val windowMinutes: Int = DEFAULT_WINDOW_MINUTES,
+    /** Target distance in metres for the Walking challenge. */
+    val meters: Int = DEFAULT_METERS
 ) {
     val isCustom: Boolean get() = dates.isNotEmpty()
     val isOnce: Boolean get() = daysMask == 0 && dates.isEmpty()
 
     val isTimed: Boolean get() = ExerciseKinds.isTimed(exercise)
-    val summary: String get() = if (isTimed) tr("$minutes min", "$minutes நிமிடம்") else tr("$reps reps", "$reps முறை")
+    val isDistance: Boolean get() = ExerciseKinds.isDistance(exercise)
+    val summary: String get() = if (isDistance) ExerciseKinds.distanceText(meters) else if (isTimed) tr("$minutes min", "$minutes நிமிடம்") else tr("$reps reps", "$reps முறை")
 
     val hour12: Int get() = ((hour24 + 11) % 12) + 1
     val isAm: Boolean get() = hour24 < 12
@@ -65,6 +68,7 @@ data class AlarmEntry(
         .put("n", minutes)
         .put("on", enabled)
         .put("w", windowMinutes)
+        .put("dm", meters)
         .put("dt", JSONArray().also { arr -> dates.forEach { arr.put(it) } })
 
     companion object {
@@ -83,6 +87,7 @@ data class AlarmEntry(
             )
 
         const val DEFAULT_WINDOW_MINUTES = 15
+        const val DEFAULT_METERS = 500
 
         fun fromJson(o: JSONObject): AlarmEntry {
             val exercise = o.optString("e", "Push-ups")
@@ -91,6 +96,7 @@ data class AlarmEntry(
             val savedWindow = o.optInt("w", -1)
             val window = when {
                 savedWindow > 0 -> savedWindow
+                ExerciseKinds.isDistance(exercise) -> 45
                 ExerciseKinds.isTimed(exercise) -> minutes + 10
                 else -> DEFAULT_WINDOW_MINUTES
             }
@@ -107,7 +113,8 @@ data class AlarmEntry(
                 dates = o.optJSONArray("dt")?.let { arr ->
                     (0 until arr.length()).map { arr.optLong(it) }.sorted()
                 } ?: emptyList(),
-                windowMinutes = window
+                windowMinutes = window,
+                meters = o.optInt("dm", DEFAULT_METERS).coerceIn(10, 100_000)
             )
         }
 

@@ -139,6 +139,10 @@ fun StatsScreen(onBack: () -> Unit) {
                 StatTile(tr("Total reps", "மொத்த முறைகள்"), stats.totalReps.toString(), Modifier.weight(1f))
                 StatTile(tr("Timed minutes", "நேர நிமிடங்கள்"), stats.totalMinutes.toString(), Modifier.weight(1f))
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatTile(tr("Walked", "நடந்த தூரம்"), ExerciseKinds.distanceText(stats.totalMeters), Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
+            }
 
             Card {
                 SectionTitle(tr("Last 7 days", "கடந்த 7 நாட்கள்"))
@@ -270,7 +274,7 @@ private fun ExerciseRow(s: ExerciseStat) {
             )
         }
         Text(
-            if (s.timed) tr("${s.total} min", "${s.total} நிமிடம்") else tr("${s.total} reps", "${s.total} முறை"),
+            if (s.distance) ExerciseKinds.distanceText(s.total) else if (s.timed) tr("${s.total} min", "${s.total} நிமிடம்") else tr("${s.total} reps", "${s.total} முறை"),
             color = TextPrimary,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold
