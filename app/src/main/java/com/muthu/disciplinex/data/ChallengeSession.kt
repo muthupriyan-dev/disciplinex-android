@@ -18,9 +18,7 @@ import java.time.ZoneId
  *     counts for the streak. The limit covers the WHOLE challenge, also while it
  *     is in progress.
  *  3. Time limit over without finishing -> MISSED: the streak is broken and the
- *     phone stays locked for 24 hours from the alarm. That penalty is stored on its own, so
- *     finishing ANOTHER alarm's challenge (or another alarm replacing this session) never
- *     lifts it. Only the 24 hours running out, or the emergency unlock, ends it.
+ *     phone stays locked for 24 hours from the alarm.
  *  4. While the challenge is in progress you may leave the app for up to
  *     [AWAY_GRACE_MS] (an emergency). Come back later than that and the progress
  *     starts again from zero.
@@ -62,12 +60,6 @@ object ChallengeSession {
     private const val K_EM_WALL = "em_wall"
     private const val K_EM_BOOT = "em_boot"
 
-    // The 24-hour PENALTY lock of a missed challenge. It is kept apart from the running
-    // session on purpose: a later alarm (or finishing it) must never shorten or lift it.
-    private const val K_PEN_WALL = "pen_wall"
-    private const val K_PEN_ELAPSED = "pen_elapsed"
-    private const val K_PEN_BOOT = "pen_boot"
-
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -77,49 +69,13 @@ object ChallengeSession {
         -1
     }
 
-    /**
-     * Time since a moment we saved as (wall clock, monotonic clock, boot count).
-     * Prefers the monotonic clock so changing the phone's date/time can't shorten a lock.
-     */
-    private fun elapsedSince(context: Context, wall: Long, elapsedStart: Long, savedBoot: Int): Long {
-        val wallDiff = System.currentTimeMillis() - wall
-        val sameBoot = bootCount(context) == savedBoot
-        var e = if (sameBoot) SystemClock.elapsedRealtime() - elapsedStart else wallDiff
-        if (e < 0) e = wallDiff
+    private fun elapsedSinceRing(context: Context, p: SharedPreferences): Long {
+        val wall = System.currentTimeMillis() - p.getLong(K_RING_WALL, 0L)
+        val sameBoot = bootCount(context) == p.getInt(K_BOOT, Int.MIN_VALUE)
+        // Prefer the monotonic clock so changing the phone's date/time can't shorten the lock.
+        var e = if (sameBoot) SystemClock.elapsedRealtime() - p.getLong(K_RING_ELAPSED, 0L) else wall
+        if (e < 0) e = wall
         return e
-    }
-
-    private fun elapsedSinceRing(context: Context, p: SharedPreferences): Long =
-        elapsedSince(context, p.getLong(K_RING_WALL, 0L), p.getLong(K_RING_ELAPSED, 0L), p.getInt(K_BOOT, Int.MIN_VALUE))
-
-    // ------------------------------------------------------------------
-    // Penalty lock (missed challenge -> 24 h), independent of any session
-    // ------------------------------------------------------------------
-
-    /** Milliseconds of penalty lock still left (0 = none). */
-    private fun penaltyMsLeft(context: Context, p: SharedPreferences): Long {
-        val wall = p.getLong(K_PEN_WALL, 0L)
-        if (wall == 0L) return 0L
-        val e = elapsedSince(context, wall, p.getLong(K_PEN_ELAPSED, 0L), p.getInt(K_PEN_BOOT, Int.MIN_VALUE))
-        return (MAX_LOCK_MS - e).coerceAtLeast(0L)
-    }
-
-    /**
-     * Starts (or extends) the penalty lock from the CURRENT session's ring time. Only ever
-     * makes the lock longer: an older, longer penalty is kept when a newer one is shorter.
-     */
-    private fun extendPenaltyFromSession(context: Context, p: SharedPreferences) {
-        val candidate = (MAX_LOCK_MS - elapsedSinceRing(context, p)).coerceAtLeast(0L)
-        if (candidate <= penaltyMsLeft(context, p)) return
-        p.edit()
-            .putLong(K_PEN_WALL, p.getLong(K_RING_WALL, System.currentTimeMillis()))
-            .putLong(K_PEN_ELAPSED, p.getLong(K_RING_ELAPSED, SystemClock.elapsedRealtime()))
-            .putInt(K_PEN_BOOT, p.getInt(K_BOOT, bootCount(context)))
-            .apply()
-    }
-
-    private fun clearPenalty(p: SharedPreferences) {
-        p.edit().remove(K_PEN_WALL).remove(K_PEN_ELAPSED).remove(K_PEN_BOOT).apply()
     }
 
     private fun ringDate(p: SharedPreferences): LocalDate =
@@ -128,26 +84,35 @@ object ChallengeSession {
 
     /** Records a failed day for this session (once) and remembers that it was missed. */
     private fun recordMiss(context: Context, p: SharedPreferences) {
-        if (p.getBoolean(K_MISSED, false)) {
-            // Already recorded; make sure the penalty exists too (older versions stored none).
-            extendPenaltyFromSession(context, p)
-            return
-        }
+        if (p.getBoolean(K_MISSED, false)) return
         StreakStore.record(context, ringDate(p), false)
         // A missed day locks the phone for the full 24 hours from the alarm.
         p.edit().putBoolean(K_MISSED, true).putLong(K_LOCK_MS, MAX_LOCK_MS).apply()
-        // ...and that lock survives a later alarm replacing this session (see start()).
-        extendPenaltyFromSession(context, p)
     }
 
     // ------------------------------------------------------------------
     // Called when an alarm rings
     // ------------------------------------------------------------------
 
-    fun start(context: Context, alarm: AlarmEntry, nextAlarmMillis: Long?) {
+    /** The same alarm firing again within this long is a duplicate trigger, not a new day. */
+    const val DUPLICATE_TRIGGER_MS = 60_000L
+
+    /**
+     * @return false if this was a duplicate trigger of the session that is already
+     * running (nothing was changed), true if a new session was started.
+     */
+    fun start(context: Context, alarm: AlarmEntry, nextAlarmMillis: Long?): Boolean {
         val p = prefs(context)
-        // A previous challenge that was never finished counts as missed.
-        if (p.getBoolean(K_ACTIVE, false)) recordMiss(context, p)
+        if (p.getBoolean(K_ACTIVE, false)) {
+            // Same alarm delivered twice (e.g. re-armed after a clock change): keep the
+            // running session instead of counting it as a missed day and restarting.
+            val sameAlarm = p.getInt(K_ALARM_ID, -1) == alarm.id
+            val sameBoot = bootCount(context) == p.getInt(K_BOOT, Int.MIN_VALUE)
+            val since = SystemClock.elapsedRealtime() - p.getLong(K_RING_ELAPSED, 0L)
+            if (sameAlarm && sameBoot && since in 0..DUPLICATE_TRIGGER_MS) return false
+            // A previous challenge that was never finished counts as missed.
+            recordMiss(context, p)
+        }
 
         val now = System.currentTimeMillis()
         val untilNext = (nextAlarmMillis ?: (now + MAX_LOCK_MS)) - now
@@ -173,22 +138,15 @@ object ChallengeSession {
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
             .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
             .apply()
+        return true
     }
 
     // ------------------------------------------------------------------
     // State
     // ------------------------------------------------------------------
 
-    /**
-     * True while the phone must stay locked: a challenge is pending/running, OR the 24-hour
-     * penalty of an earlier missed challenge is still running. Also resolves timeouts, so
-     * every caller always sees up-to-date state.
-     */
-    fun isLockActive(context: Context): Boolean =
-        sessionLockActive(context) || penaltyMsLeft(context, prefs(context)) > 0L
-
-    /** The running session only (pending, in progress or missed); ignores the penalty lock. */
-    private fun sessionLockActive(context: Context): Boolean {
+    /** Also resolves timeouts, so every caller always sees up-to-date state. */
+    fun isLockActive(context: Context): Boolean {
         val p = prefs(context)
         if (!p.getBoolean(K_ACTIVE, false)) return false
         val elapsed = elapsedSinceRing(context, p)
@@ -214,11 +172,8 @@ object ChallengeSession {
     }
 
     fun phase(context: Context): Phase {
+        if (!isLockActive(context)) return Phase.IDLE
         val p = prefs(context)
-        if (!sessionLockActive(context)) {
-            // No session, but an earlier missed challenge may still hold the phone locked.
-            return if (penaltyMsLeft(context, p) > 0L) Phase.MISSED else Phase.IDLE
-        }
         return when {
             p.getBoolean(K_MISSED, false) -> Phase.MISSED
             p.getBoolean(K_STARTED, false) -> Phase.IN_PROGRESS
@@ -286,12 +241,10 @@ object ChallengeSession {
         if (phase(context) != Phase.MISSED) return false
         val left = emergencyMsLeft(context) ?: return false
         if (left > 0L) return false
-        val p = prefs(context)
-        p.edit()
+        prefs(context).edit()
             .putBoolean(K_ACTIVE, false)
             .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
             .apply()
-        clearPenalty(p)
         return true
     }
 
@@ -346,6 +299,18 @@ object ChallengeSession {
         val p = prefs(context)
         if (p.getBoolean(K_ACTIVE, false) && !p.getBoolean(K_MISSED, false)) {
             StreakStore.record(context, ringDate(p), true)
+            val ex = exercise(context)
+            HistoryStore.add(
+                context,
+                HistoryStore.Entry(
+                    completedAtMillis = System.currentTimeMillis(),
+                    date = ringDate(p).toString(),
+                    exercise = ex,
+                    timed = ExerciseKinds.isTimed(ex),
+                    target = if (ExerciseKinds.isTimed(ex)) minutes(context) else reps(context),
+                    durationMs = elapsedSinceRing(context, p).coerceAtLeast(0L)
+                )
+            )
         }
         p.edit().putBoolean(K_ACTIVE, false)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
@@ -365,12 +330,9 @@ object ChallengeSession {
     fun summary(context: Context): String =
         if (ExerciseKinds.isTimed(exercise(context))) tr("${minutes(context)} min", "${minutes(context)} நிமிடம்") else tr("${reps(context)} reps", "${reps(context)} முறை")
 
-    /** Wall-clock time the lock is due to end (for display only): the later of session lock and penalty. */
+    /** Wall-clock time the lock is due to end (for display only). */
     fun lockEndsAtMillis(context: Context): Long {
         val p = prefs(context)
-        val sessionEnd = if (sessionLockActive(context)) p.getLong(K_RING_WALL, 0L) + p.getLong(K_LOCK_MS, MAX_LOCK_MS) else 0L
-        val pen = penaltyMsLeft(context, p)
-        val penaltyEnd = if (pen > 0L) System.currentTimeMillis() + pen else 0L
-        return maxOf(sessionEnd, penaltyEnd)
+        return p.getLong(K_RING_WALL, 0L) + p.getLong(K_LOCK_MS, MAX_LOCK_MS)
     }
 }

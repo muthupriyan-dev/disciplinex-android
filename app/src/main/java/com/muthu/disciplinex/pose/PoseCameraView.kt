@@ -59,10 +59,14 @@ fun PoseCameraView(
         val view = previewView
         var poseAnalyzer: PoseAnalyzer? = null
         var cameraProviderRef: ProcessCameraProvider? = null
+        // The provider future can complete AFTER this effect was disposed (screen left
+        // quickly). Without this flag the camera would bind with no one to release it.
+        var disposed = false
 
         if (view != null && repCounter != null) {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
             cameraProviderFuture.addListener({
+                if (disposed) return@addListener
                 try {
                     val cameraProvider = cameraProviderFuture.get()
                     cameraProviderRef = cameraProvider
@@ -97,6 +101,7 @@ fun PoseCameraView(
         }
 
         onDispose {
+            disposed = true
             try {
                 cameraProviderRef?.unbindAll()
                 poseAnalyzer?.close()

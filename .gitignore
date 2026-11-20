@@ -6,3 +6,7 @@ local.properties
 *.iml
 captures/
 .cxx/
+# Release signing secrets - never commit
+keystore.properties
+*.jks
+release.keystore

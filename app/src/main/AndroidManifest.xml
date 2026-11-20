@@ -97,7 +97,7 @@
         <!-- Re-arms the alarm after reboot, app update, and time/timezone changes. -->
         <receiver
             android:name=".alarm.BootReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />

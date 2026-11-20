@@ -31,7 +31,8 @@ class AlarmReceiver : BroadcastReceiver() {
         }
 
         // The lock lasts until the next alarm (max 24 h) unless the challenge is done.
-        ChallengeSession.start(context, alarm, AlarmScheduler.nextAlarmMillis(context))
+        val started = ChallengeSession.start(context, alarm, AlarmScheduler.nextAlarmMillis(context))
+        if (!started) return // duplicate trigger: the alarm for this session is already running
 
         try {
             AlarmService.start(context)

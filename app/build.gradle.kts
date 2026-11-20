@@ -11,8 +11,8 @@ android {
         applicationId = "com.muthu.disciplinex"
         minSdk = 26
         targetSdk = 34
-        versionCode = 15
-        versionName = "1.2.4"
+        versionCode = 13
+        versionName = "1.2.1"
     }
 
     // Fixed signing key (committed in the repo) so every Codemagic build is signed
@@ -25,6 +25,36 @@ android {
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+        }
+    }
+
+    // Release signing: the key is NEVER committed. Provide keystore.properties (git-ignored)
+    // with storeFile / storePassword / keyAlias / keyPassword, or the same values as the
+    // environment variables DX_STORE_FILE / DX_STORE_PASSWORD / DX_KEY_ALIAS / DX_KEY_PASSWORD.
+    // If neither is present the release build is simply left unsigned (never debug-signed).
+    val keystoreProps = java.util.Properties().also { props ->
+        val f = rootProject.file("keystore.properties")
+        if (f.exists()) f.inputStream().use { props.load(it) }
+    }
+    fun signingValue(propKey: String, envKey: String): String? =
+        keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
+    val releaseStoreFile = signingValue("storeFile", "DX_STORE_FILE")
+    if (releaseStoreFile != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("storePassword", "DX_STORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "DX_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "DX_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // R8 is left off until it can be verified on a real build (ML Kit + CameraX).
+            isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
