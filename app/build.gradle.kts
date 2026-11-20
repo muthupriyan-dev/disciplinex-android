@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -32,7 +34,7 @@ android {
     // with storeFile / storePassword / keyAlias / keyPassword, or the same values as the
     // environment variables DX_STORE_FILE / DX_STORE_PASSWORD / DX_KEY_ALIAS / DX_KEY_PASSWORD.
     // If neither is present the release build is simply left unsigned (never debug-signed).
-    val keystoreProps = java.util.Properties().also { props ->
+    val keystoreProps = Properties().also { props ->
         val f = rootProject.file("keystore.properties")
         if (f.exists()) f.inputStream().use { props.load(it) }
     }
