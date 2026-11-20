@@ -37,6 +37,20 @@ object StreakStore {
         prefs(context).edit().putString(KEY_DAYS, obj.toString()).apply()
     }
 
+    /** Every recorded day as (done, missed) counters. Used by the statistics screen. */
+    fun allDays(context: Context): Map<LocalDate, Pair<Int, Int>> {
+        val obj = load(context)
+        val out = HashMap<LocalDate, Pair<Int, Int>>()
+        val keys = obj.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val d = try { LocalDate.parse(key) } catch (e: Exception) { continue }
+            val arr = obj.optJSONArray(key) ?: continue
+            out[d] = arr.optInt(0) to arr.optInt(1)
+        }
+        return out
+    }
+
     private fun statusOf(obj: JSONObject, date: LocalDate): DayStatus {
         val arr = obj.optJSONArray(date.toString()) ?: return DayStatus.NONE
         return when {

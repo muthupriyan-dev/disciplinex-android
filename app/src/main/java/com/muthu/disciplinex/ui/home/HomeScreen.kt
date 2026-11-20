@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -111,7 +112,8 @@ fun HomeScreen(
     onEditAlarm: (Int) -> Unit,
     onOpenSettings: () -> Unit,
     onStartChallenge: () -> Unit,
-    onOpenHistory: () -> Unit = {}
+    onOpenHistory: () -> Unit = {},
+    onOpenStats: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -204,6 +206,9 @@ fun HomeScreen(
                         onClick = { showTour = true },
                         modifier = Modifier.tourTarget(tour, "help")
                     ) { Icon(Icons.Default.Info, contentDescription = tr("Show guide", "வழிகாட்டியை காட்டு"), tint = TextMuted) }
+                    IconButton(
+                        onClick = onOpenStats
+                    ) { Icon(Icons.Default.BarChart, contentDescription = tr("Statistics", "புள்ளிவிவரங்கள்"), tint = TextMuted) }
                     IconButton(
                         onClick = onOpenSettings,
                         modifier = Modifier.tourTarget(tour, "settings")
