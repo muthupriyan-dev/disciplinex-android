@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.data.ExerciseKinds
+import com.muthu.disciplinex.data.HistoryStore
 import com.muthu.disciplinex.data.StreakStore
 import com.muthu.disciplinex.data.tr
 import com.muthu.disciplinex.ui.theme.Background
@@ -75,6 +77,7 @@ fun HistoryScreen(onBack: () -> Unit) {
 
     val streak = remember { StreakStore.currentStreak(context) }
     val best = remember { StreakStore.bestStreak(context) }
+    val completions = remember { HistoryStore.getAll(context).sortedByDescending { it.completedAtMillis } }
 
     val tour = rememberTourState()
     var showTour by remember { mutableStateOf(false) }
@@ -199,6 +202,29 @@ fun HistoryScreen(onBack: () -> Unit) {
                 LegendDot(ChipBackground, tr("No result", "முடிவு இல்லை"))
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+            val monthEntries = completions.filter { e ->
+                try { YearMonth.from(LocalDate.parse(e.date)) == month } catch (ex: Exception) { false }
+            }
+            Text(
+                tr("Completed challenges", "முடித்த சேலஞ்ச்கள்"),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (monthEntries.isEmpty()) {
+                Text(
+                    tr(
+                        "No detailed records for this month. Details are saved from version 1.2.1 onwards.",
+                        "இந்த மாதத்திற்கு விரிவான பதிவுகள் இல்லை. விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும்."
+                    ),
+                    color = TextMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                monthEntries.forEach { e -> CompletionRow(e) }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -276,3 +302,38 @@ private fun historyTourSteps(): List<TourStep> = listOf(
             "சாம்பல் நாள் என்றால் முடிவு இல்லை: அலாரம் இல்லை அல்லது இன்னும் வரவில்லை.")
     )
 )
+
+@Composable
+private fun CompletionRow(e: HistoryStore.Entry) {
+    val amount = when {
+        e.distance -> ExerciseKinds.distanceText(e.target)
+        e.timed -> tr("${e.target} min", "${e.target} நிமிடம்")
+        else -> tr("${e.target} reps", "${e.target} முறை")
+    }
+    val totalSec = (e.durationMs / 1000).coerceAtLeast(0)
+    val took = String.format(java.util.Locale.US, "%d:%02d", totalSec / 60, totalSec % 60)
+    val dayLabel = try {
+        LocalDate.parse(e.date).let { it.dayOfMonth.toString() + " " + it.month.getDisplayName(TextStyle.SHORT, AppSettings.locale) }
+    } catch (ex: Exception) {
+        e.date
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Surface)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(ExerciseKinds.display(e.exercise), fontWeight = FontWeight.SemiBold)
+            Text(
+                dayLabel + " \u00b7 " + tr("alarm to finish $took", "அலாரம் முதல் முடிவு வரை $took"),
+                color = TextMuted,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Text(amount, fontWeight = FontWeight.Bold)
+    }
+}
