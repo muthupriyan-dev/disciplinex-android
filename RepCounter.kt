@@ -43,8 +43,11 @@ private const val MIN_REP_INTERVAL_MS = 900L
  * body counts as upright, i.e. NOT in a plank. The shoulder->knee and shoulder->ankle
  * lines are the reliable ones: in a squat they stay steep even when the torso leans.
  */
-private const val PLANK_MAX_TORSO_TILT = 60.0
-private const val PLANK_MAX_LEG_TILT = 50.0
+private const val PLANK_MAX_TORSO_TILT = 55.0
+private const val PLANK_MAX_LEG_TILT = 45.0
+
+/** The level-body posture must hold for this many frames in a row before a push-up may start. */
+private const val MIN_PLANK_FRAMES = 10
 
 /** In a push-up the hands are planted: the wrist may move at most this fraction of the shoulder's movement. */
 private const val WRIST_MOVE_RATIO_MAX = 0.7f
@@ -134,6 +137,7 @@ class PushUpRepCounter : RepCounter {
     private var trackingLossFrames = 0
     private var shoulderYAtDown: Float? = null
     private var wristYAtDown: Float? = null
+    private var plankFrames = 0
     private var downAtMs = 0L
     private var lastRepAtMs = 0L
 
@@ -171,25 +175,31 @@ class PushUpRepCounter : RepCounter {
         val rawAngle = jointAngle(shoulder.position3D, elbow.position3D, wrist.position3D)
         val elbowAngle = smoother.add(rawAngle)
 
-        // Loose on purpose: with the phone just propped on the floor the
-        // shoulder-hip line rarely reads as truly horizontal. This only
-        // rejects someone sitting bolt upright. If the hip isn't visible the
-        // check is skipped rather than blocking the rep.
-        val plankTilt = hip?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
-        val kneeTilt = knee?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
-        val ankleTilt = ankle?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
-        // Every VISIBLE body line must be roughly horizontal. Lower-body landmarks that
-        // are out of frame are skipped (phone close to the floor), but when the knee or
-        // ankle IS visible a squat can no longer pass as a push-up.
-        val isPlank = (plankTilt == null || plankTilt < PLANK_MAX_TORSO_TILT) &&
-            (kneeTilt == null || kneeTilt < PLANK_MAX_LEG_TILT) &&
-            (ankleTilt == null || ankleTilt < PLANK_MAX_LEG_TILT)
-
         // Upper-arm length on screen is a stable ruler for "did the shoulder really move".
         val upperArm = kotlin.math.hypot(
             (shoulder.position.x - elbow.position.x).toDouble(),
             (shoulder.position.y - elbow.position.y).toDouble()
         ).toFloat().coerceAtLeast(1f)
+
+        val plankTilt = hip?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
+        val kneeTilt = knee?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
+        val ankleTilt = ankle?.let { tiltFromHorizontal(shoulder.position3D, it.position3D) }
+
+        // A push-up needs POSITIVE proof of a level body: at least one of hip / knee /
+        // ankle must be visible and every visible body line must be roughly horizontal.
+        // (Before, "nothing visible" counted as a plank, so sitting down and standing up
+        // with the hands on a desk or on the knees was counted as push-ups.)
+        val lowerBodyVisible = hip != null || knee != null || ankle != null
+        if (!lowerBodyVisible) {
+            state = State.UP
+            shoulderYAtDown = null
+            plankFrames = 0
+            return RepUpdate(reps, 0f, isTracking = false, debug = "hips / legs not visible")
+        }
+        val isPlank = (plankTilt == null || plankTilt < PLANK_MAX_TORSO_TILT) &&
+            (kneeTilt == null || kneeTilt < PLANK_MAX_LEG_TILT) &&
+            (ankleTilt == null || ankleTilt < PLANK_MAX_LEG_TILT)
+        if (isPlank) plankFrames++ else plankFrames = 0
 
         if (elbowAngle > peakAngle) peakAngle = elbowAngle else peakAngle -= 0.02
         peakAngle = peakAngle.coerceIn(140.0, 175.0)
@@ -201,7 +211,7 @@ class PushUpRepCounter : RepCounter {
 
         when (state) {
             State.UP -> {
-                if (elbowAngle < downThreshold && isPlank) {
+                if (elbowAngle < downThreshold && isPlank && plankFrames >= MIN_PLANK_FRAMES) {
                     state = State.DOWN
                     shoulderYAtDown = shoulder.position.y
                     wristYAtDown = wrist.position.y

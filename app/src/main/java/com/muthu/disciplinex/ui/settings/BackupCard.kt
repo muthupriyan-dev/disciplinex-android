@@ -37,9 +37,9 @@ import com.muthu.disciplinex.ui.theme.TextMuted
 import java.time.LocalDate
 
 @Composable
-private fun InfoCard(title: String, content: @Composable () -> Unit) {
+private fun InfoCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Surface)
@@ -53,7 +53,7 @@ private fun InfoCard(title: String, content: @Composable () -> Unit) {
 
 /** Settings > Data and backup: save / restore a local JSON file. */
 @Composable
-fun BackupCard() {
+fun BackupCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var pendingRestore by remember { mutableStateOf<Uri?>(null) }
 
@@ -74,7 +74,7 @@ fun BackupCard() {
         ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) pendingRestore = uri }
 
-    InfoCard(tr("Data and backup", "தரவு மற்றும் பேக்கப்")) {
+    InfoCard(tr("Data and backup", "தரவு மற்றும் பேக்கப்"), modifier) {
         Text(
             tr(
                 "Save your alarms, streak, history and allowed apps to a file on your phone. The file stays wherever you put it; nothing is uploaded.",
@@ -145,8 +145,8 @@ fun BackupCard() {
 
 /** Settings > Privacy: plain statements that match what the app actually does. */
 @Composable
-fun PrivacyCard() {
-    InfoCard(tr("Privacy", "தனியுரிமை")) {
+fun PrivacyCard(modifier: Modifier = Modifier) {
+    InfoCard(tr("Privacy", "தனியுரிமை"), modifier) {
         val style = MaterialTheme.typography.bodyMedium
         Text(
             tr(

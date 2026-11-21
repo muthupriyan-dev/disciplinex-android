@@ -659,8 +659,8 @@ private fun challengeTourStepsDistance(): List<TourStep> = listOf(
     ),
     TourStep(
         "ring", tr("Distance walked", "நடந்த தூரம்"),
-        tr("The ring fills as you walk. Distance is your phone's step count times your step length, so it is an estimate. When it is full you can unlock your phone.",
-            "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம் = போன் எண்ணும் அடிகள் x உங்கள் அடி நீளம், எனவே இது மதிப்பீடு. முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+        tr("The ring fills as you walk. Distance is estimated from your phone's step count. When it is full you can unlock your phone.",
+            "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம் போன் எண்ணும் அடிகளிலிருந்து மதிப்பிடப்படும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
     ),
     TourStep(
         "bottom", tr("Keep the phone with you", "போனை உங்களுடன் வைத்திருங்கள்"),
@@ -762,7 +762,7 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = if (sensorReady) {
-                    tr("Steps: $steps \u00b7 step length ${(strideM * 100).toInt()} cm (estimate)", "அடிகள்: $steps \u00b7 அடி நீளம் ${(strideM * 100).toInt()} செ.மீ (மதிப்பீடு)")
+                    tr("Steps: $steps \u00b7 distance is an estimate", "அடிகள்: $steps \u00b7 தூரம் மதிப்பீடு")
                 } else {
                     tr("No step counter available \u2014 a timer replaces the distance.", "அடி கவுண்டர் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
                 },

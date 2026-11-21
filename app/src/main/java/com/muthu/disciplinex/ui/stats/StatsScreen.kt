@@ -25,6 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +43,11 @@ import com.muthu.disciplinex.data.HistoryStore
 import com.muthu.disciplinex.data.StreakStore
 import com.muthu.disciplinex.data.tr
 import com.muthu.disciplinex.domain.Achievement
+import com.muthu.disciplinex.ui.components.GuideButton
+import com.muthu.disciplinex.ui.components.TourOverlay
+import com.muthu.disciplinex.ui.components.TourStep
+import com.muthu.disciplinex.ui.components.rememberTourState
+import com.muthu.disciplinex.ui.components.tourTarget
 import com.muthu.disciplinex.domain.Achievements
 import com.muthu.disciplinex.domain.DayBar
 import com.muthu.disciplinex.domain.ExerciseStat
@@ -77,6 +85,14 @@ fun StatsScreen(onBack: () -> Unit) {
     val bestStreak = remember { StreakStore.bestStreak(context) }
     val achievements = remember { Achievements.evaluate(stats.totalDone, bestStreak, stats.totalReps) }
 
+    val tour = rememberTourState()
+    var showTour by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val tourSteps = remember(showTour, AppSettings.language) {
+        statsTourSteps().filter { tour.bounds.containsKey(it.key) }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,14 +115,16 @@ fun StatsScreen(onBack: () -> Unit) {
                 tr("Statistics", "புள்ளிவிவரங்கள்"),
                 color = TextPrimary,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
             )
+            GuideButton(onClick = { showTour = true })
         }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -123,6 +141,10 @@ fun StatsScreen(onBack: () -> Unit) {
                 }
             }
 
+            Column(
+                modifier = Modifier.tourTarget(tour, "numbers"),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(tr("Completed", "முடிந்தவை"), stats.totalDone.toString(), Modifier.weight(1f))
                 StatTile(
@@ -143,8 +165,9 @@ fun StatsScreen(onBack: () -> Unit) {
                 StatTile(tr("Walked", "நடந்த தூரம்"), ExerciseKinds.distanceText(stats.totalMeters), Modifier.weight(1f))
                 Spacer(Modifier.weight(1f))
             }
+            }
 
-            Card {
+            Card(Modifier.tourTarget(tour, "chart")) {
                 SectionTitle(tr("Last 7 days", "கடந்த 7 நாட்கள்"))
                 Spacer(Modifier.height(12.dp))
                 WeekChart(stats.last7)
@@ -159,7 +182,7 @@ fun StatsScreen(onBack: () -> Unit) {
                 )
             }
 
-            Card {
+            Card(Modifier.tourTarget(tour, "exercise")) {
                 SectionTitle(tr("By exercise", "பயிற்சி வாரியாக"))
                 Spacer(Modifier.height(8.dp))
                 if (stats.perExercise.isEmpty()) {
@@ -176,7 +199,7 @@ fun StatsScreen(onBack: () -> Unit) {
                 }
             }
 
-            Card {
+            Card(Modifier.tourTarget(tour, "achievements")) {
                 SectionTitle(tr("Achievements", "சாதனைகள்"))
                 Spacer(Modifier.height(8.dp))
                 achievements.forEach { AchievementRow(it) }
@@ -185,12 +208,39 @@ fun StatsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
         }
     }
+    if (showTour) {
+        TourOverlay(tourSteps, tour, onFinish = { showTour = false }, scrollState = scroll)
+    }
+    }
 }
 
+private fun statsTourSteps(): List<TourStep> = listOf(
+    TourStep(
+        "numbers", tr("Your numbers", "உங்கள் எண்கள்"),
+        tr("Challenges you finished, how many of your alarms you completed, your streaks, total reps, timed minutes and distance walked. All of it comes from your real activity.",
+            "நீங்கள் முடித்த சேலஞ்ச்கள், அலாரங்களில் எத்தனை முடித்தீர்கள், ஸ்ட்ரீக், மொத்த முறைகள், நேர நிமிடங்கள், நடந்த தூரம். எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்து வருகிறது.")
+    ),
+    TourStep(
+        "chart", tr("Last 7 days", "கடந்த 7 நாட்கள்"),
+        tr("Green bars are days you finished, red bars are days you missed. The number above a bar is how many challenges that day.",
+            "பச்சை பார் முடித்த நாள், சிவப்பு பார் தவறிய நாள். பாருக்கு மேலுள்ள எண் அந்த நாளின் சேலஞ்ச் எண்ணிக்கை.")
+    ),
+    TourStep(
+        "exercise", tr("By exercise", "பயிற்சி வாரியாக"),
+        tr("Totals for each exercise. Details are saved from version 1.2.1 onwards, so older challenges are not listed here.",
+            "ஒவ்வொரு பயிற்சிக்கான மொத்தம். விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும், பழைய சேலஞ்ச்கள் இங்கே இருக்காது.")
+    ),
+    TourStep(
+        "achievements", tr("Achievements", "சாதனைகள்"),
+        tr("A badge unlocks only when your real activity reaches the goal, like a 7-day streak or 100 finished challenges.",
+            "7 நாள் ஸ்ட்ரீக், 100 சேலஞ்ச் போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பேட்ஜ் திறக்கும்.")
+    )
+)
+
 @Composable
-private fun Card(content: @Composable () -> Unit) {
+private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Surface)
@@ -220,7 +270,7 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
 private fun WeekChart(days: List<DayBar>) {
     val maxCount = (days.maxOfOrNull { it.done + it.missed } ?: 0).coerceAtLeast(1)
     Row(
-        modifier = Modifier.fillMaxWidth().height(110.dp),
+        modifier = Modifier.fillMaxWidth().height(140.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Bottom
     ) {

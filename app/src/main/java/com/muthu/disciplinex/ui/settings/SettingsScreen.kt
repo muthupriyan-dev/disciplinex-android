@@ -353,9 +353,9 @@ fun SettingsScreen(
             }
 
             // ---- Data and backup / Privacy ----
-            BackupCard()
+            BackupCard(Modifier.tourTarget(tour, "backup"))
 
-            PrivacyCard()
+            PrivacyCard(Modifier.tourTarget(tour, "privacy"))
 
             // ---- About ----
             SettingsCard(tr("About", "பற்றி"), Modifier.tourTarget(tour, "about")) {
@@ -460,6 +460,16 @@ private fun settingsTourSteps(): List<TourStep> = listOf(
         "history", tr("Streak history", "ஸ்ட்ரீக் வரலாறு"),
         tr("Open a calendar of the days you finished and the days you missed.",
             "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் காலெண்டரை திறக்கவும்.")
+    ),
+    TourStep(
+        "backup", tr("Data and backup", "தரவு மற்றும் பேக்கப்"),
+        tr("Save your alarms, streak, history and allowed apps to a file. Restore works only on a fresh start (no recorded days yet), so a backup can never undo a missed day.",
+            "அலாரங்கள், ஸ்ட்ரீக், வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை கோப்பாக சேமிக்கலாம். எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும், எனவே தவறிய நாளை அழிக்க முடியாது.")
+    ),
+    TourStep(
+        "privacy", tr("Privacy", "தனியுரிமை"),
+        tr("What the camera, the accessibility service and your data are used for. Nothing leaves your phone.",
+            "கேமரா, அக்சசிபிலிட்டி சேவை, உங்கள் தரவு எதற்கு பயன்படுகிறது என்பது. எதுவும் போனை விட்டு வெளியே போகாது.")
     ),
     TourStep(
         "about", tr("About", "பற்றி"),

@@ -91,17 +91,46 @@ fun rememberWalkSteps(enabled: Boolean, refresh: Int): MutableState<Int?> {
         if (!enabled || sm == null || sensor == null || !WalkSteps.hasPermission(context)) {
             return@DisposableEffect onDispose { }
         }
-        val listener = object : SensorEventListener {
+        // The step COUNTER reports in delayed bursts (the number freezes, then jumps).
+        // The step DETECTOR fires once per step with almost no delay and fills those gaps;
+        // every counter reading is the authoritative total and absorbs the detector tally.
+        val detector = sm.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+        var counterSteps = 0
+        var detected = 0
+        fun publish() {
+            val computed = counterSteps + detected
+            if (computed > (steps.value ?: -1)) steps.value = computed
+        }
+        val counterListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.values.isNotEmpty()) {
-                    steps.value = WalkSteps.stepsSince(context, event.values[0].toLong())
+                    val newTotal = WalkSteps.stepsSince(context, event.values[0].toLong())
+                    val delta = (newTotal - counterSteps).coerceAtLeast(0)
+                    counterSteps = newTotal
+                    detected = (detected - delta).coerceAtLeast(0)
+                    publish()
                 }
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
-        sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
-        onDispose { sm.unregisterListener(listener) }
+        val detectorListener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                detected++
+                publish()
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        // maxReportLatency 0 = deliver events immediately instead of batching them.
+        sm.registerListener(counterListener, sensor, SensorManager.SENSOR_DELAY_UI, 0)
+        if (detector != null) {
+            sm.registerListener(detectorListener, detector, SensorManager.SENSOR_DELAY_UI, 0)
+        }
+        onDispose {
+            sm.unregisterListener(counterListener)
+            sm.unregisterListener(detectorListener)
+        }
     }
     return steps
 }

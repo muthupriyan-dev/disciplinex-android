@@ -97,8 +97,12 @@ private fun homeTourSteps(): List<TourStep> = listOf(
         tr("Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\u2026) and how many reps or minutes.", "புதிய அலாரம் சேர்க்க + தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், நடைப்பயிற்சி\u2026) மற்றும் எத்தனை முறை / நிமிடங்கள் என தேர்ந்தெடுங்கள்.")
     ),
     TourStep(
+        "stats", tr("Statistics", "புள்ளிவிவரங்கள்"),
+        tr("See your totals, the last 7 days, results for each exercise and your achievements.", "மொத்த எண்கள், கடந்த 7 நாட்கள், ஒவ்வொரு பயிற்சியின் முடிவு, சாதனைகளை பாருங்கள்.")
+    ),
+    TourStep(
         "settings", tr("Settings", "அமைப்புகள்"),
-        tr("Choose which apps stay open while your phone is locked. Phone and Camera are always open.", "போன் பூட்டியிருக்கும்போது எந்த ஆப்கள் திறந்திருக்க வேண்டும் என்பதை தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் திறந்திருக்கும்.")
+        tr("Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.", "பூட்டியிருக்கும்போது எந்த ஆப்கள் திறந்திருக்க வேண்டும், தீம், மொழி, காப்பு பிரதி சேமிப்பு / மீட்பு, தனியுரிமை குறிப்புகள் அனைத்தும் இங்கே.")
     ),
     TourStep(
         "help", tr("Need this again?", "மீண்டும் வேண்டுமா?"),
@@ -207,7 +211,8 @@ fun HomeScreen(
                         modifier = Modifier.tourTarget(tour, "help")
                     ) { Icon(Icons.Default.Info, contentDescription = tr("Show guide", "வழிகாட்டியை காட்டு"), tint = TextMuted) }
                     IconButton(
-                        onClick = onOpenStats
+                        onClick = onOpenStats,
+                        modifier = Modifier.tourTarget(tour, "stats")
                     ) { Icon(Icons.Default.BarChart, contentDescription = tr("Statistics", "புள்ளிவிவரங்கள்"), tint = TextMuted) }
                     IconButton(
                         onClick = onOpenSettings,
