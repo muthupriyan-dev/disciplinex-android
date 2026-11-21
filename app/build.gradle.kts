@@ -96,4 +96,6 @@ dependencies {
     implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
 
     testImplementation("junit:junit:4.13.2")
+    // Android's org.json is only a stub on the JVM, so unit tests need the real one.
+    testImplementation("org.json:json:20240303")
 }

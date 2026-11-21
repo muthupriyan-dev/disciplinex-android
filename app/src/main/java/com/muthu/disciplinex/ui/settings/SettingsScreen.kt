@@ -352,6 +352,11 @@ fun SettingsScreen(
                 ) { Text(tr("Open calendar", "காலெண்டரை திற"), fontWeight = FontWeight.SemiBold) }
             }
 
+            // ---- Data and backup / Privacy ----
+            BackupCard()
+
+            PrivacyCard()
+
             // ---- About ----
             SettingsCard(tr("About", "பற்றி"), Modifier.tourTarget(tour, "about")) {
                 Text(
