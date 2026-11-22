@@ -764,12 +764,23 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
                 text = if (sensorReady) {
                     tr("Steps: $steps \u00b7 distance is an estimate", "அடிகள்: $steps \u00b7 தூரம் மதிப்பீடு")
                 } else {
-                    tr("No step counter available \u2014 a timer replaces the distance.", "அடி கவுண்டர் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
+                    if (WalkSteps.hasPermission(context)) {
+                        tr("No step counter available \u2014 a timer replaces the distance.", "அடி கவுண்டர் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
+                    } else {
+                        tr("Physical activity is off \u2014 a timer replaces the distance. Tap Allow to count steps.", "உடல் செயல்பாடு அனுமதி இல்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும். அடிகளை எண்ண Allow தட்டுங்கள்.")
+                    }
                 },
                 color = TextMuted,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.labelLarge
             )
+            if (!sensorReady && !WalkSteps.hasPermission(context)) {
+                androidx.compose.material3.TextButton(
+                    onClick = { stepPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
+                ) {
+                    Text(tr("Allow physical activity", "உடல் செயல்பாட்டை அனுமதி"), color = OrangeEnd, fontWeight = FontWeight.Bold)
+                }
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

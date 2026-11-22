@@ -145,9 +145,24 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         }
     }
 
+    val activityLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        refreshTick++
+        val activity = context.findActivity()
+        if (!granted && activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(
+                activity, Manifest.permission.ACTIVITY_RECOGNITION
+            )
+        ) {
+            openAppSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        }
+    }
+
     val notificationGranted = remember(refreshTick) { hasNotificationPermission(context) }
     val fullScreenGranted = remember(refreshTick) { hasFullScreenIntentPermission(context) }
     val cameraGranted = remember(refreshTick) { hasCameraPermission(context) }
+    val activityGranted = remember(refreshTick) { com.muthu.disciplinex.data.WalkSteps.hasPermission(context) }
     val batteryGranted = remember(refreshTick) { isIgnoringBatteryOptimizations(context) }
     val accessibilityGranted = remember(refreshTick) { LockAccessibilityService.isEnabled(context) }
 
@@ -187,6 +202,16 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 onRequest = { cameraLauncher.launch(Manifest.permission.CAMERA) }
             )
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            add(
+                PermissionRow(
+                    title = tr("Physical activity", "உடல் செயல்பாடு"),
+                    reason = tr("Counts your steps for the Walking challenge. Nothing leaves your phone.", "நடைப்பயிற்சி சேலஞ்சுக்கு உங்கள் அடிகளை எண்ண. எதுவும் போனை விட்டு வெளியே போகாது."),
+                    isGranted = activityGranted,
+                    onRequest = { activityLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
+                )
+            )
+        }
         add(
             PermissionRow(
                 title = tr("Run in background", "பின்னணியில் இயங்கு"),

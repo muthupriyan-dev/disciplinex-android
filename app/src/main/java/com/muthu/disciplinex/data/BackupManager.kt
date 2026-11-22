@@ -28,7 +28,7 @@ object BackupManager {
     private const val HISTORY_PREFS = "disciplinex_history"
     private const val HISTORY_KEY = "entries"
 
-    enum class RestoreResult { OK, INVALID_FILE, NOT_ALLOWED, IO_ERROR }
+    enum class RestoreResult { OK, INVALID_FILE, BLOCKED_HISTORY, BLOCKED_ACTIVE, BLOCKED_ALARM_SOON, IO_ERROR }
 
     class Parsed(
         val alarms: List<AlarmEntry>,
@@ -123,17 +123,18 @@ object BackupManager {
         false
     }
 
-    /** True if a restore must be refused right now (see the class comment). */
-    fun restoreBlocked(context: Context): Boolean {
-        if (ChallengeSession.isLockActive(context)) return true
-        if (AlarmStore.getAll(context).any { AlarmScheduler.isCommitted(it) }) return true
-        if (StreakStore.allDays(context).isNotEmpty()) return true
-        if (HistoryStore.getAll(context).isNotEmpty()) return true
-        return false
+    /** Why a restore must be refused right now (see the class comment), or null if it is allowed. */
+    fun restoreBlockReason(context: Context): RestoreResult? {
+        if (ChallengeSession.isLockActive(context)) return RestoreResult.BLOCKED_ACTIVE
+        if (AlarmStore.getAll(context).any { AlarmScheduler.isCommitted(it) }) return RestoreResult.BLOCKED_ALARM_SOON
+        if (StreakStore.allDays(context).isNotEmpty() || HistoryStore.getAll(context).isNotEmpty()) {
+            return RestoreResult.BLOCKED_HISTORY
+        }
+        return null
     }
 
     fun restore(context: Context, uri: Uri): RestoreResult {
-        if (restoreBlocked(context)) return RestoreResult.NOT_ALLOWED
+        restoreBlockReason(context)?.let { return it }
         val text = try {
             readLimited(context, uri) ?: return RestoreResult.INVALID_FILE
         } catch (e: Exception) {

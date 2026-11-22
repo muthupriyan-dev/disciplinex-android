@@ -18,12 +18,13 @@ import com.muthu.disciplinex.lock.LockAccessibilityService
  */
 object PermissionChecks {
 
-    enum class Kind { NOTIFICATIONS, FULL_SCREEN, CAMERA, BATTERY, ACCESSIBILITY }
+    enum class Kind { NOTIFICATIONS, FULL_SCREEN, CAMERA, ACTIVITY, BATTERY, ACCESSIBILITY }
 
     fun title(kind: Kind): String = when (kind) {
         Kind.NOTIFICATIONS -> tr("Notifications", "அறிவிப்புகள்")
         Kind.FULL_SCREEN -> tr("Alarm over lock screen", "லாக் ஸ்கிரீன் மேல் அலாரம்")
         Kind.CAMERA -> tr("Camera", "கேமரா")
+        Kind.ACTIVITY -> tr("Physical activity (walking)", "உடல் செயல்பாடு (நடைப்பயிற்சி)")
         Kind.BATTERY -> tr("Run in background", "பின்னணியில் இயங்கு")
         Kind.ACCESSIBILITY -> tr("App lock (Accessibility)", "ஆப் லாக் (Accessibility)")
     }
@@ -39,6 +40,7 @@ object PermissionChecks {
         Kind.CAMERA ->
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED
+        Kind.ACTIVITY -> WalkSteps.hasPermission(context)
         Kind.BATTERY ->
             (context.getSystemService(Context.POWER_SERVICE) as? PowerManager)
                 ?.isIgnoringBatteryOptimizations(context.packageName) ?: true
@@ -61,6 +63,7 @@ object PermissionChecks {
                     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri)
                 }
             Kind.CAMERA -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri)
+            Kind.ACTIVITY -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri)
             Kind.BATTERY -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkgUri)
             Kind.ACCESSIBILITY -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         }

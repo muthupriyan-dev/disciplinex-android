@@ -92,7 +92,14 @@ fun BackupCard(modifier: Modifier = Modifier) {
         ) { Text(tr("Save backup", "பேக்கப் சேமி"), fontWeight = FontWeight.SemiBold) }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
-            onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream", "*/*")) },
+            onClick = {
+                val why = BackupManager.restoreBlockReason(context)
+                if (why != null) {
+                    Toast.makeText(context, restoreMessage(why), Toast.LENGTH_LONG).show()
+                } else {
+                    importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream", "*/*"))
+                }
+            },
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(26.dp)
         ) { Text(tr("Restore from backup", "பேக்கப்பிலிருந்து மீட்டெடு"), fontWeight = FontWeight.SemiBold) }
@@ -123,16 +130,7 @@ fun BackupCard(modifier: Modifier = Modifier) {
                 TextButton(onClick = {
                     val result = BackupManager.restore(context, uri)
                     pendingRestore = null
-                    val message = when (result) {
-                        BackupManager.RestoreResult.OK ->
-                            tr("Backup restored. Reopen the app to see everything.", "பேக்கப் மீட்டெடுக்கப்பட்டது. அனைத்தையும் காண ஆப்பை மீண்டும் திறக்கவும்.")
-                        BackupManager.RestoreResult.INVALID_FILE ->
-                            tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX பேக்கப் கோப்பு அல்ல.")
-                        BackupManager.RestoreResult.NOT_ALLOWED ->
-                            tr("Restore is not possible now (history exists, a challenge is active or an alarm is about to ring).", "இப்போது மீட்டெடுக்க முடியாது (வரலாறு உள்ளது, சேலஞ்ச் நடக்கிறது அல்லது அலாரம் அடிக்கப்போகிறது).")
-                        BackupManager.RestoreResult.IO_ERROR ->
-                            tr("Could not read the file.", "கோப்பை படிக்க முடியவில்லை.")
-                    }
+                    val message = restoreMessage(result)
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }) { Text(tr("Restore", "மீட்டெடு"), color = OrangeEnd, fontWeight = FontWeight.Bold) }
             },
@@ -180,4 +178,22 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
             color = TextMuted, style = style
         )
     }
+}
+
+private fun restoreMessage(result: BackupManager.RestoreResult): String = when (result) {
+    BackupManager.RestoreResult.OK ->
+        tr("Backup restored. Reopen the app to see everything.", "பேக்கப் மீட்டெடுக்கப்பட்டது. அனைத்தையும் காண ஆப்பை மீண்டும் திறக்கவும்.")
+    BackupManager.RestoreResult.INVALID_FILE ->
+        tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX பேக்கப் கோப்பு அல்ல.")
+    BackupManager.RestoreResult.BLOCKED_HISTORY ->
+        tr(
+            "This phone already has recorded days, so restore is blocked. Restore only works on a fresh install (for example a new phone), so a backup can never undo a missed day. Your backup file itself is fine.",
+            "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் மீட்டெடுப்பு தடுக்கப்பட்டது. புதிய இன்ஸ்டாலில் (எ.கா. புதிய போன்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் பேக்கப் தவறிய நாளை அழிக்க முடியாது. உங்கள் பேக்கப் கோப்பு சரியாகவே உள்ளது."
+        )
+    BackupManager.RestoreResult.BLOCKED_ACTIVE ->
+        tr("A challenge is active right now. Finish it first, then try again.", "இப்போது ஒரு சேலஞ்ச் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு மீண்டும் முயலுங்கள்.")
+    BackupManager.RestoreResult.BLOCKED_ALARM_SOON ->
+        tr("An alarm will ring within 2 hours, so restore is blocked. Try again later.", "2 மணி நேரத்துக்குள் அலாரம் அடிக்கும், அதனால் மீட்டெடுப்பு தடுக்கப்பட்டது. பிறகு முயலுங்கள்.")
+    BackupManager.RestoreResult.IO_ERROR ->
+        tr("Could not read the file.", "கோப்பை படிக்க முடியவில்லை.")
 }
