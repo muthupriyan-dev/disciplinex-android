@@ -51,6 +51,6 @@ object AlarmStore {
     private fun writeAll(context: Context, list: List<AlarmEntry>) {
         val arr = JSONArray()
         list.forEach { arr.put(it.toJson()) }
-        prefs(context).edit().putString(KEY_ALARMS, arr.toString()).apply()
+        prefs(context).edit().putString(KEY_ALARMS, arr.toString()).commit()
     }
 }

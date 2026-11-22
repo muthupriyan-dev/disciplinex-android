@@ -26,21 +26,30 @@ class PoseAnalyzer(
             .build()
     )
 
+    @Volatile
+    private var closed = false
+
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
-        if (mediaImage == null) {
+        if (closed || mediaImage == null) {
             imageProxy.close()
             return
         }
-        val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        detector.process(inputImage)
-            .addOnSuccessListener { pose -> onPose(pose) }
-            .addOnFailureListener { onPose(null) }
-            .addOnCompleteListener { imageProxy.close() }
+        try {
+            val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+            detector.process(inputImage)
+                .addOnSuccessListener { pose -> if (!closed) onPose(pose) }
+                .addOnFailureListener { if (!closed) onPose(null) }
+                .addOnCompleteListener { imageProxy.close() }
+        } catch (e: Exception) {
+            // The detector was closed between the check above and process(): drop this frame.
+            imageProxy.close()
+        }
     }
 
     fun close() {
+        closed = true
         detector.close()
     }
 }

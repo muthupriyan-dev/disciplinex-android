@@ -88,7 +88,7 @@ object ChallengeSession {
         if (p.getBoolean(K_MISSED, false)) return
         StreakStore.record(context, ringDate(p), false)
         // A missed day locks the phone for the full 24 hours from the alarm.
-        p.edit().putBoolean(K_MISSED, true).putLong(K_LOCK_MS, MAX_LOCK_MS).apply()
+        p.edit().putBoolean(K_MISSED, true).putLong(K_LOCK_MS, MAX_LOCK_MS).commit()
     }
 
     // ------------------------------------------------------------------
@@ -139,7 +139,7 @@ object ChallengeSession {
             .putLong(K_WINDOW_MS, windowMs)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
             .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
-            .apply()
+            .commit()
         return true
     }
 
@@ -158,7 +158,7 @@ object ChallengeSession {
             recordMiss(context, p) // also extends the lock to 24 hours
             UserPrefs.resetProgress(context)
             if (!MISSED_KEEPS_LOCK) {
-                p.edit().putBoolean(K_ACTIVE, false).apply()
+                p.edit().putBoolean(K_ACTIVE, false).commit()
                 return false
             }
         }
@@ -166,7 +166,7 @@ object ChallengeSession {
         // Lock window is over (24 hours after a miss, or the next alarm for a finished-in-time day).
         if (elapsed > p.getLong(K_LOCK_MS, MAX_LOCK_MS)) {
             recordMiss(context, p) // started but never finished, or never started
-            p.edit().putBoolean(K_ACTIVE, false).apply()
+            p.edit().putBoolean(K_ACTIVE, false).commit()
             UserPrefs.resetProgress(context)
             return false
         }
@@ -214,12 +214,12 @@ object ChallengeSession {
             .putLong(K_EM_ELAPSED, SystemClock.elapsedRealtime())
             .putLong(K_EM_WALL, System.currentTimeMillis())
             .putInt(K_EM_BOOT, bootCount(context))
-            .apply()
+            .commit()
         return true
     }
 
     fun cancelEmergencyUnlock(context: Context) {
-        prefs(context).edit().remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT).apply()
+        prefs(context).edit().remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT).commit()
     }
 
     /** null = not started, 0 = the wait is over, otherwise milliseconds still to wait. */
@@ -246,7 +246,7 @@ object ChallengeSession {
         prefs(context).edit()
             .putBoolean(K_ACTIVE, false)
             .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
-            .apply()
+            .commit()
         return true
     }
 
@@ -257,7 +257,7 @@ object ChallengeSession {
             .putLong(K_LEFT_ELAPSED, SystemClock.elapsedRealtime())
             .putLong(K_LEFT_WALL, System.currentTimeMillis())
             .putInt(K_LEFT_BOOT, bootCount(context))
-            .apply()
+            .commit()
     }
 
     /**
@@ -273,7 +273,7 @@ object ChallengeSession {
         val sameBoot = bootCount(context) == p.getInt(K_LEFT_BOOT, Int.MIN_VALUE)
         var away = if (sameBoot) SystemClock.elapsedRealtime() - leftElapsed else System.currentTimeMillis() - leftWall
         if (away < 0) away = System.currentTimeMillis() - leftWall
-        p.edit().remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT).apply()
+        p.edit().remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT).commit()
 
         if (away > AWAY_GRACE_MS && phase(context) == Phase.IN_PROGRESS) {
             UserPrefs.resetProgress(context)
@@ -290,7 +290,7 @@ object ChallengeSession {
     fun enterChallenge(context: Context): Phase {
         val ph = phase(context)
         if (ph == Phase.WAITING) {
-            prefs(context).edit().putBoolean(K_STARTED, true).apply()
+            prefs(context).edit().putBoolean(K_STARTED, true).commit()
             return Phase.IN_PROGRESS
         }
         return ph
@@ -321,7 +321,7 @@ object ChallengeSession {
         }
         p.edit().putBoolean(K_ACTIVE, false)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
-            .apply()
+            .commit()
         UserPrefs.resetProgress(context)
     }
 

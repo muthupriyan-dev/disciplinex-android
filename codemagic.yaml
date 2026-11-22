@@ -12,5 +12,9 @@ workflows:
       - name: Build debug APK
         script: |
           ./gradlew assembleDebug
+      - name: Run unit tests
+        script: |
+          ./gradlew testDebugUnitTest
+        ignore_failure: true
     artifacts:
       - app/build/outputs/apk/**/*.apk

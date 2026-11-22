@@ -34,7 +34,7 @@ object StreakStore {
         var missed = arr?.optInt(1) ?: 0
         if (success) done++ else missed++
         obj.put(key, JSONArray().put(done).put(missed))
-        prefs(context).edit().putString(KEY_DAYS, obj.toString()).apply()
+        prefs(context).edit().putString(KEY_DAYS, obj.toString()).commit()
     }
 
     /** Every recorded day as (done, missed) counters. Used by the statistics screen. */

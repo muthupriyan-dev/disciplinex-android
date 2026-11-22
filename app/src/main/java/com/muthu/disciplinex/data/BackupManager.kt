@@ -149,9 +149,9 @@ object BackupManager {
             }
             parsed.alarms.forEach { AlarmStore.save(context, it) }
             context.getSharedPreferences(STREAK_PREFS, Context.MODE_PRIVATE)
-                .edit().putString(STREAK_KEY, parsed.streakJson).apply()
+                .edit().putString(STREAK_KEY, parsed.streakJson).commit()
             context.getSharedPreferences(HISTORY_PREFS, Context.MODE_PRIVATE)
-                .edit().putString(HISTORY_KEY, parsed.historyJson).apply()
+                .edit().putString(HISTORY_KEY, parsed.historyJson).commit()
             parsed.allowedApps?.let { UserPrefs.setAllowedApps(context, it) }
             AlarmScheduler.scheduleAll(context)
             RestoreResult.OK

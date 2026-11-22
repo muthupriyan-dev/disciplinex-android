@@ -75,6 +75,6 @@ object HistoryStore {
                     .put("ds", it.distance)
             )
         }
-        prefs(context).edit().putString(KEY_ENTRIES, arr.toString()).apply()
+        prefs(context).edit().putString(KEY_ENTRIES, arr.toString()).commit()
     }
 }

@@ -44,7 +44,7 @@ object UserPrefs {
     fun isOnboarded(context: Context): Boolean = prefs(context).getBoolean(KEY_ONBOARDED, false)
 
     fun setOnboarded(context: Context) {
-        prefs(context).edit().putBoolean(KEY_ONBOARDED, true).apply()
+        prefs(context).edit().putBoolean(KEY_ONBOARDED, true).commit()
     }
 
     fun isTourSeen(context: Context): Boolean = prefs(context).getBoolean(KEY_TOUR_SEEN, false)
@@ -104,6 +104,6 @@ object UserPrefs {
         prefs(context).getStringSet(KEY_ALLOWED_APPS, null) ?: DEFAULT_ALLOWED_APPS
 
     fun setAllowedApps(context: Context, apps: Set<String>) {
-        prefs(context).edit().putStringSet(KEY_ALLOWED_APPS, HashSet(apps)).apply()
+        prefs(context).edit().putStringSet(KEY_ALLOWED_APPS, HashSet(apps)).commit()
     }
 }
