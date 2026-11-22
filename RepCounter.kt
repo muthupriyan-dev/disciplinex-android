@@ -51,7 +51,9 @@ private const val PU_MIN_SHOULDER_TRAVEL = 0.35f
 private const val PU_MAX_WRIST_RATIO = 0.6f
 /** Hip / knee / ankle must be visible in at least this fraction of the frames. */
 private const val PU_MIN_LOWER_FRACTION = 0.6f
-/** Legs stay straight in a push-up; a knee angle that changes more than this means squat / sitting. */
+/** Legs stay straight in a push-up; a knee angle that changes more than this means squat / sitting.
+ *  Only used when the camera sees you from the SIDE: from the front your legs point at the camera,
+ *  so their angle on screen is meaningless (that wrongly rejected every real push-up). */
 private const val PU_MAX_KNEE_RANGE = 40.0
 /** Seen from the side, a push-up body is roughly level: shoulder->hip tilt (degrees from horizontal). */
 private const val PU_MAX_TORSO_TILT = 55.0
@@ -148,9 +150,12 @@ class PushUpRepCounter : RepCounter {
     private var kneeFrames = 0
     private var torsoFrames = 0
     private var torsoUpright = 0
+    private var sepMaxPx = 0f
 
     private var skipReason = ""
     private var skipAtMs = 0L
+    private var lastMetrics = ""
+    private var metricsAtMs = 0L
 
     private fun pickSide(pose: Pose?): BodySide? {
         if (pose == null) return null
@@ -182,6 +187,7 @@ class PushUpRepCounter : RepCounter {
         kneeFrames = 0
         torsoFrames = 0
         torsoUpright = 0
+        sepMaxPx = 0f
     }
 
     private fun accumulate(s: BodySide, shoulder: PoseLandmark, elbow: PoseLandmark, wrist: PoseLandmark) {
@@ -196,20 +202,36 @@ class PushUpRepCounter : RepCounter {
         val knee = s.knee
         val ankle = s.ankle
         if (hip != null || knee != null || ankle != null) lowerFrames++
-        if (hip != null && knee != null && ankle != null) {
-            val k = angleAt(hip, knee, ankle)
-            kneeMin = min(kneeMin, k)
-            kneeMax = max(kneeMax, k)
-            kneeFrames++
-        }
+
+        // Side view = the far shoulder is hidden or sits almost behind the near one.
         val other = s.otherShoulder
-        if (other != null && hip != null) {
-            val width = abs(shoulder.position.x - other.position.x)
-            if (width < PU_SIDE_VIEW_RATIO * armLen) {
+        val sideView = other == null ||
+            abs(shoulder.position.x - other.position.x) < PU_SIDE_VIEW_RATIO * armLen
+
+        if (hip != null) sepMaxPx = max(sepMaxPx, abs(hip.position.y - shoulder.position.y))
+        if (sideView) {
+            if (hip != null && knee != null && ankle != null) {
+                val k = angleAt(hip, knee, ankle)
+                kneeMin = min(kneeMin, k)
+                kneeMax = max(kneeMax, k)
+                kneeFrames++
+            }
+            if (hip != null) {
                 torsoFrames++
                 if (tiltFromHorizontal(shoulder, hip) >= PU_MAX_TORSO_TILT) torsoUpright++
             }
         }
+    }
+
+    /** Numbers of the finished rep, shown in the debug line so thresholds can be tuned from real data. */
+    private fun metrics(): String {
+        val shoulderTravel = shoulderMax - shoulderMin
+        val wristTravel = wristMax - wristMin
+        val sh = shoulderTravel / armLen
+        val hand = if (shoulderTravel > 0f) wristTravel / shoulderTravel else 0f
+        val knee = if (kneeFrames >= 5) (kneeMax - kneeMin).toInt() else -1
+        val sep = sepMaxPx / armLen
+        return "sh ${"%.2f".format(sh)} hand ${"%.2f".format(hand)} knee $knee sep ${"%.1f".format(sep)}"
     }
 
     /** null = the finished rep looks like a real push-up, otherwise the reason it is skipped. */
@@ -264,21 +286,30 @@ class PushUpRepCounter : RepCounter {
         } else if (angle > PU_UP) {
             down = false
             val reason = if (cycleActive) judge() else null
+            if (cycleActive) {
+                lastMetrics = metrics()
+                metricsAtMs = now
+            }
             cycleActive = false
             if (reason != null) {
                 skipReason = reason
                 skipAtMs = now
-            } else if (now - downAtMs >= MIN_DOWN_TO_UP_MS && now - lastRepMs >= MIN_REP_INTERVAL_MS) {
-                reps++
-                lastRepMs = now
+            } else {
+                skipReason = ""
+                if (now - downAtMs >= MIN_DOWN_TO_UP_MS && now - lastRepMs >= MIN_REP_INTERVAL_MS) {
+                    reps++
+                    lastRepMs = now
+                }
             }
         }
 
         val progress = ((angle - PU_DOWN) / (PU_UP - PU_DOWN)).toFloat().coerceIn(0f, 1f)
-        val showSkip = skipReason.isNotEmpty() && now - skipAtMs < SKIP_MESSAGE_MS
+        val showResult = lastMetrics.isNotEmpty() && now - metricsAtMs < SKIP_MESSAGE_MS
         val debug = "elbow ${angle.toInt()}\u00b0 \u00b7 down<${PU_DOWN.toInt()} up>${PU_UP.toInt()} \u00b7 " +
             (if (down) "DOWN" else "UP") +
-            (if (showSkip) " \u00b7 skipped: $skipReason" else "")
+            (if (showResult) {
+                (if (skipReason.isNotEmpty()) " \u00b7 skipped: $skipReason" else " \u00b7 counted") + " \u00b7 $lastMetrics"
+            } else "")
         return RepUpdate(reps, progress, isTracking = noLowerFrames < NO_LOWER_HINT_FRAMES, debug = debug)
     }
 }
