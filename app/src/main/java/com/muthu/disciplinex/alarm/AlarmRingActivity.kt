@@ -27,7 +27,9 @@ import com.muthu.disciplinex.MainActivity
 import com.muthu.disciplinex.data.ChallengeSession
 import com.muthu.disciplinex.data.AppSettings
 import com.muthu.disciplinex.data.ExerciseKinds
+import com.muthu.disciplinex.ui.theme.OrangeDeep
 import com.muthu.disciplinex.ui.theme.OrangeEnd
+import com.muthu.disciplinex.ui.theme.SuccessButton
 import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
@@ -122,7 +124,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(OrangeEnd),
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -133,7 +135,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 ChallengeSession.Phase.WAITING -> {
                     Text(
                         text = if (label.isBlank()) tr("Time to move!", "உடலை அசைக்க வேண்டிய நேரம்!") else label,
-                        color = Color.White,
+                        color = OrangeEnd,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -141,20 +143,20 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "$exercise \u00b7 $summary",
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = OrangeDeep,
                         fontSize = 18.sp
                     )
                     Spacer(modifier = Modifier.height(36.dp))
                     val sec = (msLeft / 1000).toInt()
                     Text(
                         text = String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60),
-                        color = Color.White,
+                        color = OrangeEnd,
                         fontSize = 56.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = tr("left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours", "முடிக்க நேரம் மீதம் \u2014 அதன் பிறகு சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்"),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = OrangeDeep,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
                     )
@@ -162,8 +164,8 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     Button(
                         onClick = onStart,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = OrangeEnd
+                            containerColor = SuccessButton,
+                            contentColor = Color.White
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -172,10 +174,12 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         Text(tr("Start challenge", "சவாலை தொடங்கு"), fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(
+                    Button(
                         onClick = onClose,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                        border = BorderStroke(1.5.dp, Color.White),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = OrangeEnd,
+                            contentColor = Color.White
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
@@ -185,25 +189,25 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = tr("Dismiss only stops the sound. The time limit keeps running and your apps stay locked.", "நிறுத்து என்பது ஒலியை மட்டுமே நிறுத்தும். நேர வரம்பு தொடர்ந்து ஓடும், ஆப்கள் பூட்டியே இருக்கும்."),
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = OrangeDeep,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
                     )
                 }
 
                 ChallengeSession.Phase.IN_PROGRESS -> {
-                    Text(tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"), color = OrangeEnd, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     val secLeft = (msLeft / 1000).toInt()
                     Text(
                         text = String.format(Locale.US, tr("%d:%02d:%02d left to finish", "முடிக்க %d:%02d:%02d மீதம்"), secLeft / 3600, (secLeft % 3600) / 60, secLeft % 60),
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = OrangeDeep,
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessButton, contentColor = Color.White),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
                     ) { Text(tr("Continue challenge", "சவாலை தொடர்"), fontWeight = FontWeight.Bold) }
                 }
@@ -211,28 +215,28 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 ChallengeSession.Phase.MISSED -> {
                     val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                         .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                    Text(tr("Challenge missed", "சவால் தவறிவிட்டது"), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge missed", "சவால் தவறிவிட்டது"), color = OrangeEnd, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = tr("You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.", "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது; $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்."),
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = OrangeDeep,
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
                         onClick = onClose,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
                     ) { Text(tr("OK", "சரி"), fontWeight = FontWeight.Bold) }
                 }
 
                 ChallengeSession.Phase.IDLE -> {
-                    Text(tr("Nothing pending", "காத்திருப்பது எதுவும் இல்லை"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Nothing pending", "காத்திருப்பது எதுவும் இல்லை"), color = OrangeEnd, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = onClose,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
+                        colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
                     ) { Text(tr("Close", "மூடு"), fontWeight = FontWeight.Bold) }
                 }

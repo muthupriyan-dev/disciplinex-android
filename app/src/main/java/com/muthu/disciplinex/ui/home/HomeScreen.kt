@@ -21,6 +21,16 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FabPosition
@@ -50,7 +60,10 @@ import com.muthu.disciplinex.data.AlarmEntry
 import com.muthu.disciplinex.data.AlarmStore
 import com.muthu.disciplinex.data.PermissionChecks
 import com.muthu.disciplinex.data.ChallengeSession
+import com.muthu.disciplinex.data.HistoryStore
 import com.muthu.disciplinex.data.StreakStore
+import com.muthu.disciplinex.domain.Achievements
+import com.muthu.disciplinex.domain.StatsCalculator
 import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.lock.LockAccessibilityService
 import com.muthu.disciplinex.ui.components.GradientHeroCard
@@ -145,10 +158,45 @@ fun HomeScreen(
     val week = remember(refreshTick) { StreakStore.lastSevenDays(context) }
     val nextText = remember(refreshTick) { nextAlarmText(context) }
     val msLeft = remember(refreshTick) { ChallengeSession.msLeftToFinish(context) }
+    val emergencyOpenLeft = remember(refreshTick) { ChallengeSession.emergencyUnlockMsLeft(context) }
+
+    // "Today: 1 of 2 done": repeating / custom alarms due today vs. challenges finished today.
+    val today = remember(refreshTick) { LocalDate.now() }
+    val doneToday = remember(refreshTick) { StreakStore.allDays(context)[today]?.first ?: 0 }
+    val dueToday = remember(refreshTick) {
+        alarms.count {
+            it.enabled && (
+                today.toEpochDay() in it.dates ||
+                    (it.daysMask != 0 && ((it.daysMask shr (today.dayOfWeek.value - 1)) and 1) == 1)
+                )
+        }
+    }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // A new badge unlocked since the last time the user saw Home: tell them once.
+    LaunchedEffect(streak, best, doneToday) {
+        val stats = StatsCalculator.compute(StreakStore.allDays(context), HistoryStore.getAll(context), LocalDate.now())
+        val unlocked = Achievements.evaluate(stats.totalDone, best, stats.totalReps).filter { it.unlocked }
+        val ids = unlocked.map { it.id }.toSet()
+        val seen = UserPrefs.getSeenAchievements(context)
+        if (seen == null) {
+            UserPrefs.setSeenAchievements(context, ids) // first run: don't announce old badges
+        } else {
+            val fresh = unlocked.filter { it.id !in seen }
+            if (fresh.isNotEmpty()) {
+                UserPrefs.setSeenAchievements(context, seen + ids)
+                val names = fresh.joinToString(", ") { tr(it.titleEn, it.titleTa) }
+                snackbarHostState.showSnackbar(
+                    message = tr("\uD83C\uDFC6 Achievement unlocked: $names", "\uD83C\uDFC6 புதிய சாதனை: $names")
+                )
+            }
+        }
+    }
 
     // While a challenge is waiting to be started, tick once a second so the countdown moves.
-    LaunchedEffect(phase) {
-        if (phase == ChallengeSession.Phase.WAITING || phase == ChallengeSession.Phase.IN_PROGRESS) {
+    LaunchedEffect(phase, emergencyOpenLeft != null) {
+        if (phase == ChallengeSession.Phase.WAITING || phase == ChallengeSession.Phase.IN_PROGRESS || emergencyOpenLeft != null) {
             while (true) {
                 delay(1000)
                 refreshTick++
@@ -169,6 +217,7 @@ fun HomeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 if (!locked) {
                     FloatingActionButton(
@@ -263,8 +312,45 @@ fun HomeScreen(
                     EmergencyUnlockCard(onChanged = { refreshTick++ })
                 }
 
+                if (emergencyOpenLeft != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val sec = (emergencyOpenLeft / 1000).toInt()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Surface)
+                            .padding(16.dp)
+                    ) {
+                        Text(tr("Emergency unlock is on", "அவசரத் திறப்பு இயக்கத்தில் உள்ளது"), fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            tr("Your phone locks again in ${sec / 60}:${"%02d".format(sec % 60)}.",
+                                "${sec / 60}:${"%02d".format(sec % 60)} கழித்து போன் மீண்டும் பூட்டிக்கொள்ளும்."),
+                            color = TextMuted,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(tr("Alarms", "அலாரங்கள்"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                if (dueToday > 0 || doneToday > 0) {
+                    val total = maxOf(dueToday, doneToday)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        tr("Today: $doneToday of $total done", "இன்று: $total-ல் $doneToday முடிந்தது"),
+                        color = TextMuted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { doneToday.toFloat() / total },
+                        color = if (doneToday >= total) Success else OrangeEnd,
+                        trackColor = com.muthu.disciplinex.ui.theme.Divider,
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
+                    )
+                }
                 if (locked) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -305,23 +391,42 @@ fun HomeScreen(
                 }
 
                 alarms.forEachIndexed { index, alarm ->
-                    val committed = AlarmScheduler.isCommitted(alarm)
-                    AlarmCard(
-                        alarm = alarm,
-                        locked = locked || committed,
-                        committed = committed && !locked,
-                        modifier = if (index == 0) Modifier.tourTarget(tour, "alarm") else Modifier,
-                        switchModifier = if (index == 0) Modifier.tourTarget(tour, "switch") else Modifier,
-                        onClick = { onEditAlarm(alarm.id) },
-                        onToggle = { on ->
-                            val updated = alarm.copy(enabled = on)
-                            AlarmStore.save(context, updated)
-                            if (on) AlarmScheduler.schedule(context, updated)
-                            else AlarmScheduler.cancel(context, updated.id)
-                            refreshTick++
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    key(alarm.id) {
+                        val committed = AlarmScheduler.isCommitted(alarm)
+                        SwipeableAlarmCard(
+                            alarm = alarm,
+                            locked = locked || committed,
+                            committed = committed && !locked,
+                            modifier = if (index == 0) Modifier.tourTarget(tour, "alarm") else Modifier,
+                            switchModifier = if (index == 0) Modifier.tourTarget(tour, "switch") else Modifier,
+                            onClick = { onEditAlarm(alarm.id) },
+                            onToggle = { on ->
+                                val updated = alarm.copy(enabled = on)
+                                AlarmStore.save(context, updated)
+                                if (on) AlarmScheduler.schedule(context, updated)
+                                else AlarmScheduler.cancel(context, updated.id)
+                                refreshTick++
+                            },
+                            onDelete = {
+                                AlarmScheduler.cancel(context, alarm.id)
+                                AlarmStore.delete(context, alarm.id)
+                                refreshTick++
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = tr("Alarm deleted", "அலாரம் நீக்கப்பட்டது"),
+                                        actionLabel = tr("Undo", "திரும்பப்பெறு"),
+                                        duration = androidx.compose.material3.SnackbarDuration.Long
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        AlarmStore.save(context, alarm)
+                                        if (alarm.enabled) AlarmScheduler.schedule(context, alarm)
+                                        refreshTick++
+                                    }
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
 
                 // Room so the + button never covers the last card.
@@ -417,6 +522,8 @@ private fun StatusCard(
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
+                Spacer(modifier = Modifier.height(10.dp))
+                TimeLeftBar(msLeft = msLeft, windowMs = ChallengeSession.windowMs(context))
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onStartChallenge,
@@ -434,6 +541,8 @@ private fun StatusCard(
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
+                Spacer(modifier = Modifier.height(10.dp))
+                TimeLeftBar(msLeft = msLeft, windowMs = ChallengeSession.windowMs(context))
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onStartChallenge,
@@ -469,6 +578,74 @@ private fun StatusCard(
                 )
             }
         }
+    }
+}
+
+/** A thin bar that empties as the time limit runs out (turns red in the last minute). */
+@Composable
+private fun TimeLeftBar(msLeft: Long, windowMs: Long) {
+    val sec = (msLeft / 1000).toInt()
+    LinearProgressIndicator(
+        progress = { (msLeft.toFloat() / windowMs.coerceAtLeast(1L)).coerceIn(0f, 1f) },
+        color = if (sec < 60) Danger else OrangeEnd,
+        trackColor = com.muthu.disciplinex.ui.theme.Divider,
+        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
+    )
+}
+
+/**
+ * An alarm card you can swipe left to delete (with an Undo in the snackbar).
+ * A locked or committed alarm can't be deleted, so it is not swipeable.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableAlarmCard(
+    alarm: AlarmEntry,
+    locked: Boolean,
+    committed: Boolean,
+    modifier: Modifier,
+    switchModifier: Modifier,
+    onClick: () -> Unit,
+    onToggle: (Boolean) -> Unit,
+    onDelete: () -> Unit
+) {
+    if (locked) {
+        AlarmCard(alarm, locked, committed, modifier, switchModifier, onClick, onToggle)
+        return
+    }
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                currentOnDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        modifier = modifier,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Danger)
+                    .padding(end = 24.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = tr("Delete alarm", "அலாரத்தை நீக்கு"),
+                    tint = Color.White
+                )
+            }
+        }
+    ) {
+        AlarmCard(alarm, locked, committed, Modifier, switchModifier, onClick, onToggle)
     }
 }
 
@@ -605,8 +782,8 @@ private fun EmergencyUnlockCard(onChanged: () -> Unit) {
         when {
             left == null -> {
                 Text(
-                    tr("You can unlock early after a 10-minute wait. Today stays missed and your streak stays at 0.",
-                        "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும்."),
+                    tr("Wait 10 minutes inside this app (the time only counts while the app is open) and your phone unlocks for 30 minutes, then it locks again. Today stays missed and your streak stays at 0.",
+                        "இந்த ஆப்புக்குள் 10 நிமிடம் காத்திருங்கள் (ஆப் திறந்திருக்கும்போது மட்டுமே நேரம் எண்ணப்படும்). பிறகு போன் 30 நிமிடம் திறந்திருக்கும், அதன் பிறகு மீண்டும் பூட்டிவிடும். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -618,8 +795,8 @@ private fun EmergencyUnlockCard(onChanged: () -> Unit) {
             left > 0L -> {
                 val sec = (left / 1000).toInt()
                 Text(
-                    tr("Unlock available in ${sec / 60}:${"%02d".format(sec % 60)}",
-                        "${sec / 60}:${"%02d".format(sec % 60)} கழித்து திறக்கலாம்"),
+                    tr("Unlock available in ${sec / 60}:${"%02d".format(sec % 60)} \u2014 keep this app open, the timer pauses when you leave",
+                        "${sec / 60}:${"%02d".format(sec % 60)} கழித்து திறக்கலாம் \u2014 இந்த ஆப்பை திறந்தே வையுங்கள், வெளியே சென்றால் நேரம் நின்றுவிடும்"),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -644,8 +821,8 @@ private fun EmergencyUnlockCard(onChanged: () -> Unit) {
             title = { Text(tr("Start emergency unlock?", "அவசரத் திறப்பை தொடங்கவா?")) },
             text = {
                 Text(
-                    tr("Your apps unlock after 10 minutes. Today stays missed and your streak stays at 0. Only use this for a real emergency.",
-                        "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.")
+                    tr("You must keep this app open for 10 minutes. Then your apps unlock for 30 minutes and lock again by themselves. Today stays missed and your streak stays at 0. Only use this for a real emergency.",
+                        "இந்த ஆப்பை 10 நிமிடம் திறந்து வைத்திருக்க வேண்டும். பிறகு ஆப்கள் 30 நிமிடம் திறந்திருக்கும், தானாகவே மீண்டும் பூட்டிக்கொள்ளும். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.")
                 )
             },
             confirmButton = {

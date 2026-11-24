@@ -59,8 +59,8 @@ fun PrimaryPillButton(
         modifier = modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(26.dp),
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-            containerColor = Surface,
-            contentColor = OrangeEnd,
+            containerColor = OrangeEnd,
+            contentColor = androidx.compose.ui.graphics.Color.White,
             disabledContainerColor = com.muthu.disciplinex.ui.theme.ChipBackground,
             disabledContentColor = com.muthu.disciplinex.ui.theme.TextMuted
         )

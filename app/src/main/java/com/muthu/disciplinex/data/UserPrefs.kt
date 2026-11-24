@@ -13,6 +13,7 @@ object UserPrefs {
     private const val KEY_ONBOARDED = "onboarded"
     private const val KEY_TOUR_SEEN = "tour_seen"
     private const val KEY_ALLOWED_APPS = "allowed_apps"
+    private const val KEY_SEEN_ACHIEVEMENTS = "seen_achievements"
 
     // Challenge progress (survives the app being closed/killed)
     private const val KEY_TIMED_PROGRESS_MS = "timed_progress_ms"
@@ -105,5 +106,17 @@ object UserPrefs {
 
     fun setAllowedApps(context: Context, apps: Set<String>) {
         prefs(context).edit().putStringSet(KEY_ALLOWED_APPS, HashSet(apps)).commit()
+    }
+
+    // ------------------------------------------------------------------
+    // Achievements the user has already been told about
+    // ------------------------------------------------------------------
+
+    /** null = nothing recorded yet (first run), so old badges are not announced as new. */
+    fun getSeenAchievements(context: Context): Set<String>? =
+        prefs(context).getStringSet(KEY_SEEN_ACHIEVEMENTS, null)
+
+    fun setSeenAchievements(context: Context, ids: Set<String>) {
+        prefs(context).edit().putStringSet(KEY_SEEN_ACHIEVEMENTS, HashSet(ids)).commit()
     }
 }

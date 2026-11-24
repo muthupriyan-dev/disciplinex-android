@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.provider.Settings
@@ -45,6 +48,10 @@ class LockAccessibilityService : AccessibilityService() {
             type != AccessibilityEvent.TYPE_WINDOWS_CHANGED
         ) return
 
+        // An emergency unlock is running: make sure the lock comes back when it ends,
+        // even if the user stays inside one app the whole time.
+        scheduleRelockIfNeeded()
+
         if (!ChallengeSession.isLockActive(this)) return     // no challenge pending
 
         // 1) The app that just came to the front.
@@ -58,6 +65,31 @@ class LockAccessibilityService : AccessibilityService() {
 
         // 2) Any other visible window (split-screen or floating mini window).
         if (hasBlockedWindowOnScreen()) redirectToChallenge()
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val relockRunnable = Runnable { relockNow() }
+
+    private fun scheduleRelockIfNeeded() {
+        val left = ChallengeSession.emergencyUnlockMsLeft(this) ?: return
+        handler.removeCallbacks(relockRunnable)
+        handler.postDelayed(relockRunnable, left + 500L)
+    }
+
+    /** The 30-minute emergency unlock is over: send the user back to the challenge screen. */
+    private fun relockNow() {
+        if (!ChallengeSession.isLockActive(this)) return
+        val power = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        // Screen off: the next time the user opens an app the normal check blocks it.
+        if (power != null && !power.isInteractive) return
+        val front = try { rootInActiveWindow?.packageName?.toString() } catch (e: Exception) { null }
+        if (front == packageName) return // already inside DisciplineX
+        redirectToChallenge()
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(relockRunnable)
+        super.onDestroy()
     }
 
     /** True if a window of a blocked app is visible anywhere on screen. */

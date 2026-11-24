@@ -22,6 +22,9 @@ import java.time.ZoneId
  *  4. While the challenge is in progress you may leave the app for up to
  *     [AWAY_GRACE_MS] (an emergency). Come back later than that and the progress
  *     starts again from zero.
+ *  5. After a MISSED challenge an emergency unlock is possible: keep the app OPEN for
+ *     [EMERGENCY_WAIT_MS] (the clock pauses whenever the app is not on screen), then the
+ *     phone is unlocked for [EMERGENCY_UNLOCK_MS] and locks again by itself.
  */
 object ChallengeSession {
     /** The alarm sound stops after this long (or at the time limit, if shorter). */
@@ -31,8 +34,14 @@ object ChallengeSession {
     /** How long you may be away from an in-progress challenge before it restarts. */
     const val AWAY_GRACE_MS = 5 * 60 * 1000L
 
-    /** After a MISSED challenge you can unlock early, but only after waiting this long. */
+    /**
+     * After a MISSED challenge you can unlock early, but only after waiting this long.
+     * The wait only counts while the app is OPEN (on screen).
+     */
     const val EMERGENCY_WAIT_MS = 10 * 60 * 1000L
+
+    /** An emergency unlock lasts this long, then the phone locks again by itself. */
+    const val EMERGENCY_UNLOCK_MS = 30 * 60 * 1000L
 
     /** true = missing the time limit keeps the phone locked (for 24 hours). */
     const val MISSED_KEEPS_LOCK = true
@@ -60,6 +69,13 @@ object ChallengeSession {
     private const val K_EM_ELAPSED = "em_elapsed"
     private const val K_EM_WALL = "em_wall"
     private const val K_EM_BOOT = "em_boot"
+    private const val K_EM_STARTED = "em_started"
+    private const val K_EM_ACCUM = "em_accum"
+    private const val K_EM_RUN_SINCE = "em_run_since"
+    private const val K_EM_RUN_BOOT = "em_run_boot"
+    private const val K_EMU_ELAPSED = "emu_elapsed"
+    private const val K_EMU_WALL = "emu_wall"
+    private const val K_EMU_BOOT = "emu_boot"
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -139,6 +155,8 @@ object ChallengeSession {
             .putLong(K_WINDOW_MS, windowMs)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
             .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
+            .remove(K_EM_STARTED).remove(K_EM_ACCUM).remove(K_EM_RUN_SINCE).remove(K_EM_RUN_BOOT)
+            .remove(K_EMU_ELAPSED).remove(K_EMU_WALL).remove(K_EMU_BOOT)
             .commit()
         return true
     }
@@ -151,6 +169,11 @@ object ChallengeSession {
     fun isLockActive(context: Context): Boolean {
         val p = prefs(context)
         if (!p.getBoolean(K_ACTIVE, false)) return false
+
+        // Emergency unlock running: the phone is open for 30 minutes, then it locks again.
+        val unlockLeft = emergencyUnlockLeft(context, p)
+        if (unlockLeft != null && unlockLeft > 0L) return false
+
         val elapsed = elapsedSinceRing(context, p)
 
         // Time limit over without finishing (whether or not it was ever opened): missed.
@@ -211,43 +234,101 @@ object ChallengeSession {
     fun startEmergencyUnlock(context: Context): Boolean {
         if (phase(context) != Phase.MISSED) return false
         prefs(context).edit()
-            .putLong(K_EM_ELAPSED, SystemClock.elapsedRealtime())
-            .putLong(K_EM_WALL, System.currentTimeMillis())
-            .putInt(K_EM_BOOT, bootCount(context))
+            .putBoolean(K_EM_STARTED, true)
+            .putLong(K_EM_ACCUM, 0L)
+            // The user is looking at the app right now, so the clock starts running.
+            .putLong(K_EM_RUN_SINCE, SystemClock.elapsedRealtime())
+            .putInt(K_EM_RUN_BOOT, bootCount(context))
             .commit()
         return true
     }
 
     fun cancelEmergencyUnlock(context: Context) {
-        prefs(context).edit().remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT).commit()
+        prefs(context).edit().clearEmergencyWait().commit()
+    }
+
+    private fun SharedPreferences.Editor.clearEmergencyWait(): SharedPreferences.Editor =
+        remove(K_EM_STARTED).remove(K_EM_ACCUM).remove(K_EM_RUN_SINCE).remove(K_EM_RUN_BOOT)
+            .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
+
+    /** The app came on screen: the emergency wait (if any) runs again. */
+    fun onAppForeground(context: Context) {
+        val p = prefs(context)
+        if (!p.getBoolean(K_EM_STARTED, false)) return
+        // If a previous on-screen period was never closed (the app was killed), that time
+        // is not counted - it is only counted when we saw the app go to the background.
+        p.edit()
+            .putLong(K_EM_RUN_SINCE, SystemClock.elapsedRealtime())
+            .putInt(K_EM_RUN_BOOT, bootCount(context))
+            .commit()
+    }
+
+    /** The app left the screen: the emergency wait pauses and keeps what it has counted. */
+    fun onAppBackground(context: Context) {
+        val p = prefs(context)
+        if (!p.getBoolean(K_EM_STARTED, false)) return
+        val since = p.getLong(K_EM_RUN_SINCE, 0L)
+        if (since == 0L) return
+        val sameBoot = bootCount(context) == p.getInt(K_EM_RUN_BOOT, Int.MIN_VALUE)
+        val ran = if (sameBoot) (SystemClock.elapsedRealtime() - since).coerceAtLeast(0L) else 0L
+        p.edit()
+            .putLong(K_EM_ACCUM, p.getLong(K_EM_ACCUM, 0L) + ran)
+            .putLong(K_EM_RUN_SINCE, 0L)
+            .commit()
     }
 
     /** null = not started, 0 = the wait is over, otherwise milliseconds still to wait. */
     fun emergencyMsLeft(context: Context): Long? {
         val p = prefs(context)
-        val wall = p.getLong(K_EM_WALL, 0L)
-        val elapsed = p.getLong(K_EM_ELAPSED, 0L)
-        if (wall == 0L && elapsed == 0L) return null
-        val now = System.currentTimeMillis()
-        val sameBoot = bootCount(context) == p.getInt(K_EM_BOOT, Int.MIN_VALUE)
-        var passed = if (sameBoot) SystemClock.elapsedRealtime() - elapsed else now - wall
-        if (passed < 0) passed = now - wall
+        if (!p.getBoolean(K_EM_STARTED, false)) return null
+        var passed = p.getLong(K_EM_ACCUM, 0L)
+        val since = p.getLong(K_EM_RUN_SINCE, 0L)
+        if (since != 0L && bootCount(context) == p.getInt(K_EM_RUN_BOOT, Int.MIN_VALUE)) {
+            passed += (SystemClock.elapsedRealtime() - since).coerceAtLeast(0L)
+        }
         return (EMERGENCY_WAIT_MS - passed).coerceAtLeast(0L)
     }
 
     /**
-     * Unlocks the phone once the wait is over. The day stays missed and the
-     * streak stays reset - this only lifts the lock.
+     * Unlocks the phone once the wait is over, for [EMERGENCY_UNLOCK_MS] only. The day
+     * stays missed and the streak stays reset - this only lifts the lock for a while.
      */
     fun finishEmergencyUnlock(context: Context): Boolean {
         if (phase(context) != Phase.MISSED) return false
         val left = emergencyMsLeft(context) ?: return false
         if (left > 0L) return false
         prefs(context).edit()
-            .putBoolean(K_ACTIVE, false)
-            .remove(K_EM_ELAPSED).remove(K_EM_WALL).remove(K_EM_BOOT)
+            .clearEmergencyWait()
+            .putLong(K_EMU_ELAPSED, SystemClock.elapsedRealtime())
+            .putLong(K_EMU_WALL, System.currentTimeMillis())
+            .putInt(K_EMU_BOOT, bootCount(context))
             .commit()
         return true
+    }
+
+    /** Milliseconds of emergency unlock still left; null if none is running. */
+    private fun emergencyUnlockLeft(context: Context, p: SharedPreferences): Long? {
+        val wall = p.getLong(K_EMU_WALL, 0L)
+        val elapsed = p.getLong(K_EMU_ELAPSED, 0L)
+        if (wall == 0L && elapsed == 0L) return null
+        val now = System.currentTimeMillis()
+        val sameBoot = bootCount(context) == p.getInt(K_EMU_BOOT, Int.MIN_VALUE)
+        var passed = if (sameBoot) SystemClock.elapsedRealtime() - elapsed else now - wall
+        if (passed < 0) passed = now - wall
+        val left = (EMERGENCY_UNLOCK_MS - passed).coerceAtLeast(0L)
+        if (left == 0L) {
+            // The 30 minutes are over: the lock comes back.
+            p.edit().remove(K_EMU_ELAPSED).remove(K_EMU_WALL).remove(K_EMU_BOOT).commit()
+            return null
+        }
+        return left
+    }
+
+    /** For the Home banner: how long the phone stays unlocked (null = no emergency unlock running). */
+    fun emergencyUnlockMsLeft(context: Context): Long? {
+        val p = prefs(context)
+        if (!p.getBoolean(K_ACTIVE, false)) return null
+        return emergencyUnlockLeft(context, p)
     }
 
     /** Call when the challenge screen goes to the background. */
@@ -321,6 +402,7 @@ object ChallengeSession {
         }
         p.edit().putBoolean(K_ACTIVE, false)
             .remove(K_LEFT_ELAPSED).remove(K_LEFT_WALL).remove(K_LEFT_BOOT)
+            .remove(K_EMU_ELAPSED).remove(K_EMU_WALL).remove(K_EMU_BOOT)
             .commit()
         UserPrefs.resetProgress(context)
     }

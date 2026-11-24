@@ -1,5 +1,10 @@
 package com.muthu.disciplinex.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -14,6 +19,7 @@ import com.muthu.disciplinex.data.UserPrefs
 import com.muthu.disciplinex.ui.alarms.AlarmEditScreen
 import com.muthu.disciplinex.ui.challenge.ChallengeGate
 import com.muthu.disciplinex.ui.home.HomeScreen
+import com.muthu.disciplinex.ui.onboarding.HowItWorksScreen
 import com.muthu.disciplinex.ui.onboarding.PermissionsScreen
 import com.muthu.disciplinex.ui.onboarding.WelcomeScreen
 import com.muthu.disciplinex.ui.settings.AllowedAppsScreen
@@ -23,6 +29,7 @@ import com.muthu.disciplinex.ui.stats.StatsScreen
 
 private object Routes {
     const val WELCOME = "welcome"
+    const val HOW_IT_WORKS = "how_it_works"
     const val PERMISSIONS = "permissions"
     const val HOME = "home"
     const val CHALLENGE = "challenge"
@@ -68,9 +75,23 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
         }
     }
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        // Screens slide in from the side and fade, going back reverses it.
+        enterTransition = { slideInHorizontally(tween(260)) { it / 6 } + fadeIn(tween(260)) },
+        exitTransition = { slideOutHorizontally(tween(260)) { -it / 6 } + fadeOut(tween(200)) },
+        popEnterTransition = { slideInHorizontally(tween(260)) { -it / 6 } + fadeIn(tween(260)) },
+        popExitTransition = { slideOutHorizontally(tween(260)) { it / 6 } + fadeOut(tween(200)) }
+    ) {
         composable(Routes.WELCOME) {
-            WelcomeScreen(onGetStarted = { navController.navigate(Routes.PERMISSIONS) })
+            WelcomeScreen(onGetStarted = { navController.navigate(Routes.HOW_IT_WORKS) })
+        }
+        composable(Routes.HOW_IT_WORKS) {
+            HowItWorksScreen(
+                onContinue = { navController.navigate(Routes.PERMISSIONS) },
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Routes.PERMISSIONS) {
             PermissionsScreen(

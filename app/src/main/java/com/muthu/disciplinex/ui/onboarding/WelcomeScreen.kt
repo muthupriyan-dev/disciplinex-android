@@ -47,6 +47,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(28.dp))
             GradientHeroCard(
+                modifier = Modifier.fillMaxWidth(),
                 title = tr("Morning Challenge", "காலை சவால்"),
                 subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் பயிற்சியை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள்.")
             ) {

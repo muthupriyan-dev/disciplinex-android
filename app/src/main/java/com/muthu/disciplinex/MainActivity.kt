@@ -8,6 +8,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
 import com.muthu.disciplinex.data.AppSettings
+import com.muthu.disciplinex.data.ChallengeSession
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
@@ -59,6 +60,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    // The emergency-unlock wait only counts while the app is on screen.
+    override fun onStart() {
+        super.onStart()
+        ChallengeSession.onAppForeground(this)
+    }
+
+    override fun onStop() {
+        ChallengeSession.onAppBackground(this)
+        super.onStop()
     }
 
     override fun onNewIntent(intent: Intent) {

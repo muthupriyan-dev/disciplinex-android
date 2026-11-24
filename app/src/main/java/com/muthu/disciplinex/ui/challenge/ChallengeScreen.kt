@@ -14,6 +14,13 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.SystemClock
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.draw.scale
+import com.muthu.disciplinex.data.StreakStore
+import java.time.LocalDate
+
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -357,13 +364,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
             Spacer(modifier = Modifier.weight(1f))
 
             if (isComplete) {
-                Text(
-                    text = tr("Challenge complete!", "சவால் முடிந்தது!"),
-                    color = Success,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
-                )
+                CompleteCelebration(modifier = Modifier.tour("bottom").padding(bottom = 16.dp))
                 PrimaryPillButton(text = tr("Finish & Unlock Phone", "முடித்து போனை திற"), onClick = onComplete)
             } else {
                 Text(
@@ -402,6 +403,9 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
     var debugText by remember(exerciseName) { mutableStateOf("") }
     val isComplete = reps >= target
     var awayReset by remember { mutableStateOf(false) }
+    // Camera exercises start with a short "get ready" countdown so you can place the phone
+    // and step back. It is skipped when some reps are already saved (coming back to the screen).
+    var ready by remember(exerciseName) { mutableStateOf(!usesCamera || reps > 0) }
 
     // Away for more than 5 minutes -> the count starts again from zero.
     if (!isComplete) {
@@ -450,7 +454,12 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (usesCamera && !isComplete) {
+            if (usesCamera && !isComplete && !ready) {
+                GetReadyCountdown(
+                    onDone = { ready = true },
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                )
+            } else if (usesCamera && !isComplete) {
                 CameraRepTracker(
                     exerciseName = exerciseName,
                     onUpdate = { update ->
@@ -483,13 +492,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
 
             when {
                 isComplete -> {
-                    Text(
-                        text = tr("Challenge complete!", "சவால் முடிந்தது!"),
-                        color = Success,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
-                    )
+                    CompleteCelebration(modifier = Modifier.tour("bottom").padding(bottom = 16.dp))
                     PrimaryPillButton(
                         text = tr("Finish & Unlock Phone", "முடித்து போனை திற"),
                         onClick = onComplete
@@ -589,6 +592,89 @@ private fun CameraRepTracker(exerciseName: String, onUpdate: (RepUpdate) -> Unit
         }
     }
     Spacer(modifier = Modifier.height(20.dp))
+}
+
+/** "Get ready" 5-4-3-2-1 before the camera starts counting reps. */
+@Composable
+private fun GetReadyCountdown(onDone: () -> Unit, modifier: Modifier = Modifier) {
+    var left by remember { mutableStateOf(5) }
+    val currentOnDone by rememberUpdatedState(onDone)
+    LaunchedEffect(Unit) {
+        while (left > 0) {
+            delay(1000)
+            left--
+        }
+        currentOnDone()
+    }
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = tr("Get ready", "தயாராகுங்கள்"),
+            color = TextMuted,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            text = "$left",
+            color = OrangeEnd,
+            fontWeight = FontWeight.Bold,
+            fontSize = 72.sp
+        )
+        Text(
+            text = tr("Place your phone and step back so your whole body is in the camera.", "போனை வைத்து, உங்கள் முழு உடலும் கேமராவில் தெரியும்படி பின்னால் நில்லுங்கள்."),
+            color = TextMuted,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        TextButton(onClick = { currentOnDone() }) {
+            Text(tr("Start now", "இப்போதே தொடங்கு"), color = OrangeEnd, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+/** Shown when the challenge is done: a little pop-in and the streak counting up. */
+@Composable
+private fun CompleteCelebration(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val streakBefore = remember { StreakStore.currentStreak(context) }
+    val alreadyCounted = remember { StreakStore.status(context, LocalDate.now()) == StreakStore.DayStatus.DONE }
+    val streakAfter = if (alreadyCounted) streakBefore else streakBefore + 1
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(200)
+        shown = true
+    }
+    val scale by animateFloatAsState(
+        targetValue = if (shown) 1f else 0.4f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "celebrateScale"
+    )
+    val count by animateIntAsState(
+        targetValue = if (shown) streakAfter else streakBefore,
+        animationSpec = tween(900),
+        label = "streakCount"
+    )
+    Column(
+        modifier = modifier.scale(scale),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("\uD83C\uDF89", fontSize = 36.sp)
+        Text(
+            text = tr("Challenge complete!", "சவால் முடிந்தது!"),
+            color = Success,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge
+        )
+        Text(
+            text = tr("\uD83D\uDD25 $count day streak", "\uD83D\uDD25 $count நாள் தொடர் சாதனை"),
+            color = TextMuted,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
 }
 
 @Composable
@@ -800,13 +886,7 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
             Spacer(modifier = Modifier.weight(1f))
 
             if (isComplete) {
-                Text(
-                    text = tr("Challenge complete!", "சவால் முடிந்தது!"),
-                    color = Success,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
-                )
+                CompleteCelebration(modifier = Modifier.tour("bottom").padding(bottom = 16.dp))
                 PrimaryPillButton(text = tr("Finish & Unlock Phone", "முடித்து போனை திற"), onClick = onComplete)
             } else {
                 Text(

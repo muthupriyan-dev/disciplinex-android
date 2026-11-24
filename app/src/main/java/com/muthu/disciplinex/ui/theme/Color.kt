@@ -25,3 +25,6 @@ val Success = Color(0xFF2ECC71)
 val SuccessText: Color get() = if (AppSettings.isDark) Color(0xFF2ECC71) else Color(0xFF11803F)
 val Warning = Color(0xFFFFB020)
 val Danger = Color(0xFFFF4D4F)
+
+/** Filled green buttons with white text (Start / Continue): deep enough to read. */
+val SuccessButton = Color(0xFF1E9E50)

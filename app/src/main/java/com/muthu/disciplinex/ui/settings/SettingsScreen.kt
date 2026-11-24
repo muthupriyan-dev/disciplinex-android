@@ -298,6 +298,15 @@ fun SettingsScreen(
                             onClick = onOpenAllowedApps,
                             showChevron = true
                         )
+                        GroupDivider()
+                        SettingsRow(
+                            icon = Icons.Filled.Info,
+                            title = tr("Emergency unlock", "அவசரத் திறப்பு"),
+                            subtitle = tr(
+                                "Missed a challenge? Keep the app open for 10 minutes (the time pauses when you leave) and your phone unlocks for 30 minutes, then it locks again by itself. The day stays missed.",
+                                "சவால் தவறிவிட்டதா? ஆப்பை 10 நிமிடம் திறந்து வையுங்கள் (வெளியே சென்றால் நேரம் நின்றுவிடும்). பிறகு போன் 30 நிமிடம் திறந்திருக்கும், தானாகவே மீண்டும் பூட்டிக்கொள்ளும். அந்த நாள் தவறியதாகவே இருக்கும்."
+                            )
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
