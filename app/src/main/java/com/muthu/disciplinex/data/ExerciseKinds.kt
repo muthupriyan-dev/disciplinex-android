@@ -31,5 +31,10 @@ object ExerciseKinds {
 
     /** "350 m" or "1.5 km". */
     fun distanceText(meters: Int): String =
-        if (meters >= 1000) String.format(java.util.Locale.US, "%.1f km", meters / 1000.0) else "$meters m"
+        if (meters >= 1000) {
+            val km = String.format(java.util.Locale.US, "%.1f", meters / 1000.0)
+            tr("$km km", "$km கி.மீ")
+        } else {
+            tr("$meters m", "$meters மீ")
+        }
 }

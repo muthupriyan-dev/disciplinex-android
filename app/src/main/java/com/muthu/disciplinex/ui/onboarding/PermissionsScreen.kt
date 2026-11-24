@@ -170,7 +170,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         add(
             PermissionRow(
                 title = tr("Notifications", "அறிவிப்புகள்"),
-                reason = tr("Shows the wake-up alarm and keeps it running reliably.", "எழுப்பும் அலாரத்தை காட்டி, அது நம்பகமாக இயங்க உதவும்."),
+                reason = tr("Shows the wake-up alarm and keeps it running reliably.", "எழுப்பும் அலாரத்தை காட்டி, அது தவறாமல் வேலை செய்ய உதவும்."),
                 isGranted = notificationGranted,
                 onRequest = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -182,8 +182,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             add(
                 PermissionRow(
-                    title = tr("Alarm over lock screen", "லாக் ஸ்கிரீன் மேல் அலாரம்"),
-                    reason = tr("So the alarm screen can appear on top when your phone is locked.", "போன் பூட்டியிருக்கும்போது அலாரம் திரை மேலே தோன்ற."),
+                    title = tr("Alarm over lock screen", "பூட்டுத் திரையில் அலாரம்"),
+                    reason = tr("So the alarm screen can appear on top when your phone is locked.", "போன் பூட்டியிருக்கும்போது, அலாரம் திரை மேலே தோன்றுவதற்காக."),
                     isGranted = fullScreenGranted,
                     onRequest = {
                         val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
@@ -197,7 +197,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         add(
             PermissionRow(
                 title = tr("Camera", "கேமரா"),
-                reason = tr("Only used live for pose detection during camera-based exercises — nothing is recorded or uploaded.", "கேமரா பயிற்சிகளின்போது உடல் நிலையை கண்டறிய மட்டும் நேரடியாக பயன்படும் — எதுவும் பதிவு செய்யப்படாது, பதிவேற்றப்படாது."),
+                reason = tr("Only used live for pose detection during camera-based exercises — nothing is recorded or uploaded.", "கேமரா பயிற்சிகளின்போது உங்கள் உடல் நிலையை அறிய மட்டுமே நேரடியாக பயன்படும் — எதுவும் பதிவு செய்யப்படாது, பதிவேற்றப்படாது."),
                 isGranted = cameraGranted,
                 onRequest = { cameraLauncher.launch(Manifest.permission.CAMERA) }
             )
@@ -206,7 +206,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
             add(
                 PermissionRow(
                     title = tr("Physical activity", "உடல் செயல்பாடு"),
-                    reason = tr("Counts your steps for the Walking challenge. Nothing leaves your phone.", "நடைப்பயிற்சி சேலஞ்சுக்கு உங்கள் அடிகளை எண்ண. எதுவும் போனை விட்டு வெளியே போகாது."),
+                    reason = tr("Counts your steps for the Walking challenge. Nothing leaves your phone.", "நடைப்பயிற்சிக்காக உங்கள் அடிகளை எண்ணும். எதுவும் உங்கள் போனை விட்டு வெளியே போகாது."),
                     isGranted = activityGranted,
                     onRequest = { activityLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
                 )
@@ -214,8 +214,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         }
         add(
             PermissionRow(
-                title = tr("Run in background", "பின்னணியில் இயங்கு"),
-                reason = tr("Stops your phone's battery saver from killing the alarm or the app lock. Choose \"Allow\".", "பேட்டரி சேவர் அலாரத்தையோ ஆப் லாக்கையோ நிறுத்தாமல் தடுக்கும். \"Allow\" என்பதை தேர்ந்தெடுங்கள்."),
+                title = tr("Run in background", "பின்னணியில் இயங்க அனுமதி"),
+                reason = tr("Stops your phone's battery saver from killing the alarm or the app lock. Choose \"Allow\".", "போனின் பேட்டரி சேமிப்பு அமைப்பு அலாரத்தையோ ஆப் பூட்டையோ நிறுத்திவிடாமல் தடுக்கும். \"Allow\" (அனுமதி) என்பதை தேர்ந்தெடுங்கள்."),
                 isGranted = batteryGranted,
                 onRequest = {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
@@ -227,8 +227,8 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
         )
         add(
             PermissionRow(
-                title = tr("Accessibility service", "அக்சசிபிலிட்டி சேவை"),
-                reason = tr("Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on. If the switch is greyed out: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.", "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் சாளரங்கள் உட்பட) பார்க்க மட்டும் பயன்படும், அதனால் உங்களை சேலஞ்சுக்கு திருப்பி அனுப்ப முடியும். உங்கள் செய்திகளையோ தட்டச்சு செய்வதையோ படிக்காது. Allow தட்டி, \"DisciplineX App Lock\" திறந்து ஆன் செய்யுங்கள். சுவிட்ச் சாம்பல் நிறமாக இருந்தால்: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings."),
+                title = tr("Accessibility service", "அணுகல் வசதி சேவை"),
+                reason = tr("Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \"DisciplineX App Lock\" and switch it on. If the switch is greyed out: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.", "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் திரைகள் உட்பட) பார்க்க மட்டுமே பயன்படும்; அதனால் உங்களை மீண்டும் சவாலுக்கு அனுப்ப முடியும். உங்கள் செய்திகளையோ, நீங்கள் தட்டச்சு செய்வதையோ ஒருபோதும் படிக்காது. அனுமதி என்பதை தட்டி, \"DisciplineX App Lock\" என்பதை திறந்து இயக்குங்கள். சுவிட்ச் சாம்பல் நிறத்தில் இருந்தால்: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings."),
                 isGranted = accessibilityGranted,
                 onRequest = {
                     context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -251,7 +251,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
                     }
                 },
                 actions = { GuideButton(onClick = { showTour = true }) },
@@ -269,7 +269,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 Text(tr("Why we ask for this", "இதை ஏன் கேட்கிறோம்"), modifier = Modifier.tourTarget(tour, "why"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.", "கீழுள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது."),
+                    tr("DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.", "கீழே உள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட தகவல்களை ஒருபோதும் படிக்காது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -297,7 +297,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                                 if (p.isGranted) {
                                     Icon(
                                         Icons.Default.Check,
-                                        contentDescription = tr("Granted", "வழங்கப்பட்டது"),
+                                        contentDescription = tr("Granted", "அனுமதிக்கப்பட்டது"),
                                         tint = OrangeEnd
                                     )
                                 } else {
@@ -313,7 +313,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 if (!allGranted) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        tr("DisciplineX can't work without these. Allow every item above to continue.", "இவை இல்லாமல் DisciplineX செயல்படாது. தொடர மேலுள்ள எல்லாவற்றையும் அனுமதியுங்கள்."),
+                        tr("DisciplineX can't work without these. Allow every item above to continue.", "இவை இல்லாமல் DisciplineX வேலை செய்யாது. தொடர, மேலே உள்ள எல்லாவற்றையும் அனுமதியுங்கள்."),
                         color = OrangeEnd,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -338,18 +338,18 @@ private tailrec fun Context.findActivity(): android.app.Activity? = when (this) 
 
 private fun permissionsTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "why", tr("Why these permissions", "இந்த அனுமதிகள் ஏன்"),
+        "why", tr("Why these permissions", "இந்த அனுமதிகள் ஏன் தேவை"),
         tr("DisciplineX only uses these for the features listed. It never reads your messages, OTPs or personal content.",
-            "பட்டியலிட்ட வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும். உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது.")
+            "பட்டியலிடப்பட்ட வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும். உங்கள் செய்திகள், OTP, தனிப்பட்ட தகவல்களை ஒருபோதும் படிக்காது.")
     ),
     TourStep(
         "rows", tr("Allow each one", "ஒவ்வொன்றையும் அனுமதியுங்கள்"),
         tr("Tap Allow next to each item. A tick means it is done. The app can't work properly until every one is on.",
-            "ஒவ்வொன்றின் அருகிலும் Allow தட்டுங்கள். டிக் என்றால் முடிந்தது. எல்லாம் ஆன் ஆகும் வரை ஆப் சரியாக வேலை செய்யாது.")
+            "ஒவ்வொன்றின் அருகிலும் அனுமதி என்பதை தட்டுங்கள். சரிக்குறி என்றால் முடிந்தது. எல்லாம் இயக்கத்தில் இருக்கும் வரை ஆப் சரியாக வேலை செய்யாது.")
     ),
     TourStep(
         "continue", tr("Continue", "தொடர்"),
         tr("This unlocks only after every permission is allowed.",
-            "எல்லா அனுமதிகளும் கொடுத்த பிறகுதான் இது திறக்கும்.")
+            "எல்லா அனுமதிகளையும் கொடுத்த பிறகுதான் இது திறக்கும்.")
     )
 )

@@ -77,36 +77,36 @@ import java.util.Locale
 
 private fun homeTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "streak", tr("Your streak \uD83D\uDD25", "உங்கள் ஸ்ட்ரீக் \uD83D\uDD25"),
-        tr("Finish every challenge on time and this number grows. Miss one and it goes back to 0.", "ஒவ்வொரு சேலஞ்சையும் நேரத்துக்கு முடித்தால் இந்த எண் உயரும். ஒன்றைத் தவறவிட்டால் 0-க்கு திரும்பும்.")
+        "streak", tr("Your streak \uD83D\uDD25", "உங்கள் தொடர் சாதனை \uD83D\uDD25"),
+        tr("Finish every challenge on time and this number grows. Miss one and it goes back to 0.", "ஒவ்வொரு சவாலையும் நேரத்துக்குள் முடித்தால் இந்த எண் கூடும். ஒன்றை தவறவிட்டால் மீண்டும் 0 ஆகிவிடும்.")
     ),
     TourStep(
         "status", tr("Status", "நிலை"),
-        tr("Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings.", "ஆப் லாக் தயாரா என்றும், அலாரம் அடித்த பின் என்ன காத்திருக்கிறது என்றும் காட்டும். அலாரம் அடித்த பின் முடிக்க நீங்கள் வைத்த நேர வரம்பு உண்டு.")
+        tr("Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings.", "ஆப் பூட்டு தயாராக உள்ளதா என்பதையும், அலாரம் அடித்த பிறகு என்ன காத்திருக்கிறது என்பதையும் காட்டும். அலாரம் அடித்த பிறகு முடிக்க, நீங்கள் அந்த அலாரத்தில் வைத்த நேர வரம்பு உங்களுக்கு கிடைக்கும்.")
     ),
     TourStep(
         "alarm", tr("An alarm", "ஒரு அலாரம்"),
-        tr("Each card is one alarm. Tap it to change the time, repeat days, exercise and target. Add as many as you like \u2014 morning, evening, any time.", "ஒவ்வொரு கார்டும் ஒரு அலாரம். நேரம், நாட்கள், பயிற்சி, இலக்கு மாற்ற தட்டுங்கள். காலை, மாலை, எப்போது வேண்டுமானாலும் எத்தனை வேண்டுமானாலும் சேர்க்கலாம்.")
+        tr("Each card is one alarm. Tap it to change the time, repeat days, exercise and target. Add as many as you like \u2014 morning, evening, any time.", "ஒவ்வொரு அட்டையும் ஒரு அலாரம். நேரம், மீண்டும் அடிக்கும் நாட்கள், பயிற்சி, இலக்கு ஆகியவற்றை மாற்ற அதை தட்டுங்கள். காலை, மாலை, எப்போது வேண்டுமானாலும் \u2014 எத்தனை வேண்டுமானாலும் சேர்க்கலாம்.")
     ),
     TourStep(
-        "switch", tr("On / off", "ஆன் / ஆஃப்"),
-        tr("Switch an alarm on or off without deleting it.", "அலாரத்தை நீக்காமல் ஆன் அல்லது ஆஃப் செய்யலாம்.")
+        "switch", tr("On / off", "இயக்கு / அணை"),
+        tr("Switch an alarm on or off without deleting it.", "அலாரத்தை நீக்காமலேயே இயக்கவோ அணைக்கவோ செய்யலாம்.")
     ),
     TourStep(
         "fab", tr("Add an alarm", "அலாரம் சேர்"),
-        tr("Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\u2026) and how many reps or minutes.", "புதிய அலாரம் சேர்க்க + தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், நடைப்பயிற்சி\u2026) மற்றும் எத்தனை முறை / நிமிடங்கள் என தேர்ந்தெடுங்கள்.")
+        tr("Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\u2026) and the target: reps, minutes or distance.", "புதிய அலாரம் சேர்க்க + ஐ தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ், நடைப்பயிற்சி\u2026), இலக்கு (முறை, நிமிடங்கள் அல்லது தூரம்) ஆகியவற்றை தேர்ந்தெடுங்கள்.")
     ),
     TourStep(
         "stats", tr("Statistics", "புள்ளிவிவரங்கள்"),
-        tr("See your totals, the last 7 days, results for each exercise and your achievements.", "மொத்த எண்கள், கடந்த 7 நாட்கள், ஒவ்வொரு பயிற்சியின் முடிவு, சாதனைகளை பாருங்கள்.")
+        tr("See your totals, the last 7 days, results for each exercise and your achievements.", "உங்கள் மொத்த எண்கள், கடந்த 7 நாட்கள், ஒவ்வொரு பயிற்சியின் முடிவுகள், உங்கள் சாதனைகளை பாருங்கள்.")
     ),
     TourStep(
         "settings", tr("Settings", "அமைப்புகள்"),
-        tr("Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.", "பூட்டியிருக்கும்போது எந்த ஆப்கள் திறந்திருக்க வேண்டும், தீம், மொழி, காப்பு பிரதி சேமிப்பு / மீட்பு, தனியுரிமை குறிப்புகள் அனைத்தும் இங்கே.")
+        tr("Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.", "பூட்டியிருக்கும்போது திறந்திருக்க வேண்டிய ஆப்களை தேர்ந்தெடுங்கள், தோற்றம் மற்றும் மொழியை மாற்றுங்கள், காப்பு நகலை சேமியுங்கள் அல்லது மீட்டெடுங்கள், தனியுரிமை குறிப்புகளை படியுங்கள்.")
     ),
     TourStep(
-        "help", tr("Need this again?", "மீண்டும் வேண்டுமா?"),
-        tr("Tap this button any time to see this guide again.", "இந்த வழிகாட்டியை மீண்டும் காண எப்போது வேண்டுமானாலும் இந்த பட்டனை தட்டுங்கள்.")
+        "help", tr("Need this again?", "இது மீண்டும் வேண்டுமா?"),
+        tr("Tap this button any time to see this guide again.", "இந்த வழிகாட்டியை மீண்டும் பார்க்க, எப்போது வேண்டுமானாலும் இந்த பொத்தானை தட்டுங்கள்.")
     )
 )
 
@@ -222,8 +222,8 @@ fun HomeScreen(
 
                 // ---- Streak ----
                 GradientHeroCard(
-                    title = tr("\uD83D\uDD25 $streak day streak", "\uD83D\uDD25 $streak நாள் ஸ்ட்ரீக்"),
-                    subtitle = tr("Best: $best days", "சிறந்தது: $best நாட்கள்"),
+                    title = tr("\uD83D\uDD25 $streak day streak", "\uD83D\uDD25 $streak நாள் தொடர் சாதனை"),
+                    subtitle = tr("Best: $best days", "அதிகபட்சம்: $best நாட்கள்"),
                     modifier = Modifier.fillMaxWidth().tourTarget(tour, "streak").clickable { onOpenHistory() }
                 ) {
                     Row(
@@ -268,7 +268,7 @@ fun HomeScreen(
                 if (locked) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        tr("Alarms can't be changed while your phone is locked. Finish the challenge, or wait for the next alarm.", "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது. சேலஞ்சை முடியுங்கள், அல்லது அடுத்த அலாரம் வரை காத்திருங்கள்."),
+                        tr("Alarms can't be changed while your phone is locked. Finish the challenge, or wait for the next alarm.", "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது. சவாலை முடியுங்கள், அல்லது அடுத்த அலாரம் வரை காத்திருங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -289,7 +289,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            tr("Set a wake-up time and a challenge. Miss it and your apps stay locked.", "எழுந்திருக்கும் நேரத்தையும் சேலஞ்சையும் அமையுங்கள். தவறினால் ஆப்கள் பூட்டியிருக்கும்."),
+                            tr("Set a wake-up time and a challenge. Miss it and your apps stay locked.", "எழுந்திருக்கும் நேரத்தையும் ஒரு சவாலையும் அமைத்துக்கொள்ளுங்கள். அதை தவறவிட்டால், உங்கள் ஆப்கள் பூட்டியே இருக்கும்."),
                             color = TextMuted,
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
@@ -386,10 +386,10 @@ private fun StatusCard(
     ) {
         when {
             !serviceEnabled -> {
-                Text(tr("App lock is OFF", "ஆப் லாக் அணைந்துள்ளது"), fontWeight = FontWeight.SemiBold, color = Warning, style = MaterialTheme.typography.titleMedium)
+                Text(tr("App lock is OFF", "ஆப் பூட்டு அணைந்துள்ளது"), fontWeight = FontWeight.SemiBold, color = Warning, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    tr("Turn on the DisciplineX App Lock accessibility service. Without it, apps stay open even if you skip the challenge.", "DisciplineX App Lock அக்சசிபிலிட்டி சேவையை ஆன் செய்யுங்கள். இல்லையெனில் சேலஞ்சை தவிர்த்தாலும் ஆப்கள் திறந்தே இருக்கும்."),
+                    tr("Turn on the DisciplineX App Lock accessibility service. Without it, apps stay open even if you skip the challenge.", "DisciplineX App Lock அணுகல் வசதி சேவையை இயக்குங்கள். இது இல்லையென்றால், சவாலை தவிர்த்தாலும் ஆப்கள் திறந்தே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -399,12 +399,12 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
-                ) { Text(tr("Turn on app lock", "ஆப் லாக் ஆன் செய்")) }
+                ) { Text(tr("Turn on app lock", "ஆப் பூட்டை இயக்கு")) }
             }
 
             phase == ChallengeSession.Phase.WAITING -> {
                 val sec = (msLeft / 1000).toInt()
-                Text(tr("Challenge waiting", "சேலஞ்ச் காத்திருக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge waiting", "சவால் காத்திருக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     "${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}",
@@ -413,7 +413,7 @@ private fun StatusCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    String.format(Locale.US, tr("Finish within %02d:%02d or it counts as missed.", "%02d:%02d-க்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு."), sec / 60, sec % 60),
+                    String.format(Locale.US, tr("Finish within %02d:%02d or it counts as missed.", "%02d:%02d-க்குள் முடியுங்கள், இல்லையென்றால் தவறியதாக எடுத்துக்கொள்ளப்படும்."), sec / 60, sec % 60),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -427,10 +427,10 @@ private fun StatusCard(
             }
 
             phase == ChallengeSession.Phase.IN_PROGRESS -> {
-                Text(tr("Challenge in progress", "சேலஞ்ச் நடக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"), fontWeight = FontWeight.SemiBold, color = OrangeEnd, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    tr("${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \u2014 ${msLeft / 60000} min left.", "${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. முடித்தால் போன் திறக்கும் \u2014 ${msLeft / 60000} நிமிடம் மீதம்."),
+                    tr("${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \u2014 ${msLeft / 60000} min left.", "${ExerciseKinds.display(ChallengeSession.exercise(context))} \u00b7 ${ChallengeSession.summary(context)}. இதை முடித்தால் போன் திறக்கும் \u2014 ${msLeft / 60000} நிமிடம் மீதம்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -440,16 +440,16 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd)
-                ) { Text(tr("Continue challenge", "சேலஞ்சை தொடர்")) }
+                ) { Text(tr("Continue challenge", "சவாலை தொடர்")) }
             }
 
             phase == ChallengeSession.Phase.MISSED -> {
                 val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                     .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                Text(tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"), fontWeight = FontWeight.SemiBold, color = Danger, style = MaterialTheme.typography.titleMedium)
+                Text(tr("Challenge missed", "சவால் தவறிவிட்டது"), fontWeight = FontWeight.SemiBold, color = Danger, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    tr("You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.", "நேர வரம்புக்குள் முடிக்கவில்லை, அதனால் ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது. $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்."),
+                    tr("You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.", "நேர வரம்புக்குள் முடிக்கவில்லை, அதனால் தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது. $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -460,9 +460,9 @@ private fun StatusCard(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     when {
-                        !hasAlarms -> tr("No alarms yet \u2014 tap + to add one.", "இன்னும் அலாரம் இல்லை \u2014 சேர்க்க + தட்டுங்கள்.")
-                        nextText != null -> tr("Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish.", "அடுத்த அலாரம்: $nextText. அடித்ததும் முடிக்க உங்கள் நேர வரம்பு உண்டு; முடிக்கும் வரை போன், கேமரா, அனுமதித்த ஆப்கள் தவிர எல்லாம் பூட்டியிருக்கும்.")
-                        else -> tr("All alarms are off. Switch one on to get started.", "எல்லா அலாரங்களும் அணைந்துள்ளன. தொடங்க ஒன்றை ஆன் செய்யுங்கள்.")
+                        !hasAlarms -> tr("No alarms yet \u2014 tap + to add one.", "இன்னும் அலாரம் இல்லை \u2014 சேர்க்க + ஐ தட்டுங்கள்.")
+                        nextText != null -> tr("Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish.", "அடுத்த அலாரம்: $nextText. அது அடித்ததும் முடிக்க உங்கள் நேர வரம்பு கிடைக்கும்; முடிக்கும் வரை போன், கேமரா, நீங்கள் அனுமதித்த ஆப்கள் தவிர மற்ற எல்லா ஆப்களும் பூட்டியே இருக்கும்.")
+                        else -> tr("All alarms are off. Switch one on to get started.", "எல்லா அலாரங்களும் அணைந்துள்ளன. தொடங்க ஒன்றை இயக்குங்கள்.")
                     },
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
@@ -515,7 +515,7 @@ private fun AlarmCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     tr("\uD83D\uDD12 Rings within 2 hours \u2014 it can't be changed or switched off now.",
-                        "\uD83D\uDD12 2 மணி நேரத்துக்குள் அடிக்கும் \u2014 இப்போது மாற்றவோ அணைக்கவோ முடியாது."),
+                        "\uD83D\uDD12 2 மணி நேரத்துக்குள் அடிக்கும் \u2014 இப்போது இதை மாற்றவோ அணைக்கவோ முடியாது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -558,7 +558,7 @@ private fun PermissionWarningCard(names: String, onReview: () -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                tr("Some permissions are off", "சில அனுமதிகள் அணைந்துள்ளன"),
+                tr("Some permissions are off", "சில அனுமதிகள் கொடுக்கப்படவில்லை"),
                 fontWeight = FontWeight.Bold,
                 color = Danger
             )
@@ -600,19 +600,19 @@ private fun EmergencyUnlockCard(onChanged: () -> Unit) {
             .background(Surface)
             .padding(16.dp)
     ) {
-        Text(tr("Real emergency?", "உண்மையான அவசரமா?"), fontWeight = FontWeight.Bold)
+        Text(tr("Real emergency?", "உண்மையிலேயே அவசரமா?"), fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(4.dp))
         when {
             left == null -> {
                 Text(
                     tr("You can unlock early after a 10-minute wait. Today stays missed and your streak stays at 0.",
-                        "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும்."),
+                        "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedButton(onClick = { confirm = true }) {
-                    Text(tr("Start emergency unlock", "அவசர அன்லாக் தொடங்கு"), color = OrangeEnd)
+                    Text(tr("Start emergency unlock", "அவசரத் திறப்பை தொடங்கு"), color = OrangeEnd)
                 }
             }
             left > 0L -> {
@@ -641,11 +641,11 @@ private fun EmergencyUnlockCard(onChanged: () -> Unit) {
     if (confirm) {
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text(tr("Start emergency unlock?", "அவசர அன்லாக் தொடங்கவா?")) },
+            title = { Text(tr("Start emergency unlock?", "அவசரத் திறப்பை தொடங்கவா?")) },
             text = {
                 Text(
                     tr("Your apps unlock after 10 minutes. Today stays missed and your streak stays at 0. Only use this for a real emergency.",
-                        "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.")
+                        "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.")
                 )
             },
             confirmButton = {

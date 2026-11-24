@@ -132,7 +132,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
             when (phase) {
                 ChallengeSession.Phase.WAITING -> {
                     Text(
-                        text = if (label.isBlank()) tr("Time to move!", "எழுந்து இயங்குங்கள்!") else label,
+                        text = if (label.isBlank()) tr("Time to move!", "உடலை அசைக்க வேண்டிய நேரம்!") else label,
                         color = Color.White,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
@@ -153,7 +153,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = tr("left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours", "முடிக்க மீதம் \u2014 அதன் பிறகு சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்"),
+                        text = tr("left to finish \u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours", "முடிக்க நேரம் மீதம் \u2014 அதன் பிறகு சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்"),
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -169,7 +169,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                             .fillMaxWidth()
                             .height(56.dp)
                     ) {
-                        Text(tr("Start challenge", "சேலஞ்சை தொடங்கு"), fontWeight = FontWeight.Bold)
+                        Text(tr("Start challenge", "சவாலை தொடங்கு"), fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
@@ -184,7 +184,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = tr("Dismiss only stops the sound. The time limit keeps running and your apps stay locked.", "இது ஒலியை மட்டும் நிறுத்தும். நேர வரம்பு ஓடிக்கொண்டிருக்கும், ஆப்கள் பூட்டியே இருக்கும்."),
+                        text = tr("Dismiss only stops the sound. The time limit keeps running and your apps stay locked.", "நிறுத்து என்பது ஒலியை மட்டுமே நிறுத்தும். நேர வரம்பு தொடர்ந்து ஓடும், ஆப்கள் பூட்டியே இருக்கும்."),
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
@@ -192,7 +192,7 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 }
 
                 ChallengeSession.Phase.IN_PROGRESS -> {
-                    Text(tr("Challenge in progress", "சேலஞ்ச் நடக்கிறது"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     val secLeft = (msLeft / 1000).toInt()
                     Text(
@@ -205,16 +205,16 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         onClick = onStart,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
-                    ) { Text(tr("Continue challenge", "சேலஞ்சை தொடர்"), fontWeight = FontWeight.Bold) }
+                    ) { Text(tr("Continue challenge", "சவாலை தொடர்"), fontWeight = FontWeight.Bold) }
                 }
 
                 ChallengeSession.Phase.MISSED -> {
                     val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                         .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                    Text(tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Challenge missed", "சவால் தவறிவிட்டது"), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = tr("You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.", "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது; $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்."),
+                        text = tr("You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.", "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது; $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்."),
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center
@@ -224,11 +224,11 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                         onClick = onClose,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = OrangeEnd),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
-                    ) { Text("OK", fontWeight = FontWeight.Bold) }
+                    ) { Text(tr("OK", "சரி"), fontWeight = FontWeight.Bold) }
                 }
 
                 ChallengeSession.Phase.IDLE -> {
-                    Text(tr("Nothing pending", "நிலுவையில் எதுவும் இல்லை"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Nothing pending", "காத்திருப்பது எதுவும் இல்லை"), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = onClose,

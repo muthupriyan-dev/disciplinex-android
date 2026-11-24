@@ -120,7 +120,7 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
                 title = { Text(tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
                     }
                 },
                 actions = { GuideButton(onClick = { showTour = true }) },
@@ -137,14 +137,14 @@ fun AllowedAppsScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 modifier = Modifier.tourTarget(tour, "intro"),
-                text = tr("Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.", "டிக் செய்த ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்."),
+                text = tr("Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.", "தேர்வு செய்த ஆப்களை, ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டுகள், சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்."),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
             if (locked) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    tr("Locked until you finish today's challenge.", "இன்றைய சேலஞ்சை முடிக்கும் வரை பூட்டப்பட்டுள்ளது."),
+                    tr("Locked until you finish today's challenge.", "இன்றைய சவாலை முடிக்கும் வரை பூட்டப்பட்டுள்ளது."),
                     color = OrangeEnd,
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -201,11 +201,11 @@ private fun allowedAppsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "intro", tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"),
         tr("Apps you tick keep working while your phone is locked. Phone, Camera, keyboards and system screens are always allowed.",
-            "நீங்கள் டிக் செய்யும் ஆப்கள் போன் பூட்டியிருக்கும்போதும் வேலை செய்யும். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.")
+            "நீங்கள் தேர்வு செய்யும் ஆப்கள், போன் பூட்டியிருக்கும்போதும் வேலை செய்யும். போன், கேமரா, கீபோர்டுகள், சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.")
     ),
     TourStep(
         "list", tr("Your apps", "உங்கள் ஆப்கள்"),
         tr("Tap an app to tick or untick it. Only tick what you really need, like WhatsApp or a bank app, so distractions stay locked.",
-            "ஆப்பை தட்டி டிக் அல்லது நீக்கவும். WhatsApp, வங்கி ஆப் போல உண்மையில் தேவையானவற்றை மட்டும் டிக் செய்யுங்கள், அப்போதுதான் கவனச்சிதறல் பூட்டியிருக்கும்.")
+            "ஒரு ஆப்பை தட்டி தேர்வு செய்யலாம் அல்லது தேர்வை நீக்கலாம். WhatsApp அல்லது வங்கி ஆப் போல, உண்மையிலேயே தேவையானவற்றை மட்டும் தேர்வு செய்யுங்கள்; அப்போதுதான் கவனத்தை சிதறடிப்பவை பூட்டியே இருக்கும்.")
     )
 )

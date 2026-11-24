@@ -133,7 +133,7 @@ fun StatsScreen(onBack: () -> Unit) {
                     Text(
                         tr(
                             "No challenges recorded yet. Finish your first alarm challenge and your numbers will appear here.",
-                            "இன்னும் சேலஞ்ச் பதிவுகள் இல்லை. முதல் அலாரம் சேலஞ்சை முடித்தால் இங்கே விவரங்கள் தெரியும்."
+                            "இன்னும் சவால் பதிவுகள் இல்லை. உங்கள் முதல் அலாரம் சவாலை முடித்தால், உங்கள் எண்கள் இங்கே தெரியும்."
                         ),
                         color = TextMuted,
                         fontSize = 15.sp
@@ -148,18 +148,18 @@ fun StatsScreen(onBack: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(tr("Completed", "முடிந்தவை"), stats.totalDone.toString(), Modifier.weight(1f))
                 StatTile(
-                    tr("Completion", "நிறைவு"),
+                    tr("Completion", "நிறைவு சதவீதம்"),
                     stats.completionPercent?.let { "$it%" } ?: "-",
                     Modifier.weight(1f)
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatTile(tr("Current streak", "தற்போதைய ஸ்ட்ரீக்"), currentStreak.toString(), Modifier.weight(1f))
-                StatTile(tr("Best streak", "சிறந்த ஸ்ட்ரீக்"), bestStreak.toString(), Modifier.weight(1f))
+                StatTile(tr("Current streak", "தற்போதைய தொடர் சாதனை"), currentStreak.toString(), Modifier.weight(1f))
+                StatTile(tr("Best streak", "அதிகபட்ச தொடர் சாதனை"), bestStreak.toString(), Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(tr("Total reps", "மொத்த முறைகள்"), stats.totalReps.toString(), Modifier.weight(1f))
-                StatTile(tr("Timed minutes", "நேர நிமிடங்கள்"), stats.totalMinutes.toString(), Modifier.weight(1f))
+                StatTile(tr("Timed minutes", "டைமர் நிமிடங்கள்"), stats.totalMinutes.toString(), Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(tr("Walked", "நடந்த தூரம்"), ExerciseKinds.distanceText(stats.totalMeters), Modifier.weight(1f))
@@ -189,7 +189,7 @@ fun StatsScreen(onBack: () -> Unit) {
                     Text(
                         tr(
                             "Exercise details are recorded from version 1.2.1 onwards. Complete a challenge to see them.",
-                            "பயிற்சி விவரங்கள் பதிப்பு 1.2.1 முதல் பதிவாகும். சேலஞ்சை முடித்தால் இங்கே தெரியும்."
+                            "பயிற்சி விவரங்கள் பதிப்பு 1.2.1 முதல் பதிவாகும். ஒரு சவாலை முடித்தால் இங்கே தெரியும்."
                         ),
                         color = TextMuted,
                         fontSize = 14.sp
@@ -218,22 +218,22 @@ private fun statsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "numbers", tr("Your numbers", "உங்கள் எண்கள்"),
         tr("Challenges you finished, how many of your alarms you completed, your streaks, total reps, timed minutes and distance walked. All of it comes from your real activity.",
-            "நீங்கள் முடித்த சேலஞ்ச்கள், அலாரங்களில் எத்தனை முடித்தீர்கள், ஸ்ட்ரீக், மொத்த முறைகள், நேர நிமிடங்கள், நடந்த தூரம். எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்து வருகிறது.")
+            "நீங்கள் முடித்த சவால்கள், உங்கள் அலாரங்களில் எத்தனையை முடித்தீர்கள், தொடர் சாதனைகள், மொத்த முறைகள், டைமர் நிமிடங்கள், நடந்த தூரம் ஆகியவை. இவை எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்தே வருகின்றன.")
     ),
     TourStep(
         "chart", tr("Last 7 days", "கடந்த 7 நாட்கள்"),
         tr("Green bars are days you finished, red bars are days you missed. The number above a bar is how many challenges that day.",
-            "பச்சை பார் முடித்த நாள், சிவப்பு பார் தவறிய நாள். பாருக்கு மேலுள்ள எண் அந்த நாளின் சேலஞ்ச் எண்ணிக்கை.")
+            "பச்சை பட்டை நீங்கள் முடித்த நாள், சிவப்பு பட்டை தவறிய நாள். பட்டைக்கு மேலே உள்ள எண், அந்த நாளின் சவால்களின் எண்ணிக்கை.")
     ),
     TourStep(
         "exercise", tr("By exercise", "பயிற்சி வாரியாக"),
         tr("Totals for each exercise. Details are saved from version 1.2.1 onwards, so older challenges are not listed here.",
-            "ஒவ்வொரு பயிற்சிக்கான மொத்தம். விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும், பழைய சேலஞ்ச்கள் இங்கே இருக்காது.")
+            "ஒவ்வொரு பயிற்சிக்கான மொத்தம். விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படுவதால், பழைய சவால்கள் இங்கே இருக்காது.")
     ),
     TourStep(
         "achievements", tr("Achievements", "சாதனைகள்"),
         tr("A badge unlocks only when your real activity reaches the goal, like a 7-day streak or 100 finished challenges.",
-            "7 நாள் ஸ்ட்ரீக், 100 சேலஞ்ச் போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பேட்ஜ் திறக்கும்.")
+            "7 நாள் தொடர்ச்சியான சாதனை அல்லது 100 சவால்களை முடித்தது போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பதக்கம் திறக்கும்.")
     )
 )
 

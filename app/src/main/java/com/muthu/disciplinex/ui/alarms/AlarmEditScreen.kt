@@ -103,7 +103,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
         )
         // A custom alarm whose chosen dates/time are all in the past would never ring.
         if (alarm.isCustom && AlarmScheduler.nextTriggerMillis(alarm, System.currentTimeMillis()) == null) {
-            saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
+            saveError = tr("That time has already passed on the date(s) you picked. Pick a later date or time.", "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. இதற்கு பிறகு வரும் தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.")
             return@save
         }
         AlarmStore.save(context, alarm)
@@ -152,8 +152,8 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
         if (locked || committed) {
             Column(modifier = Modifier.padding(padding).padding(20.dp)) {
                 Text(
-                    if (locked) tr("Alarms can't be changed while your phone is locked.", "போன் பூட்டப்பட்டிருக்கும்போது அலாரங்களை மாற்ற முடியாது.")
-                    else tr("This alarm rings within 2 hours, so it can't be changed or deleted now. That keeps tomorrow's alarm from being switched off at the last minute.", "இந்த அலாரம் 2 மணி நேரத்துக்குள் அடிக்கும், அதனால் இப்போது மாற்றவோ நீக்கவோ முடியாது. நாளைய அலாரத்தை கடைசி நிமிடத்தில் அணைப்பதை இது தடுக்கும்."),
+                    if (locked) tr("Alarms can't be changed while your phone is locked.", "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது.")
+                    else tr("This alarm rings within 2 hours, so it can't be changed or deleted now. That keeps tomorrow's alarm from being switched off at the last minute.", "இந்த அலாரம் 2 மணி நேரத்துக்குள் அடிக்கும், அதனால் இப்போது மாற்றவோ நீக்கவோ முடியாது. நாளைய அலாரத்தை கடைசி நேரத்தில் அணைப்பதை இது தடுக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -191,9 +191,9 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     when {
-                        customDates.isNotEmpty() -> tr("Custom \u2014 rings only on the dates you pick below.", "தனிப்பயன் \u2014 கீழே தேர்ந்தெடுக்கும் தேதிகளில் மட்டும் அடிக்கும்.")
-                        daysMask == 0 -> tr("Once \u2014 rings the next time this clock time comes, then switches itself off.", "ஒருமுறை \u2014 இந்த நேரம் அடுத்து வரும்போது அடித்து, தானாக அணைந்துவிடும்.")
-                        else -> tr("Tap the days you want. Selected: ${repeatSummary(daysMask)}.", "வேண்டிய நாட்களை தட்டுங்கள். தேர்வு: ${repeatSummary(daysMask)}.")
+                        customDates.isNotEmpty() -> tr("Custom \u2014 rings only on the dates you pick below.", "தனிப்பயன் \u2014 கீழே நீங்கள் தேர்ந்தெடுக்கும் தேதிகளில் மட்டுமே அடிக்கும்.")
+                        daysMask == 0 -> tr("Once \u2014 rings the next time this clock time comes, then switches itself off.", "ஒருமுறை \u2014 இந்த நேரம் அடுத்து வரும்போது ஒருமுறை அடித்து, தானாகவே அணைந்துவிடும்.")
+                        else -> tr("Tap the days you want. Selected: ${repeatSummary(daysMask)}.", "வேண்டிய நாட்களை தட்டுங்கள். தேர்ந்தெடுத்தது: ${repeatSummary(daysMask)}.")
                     },
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
@@ -308,7 +308,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டரிலிருந்து மதிப்பீடு). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்."),
+                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.", "கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -329,7 +329,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        tr("Distance is estimated from your phone's step counter.", "தூரம் போனின் அடி கவுண்டரிலிருந்து மதிப்பிடப்படும்."),
+                        tr("Distance is estimated from your phone's step counter.", "தூரம் போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படுகிறது."),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -347,7 +347,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text(tr("Time limit", "நேர வரம்பு"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.", "அலாரம் அடித்த பிறகு முடிக்க உங்களுக்கு எவ்வளவு நேரம் உண்டு. நேரத்துக்குள் முடிக்காவிட்டால் அன்றைய நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்."),
+                    tr("How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.", "அலாரம் அடித்த பிறகு முடிக்க உங்களுக்கு எவ்வளவு நேரம் உண்டு. நேரத்துக்குள் முடிக்கவில்லை என்றால், அன்றைய நாள் தவறியதாக கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டியே இருக்கும்."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -461,31 +461,31 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
     TourStep(
         "time", tr("Time", "நேரம்"),
         tr("Scroll the hour, minute and AM / PM wheels to choose when the alarm rings.",
-            "அலாரம் அடிக்க வேண்டிய நேரத்தை மணி, நிமிடம், AM / PM சக்கரங்களை உருட்டி தேர்ந்தெடுங்கள்.")
+            "அலாரம் அடிக்க வேண்டிய நேரத்தை தேர்ந்தெடுக்க, மணி, நிமிடம், AM / PM சக்கரங்களை உருட்டுங்கள்.")
     ),
     TourStep(
         "repeat", tr("Repeat", "மீண்டும்"),
         tr("Every day, only once, or tap the days you want. Custom lets you pick exact dates from a calendar.",
-            "தினமும், ஒருமுறை, அல்லது வேண்டிய நாட்களை தட்டுங்கள். தனிப்பயன் மூலம் காலெண்டரில் குறிப்பிட்ட தேதிகளை தேர்ந்தெடுக்கலாம்.")
+            "தினமும், ஒருமுறை மட்டும், அல்லது வேண்டிய நாட்களை தட்டுங்கள். தனிப்பயன் என்பதில் நாட்காட்டியிலிருந்து குறிப்பிட்ட தேதிகளை தேர்ந்தெடுக்கலாம்.")
     ),
     TourStep(
         "label", tr("Label", "பெயர்"),
         tr("An optional name for this alarm, like Morning workout. It shows on the alarm.",
-            "இந்த அலாரத்துக்கு விருப்பமான பெயர், உதாரணம் காலை உடற்பயிற்சி. அலாரத்தில் தெரியும்.")
+            "இந்த அலாரத்துக்கான விருப்பப் பெயர், எ.கா. காலை உடற்பயிற்சி. இது அலாரத்தில் தெரியும்.")
     ),
     TourStep(
         "exercise", tr("Exercise and target", "பயிற்சி மற்றும் இலக்கு"),
-        tr("Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.",
-            "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டரிலிருந்து மதிப்பீடு). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.")
+        tr("Pick what you must do to unlock your phone, then set the target: reps, minutes, or distance. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.",
+            "போனை திறக்க நீங்கள் என்ன செய்ய வேண்டும் என்பதை தேர்ந்தெடுத்து, இலக்கை (முறை, நிமிடங்கள் அல்லது தூரம்) அமைத்துக்கொள்ளுங்கள். கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது.")
     ),
     TourStep(
         "limit", tr("Time limit", "நேர வரம்பு"),
         tr("How long after the alarm rings you have to finish. Miss it and the day counts as missed, your streak resets and every app stays locked for 24 hours.",
-            "அலாரம் அடித்த பிறகு முடிக்க எவ்வளவு நேரம் உண்டு. தவறினால் அந்த நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்.")
+            "அலாரம் அடித்த பிறகு முடிக்க எவ்வளவு நேரம் உண்டு. தவறினால், அன்றைய நாள் தவறியதாக கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டியே இருக்கும்.")
     ),
     TourStep(
         "save", tr("Save", "சேமி"),
         tr("Tap the tick at the top any time to save. The alarm is set straight away.",
-            "சேமிக்க மேலே உள்ள டிக்கை எப்போது வேண்டுமானாலும் தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
+            "சேமிக்க, எப்போது வேண்டுமானாலும் மேலே உள்ள சரிக்குறியை தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
     )
 )

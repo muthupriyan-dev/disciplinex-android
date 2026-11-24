@@ -1,0 +1,998 @@
+[
+{
+"en": "Wed",
+"old_ta": "புதன்",
+"new_ta": "புத",
+"new_en": null
+},
+{
+"en": "Sun",
+"old_ta": "ஞாயிறு",
+"new_ta": "ஞாயி",
+"new_en": null
+},
+{
+"en": "Alarm over lock screen",
+"old_ta": "லாக் ஸ்கிரீன் மேல் அலாரம்",
+"new_ta": "பூட்டுத் திரையில் அலாரம்",
+"new_en": null
+},
+{
+"en": "Run in background",
+"old_ta": "பின்னணியில் இயங்கு",
+"new_ta": "பின்னணியில் இயங்க அனுமதி",
+"new_en": null
+},
+{
+"en": "App lock (Accessibility)",
+"old_ta": "ஆப் லாக் (Accessibility)",
+"new_ta": "ஆப் பூட்டு (அணுகல் வசதி)",
+"new_en": null
+},
+{
+"en": "Wake up!",
+"old_ta": "எழுந்திரு!",
+"new_ta": "எழுந்திருங்கள்!",
+"new_en": null
+},
+{
+"en": "Tap to start your DisciplineX challenge.",
+"old_ta": "உங்கள் DisciplineX சேலஞ்சை தொடங்க தட்டுங்கள்.",
+"new_ta": "DisciplineX சவாலை தொடங்க தட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "Time for your challenge!",
+"old_ta": "உங்கள் சேலஞ்ச் நேரம்!",
+"new_ta": "உங்கள் சவாலுக்கான நேரம் இது!",
+"new_en": null
+},
+{
+"en": "${ExerciseKinds.display(ChallengeSession.exercise(this))} \\u00b7 ${ChallengeSession.summary(this)} \\u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.",
+"old_ta": "${ExerciseKinds.display(ChallengeSession.exercise(this))} \\u00b7 ${ChallengeSession.summary(this)} \\u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு.",
+"new_ta": "${ExerciseKinds.display(ChallengeSession.exercise(this))} \\u00b7 ${ChallengeSession.summary(this)} \\u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடியுங்கள், இல்லையென்றால் தவறியதாக எடுத்துக்கொள்ளப்படும்.",
+"new_en": null
+},
+{
+"en": "Start challenge",
+"old_ta": "சேலஞ்சை தொடங்கு",
+"new_ta": "சவாலை தொடங்கு",
+"new_en": null
+},
+{
+"en": "Time to move!",
+"old_ta": "எழுந்து இயங்குங்கள்!",
+"new_ta": "உடலை அசைக்க வேண்டிய நேரம்!",
+"new_en": null
+},
+{
+"en": "left to finish \\u2014 after that the challenge is missed, your streak resets and your apps stay locked for 24 hours",
+"old_ta": "முடிக்க மீதம் \\u2014 அதன் பிறகு சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்",
+"new_ta": "முடிக்க நேரம் மீதம் \\u2014 அதன் பிறகு சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்",
+"new_en": null
+},
+{
+"en": "Dismiss only stops the sound. The time limit keeps running and your apps stay locked.",
+"old_ta": "இது ஒலியை மட்டும் நிறுத்தும். நேர வரம்பு ஓடிக்கொண்டிருக்கும், ஆப்கள் பூட்டியே இருக்கும்.",
+"new_ta": "நிறுத்து என்பது ஒலியை மட்டுமே நிறுத்தும். நேர வரம்பு தொடர்ந்து ஓடும், ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Challenge in progress",
+"old_ta": "சேலஞ்ச் நடக்கிறது",
+"new_ta": "சவால் நடந்துகொண்டிருக்கிறது",
+"new_en": null
+},
+{
+"en": "Continue challenge",
+"old_ta": "சேலஞ்சை தொடர்",
+"new_ta": "சவாலை தொடர்",
+"new_en": null
+},
+{
+"en": "Challenge missed",
+"old_ta": "சேலஞ்ச் தவறிவிட்டது",
+"new_ta": "சவால் தவறிவிட்டது",
+"new_en": null
+},
+{
+"en": "You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.",
+"old_ta": "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது; $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்.",
+"new_ta": "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது; $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Nothing pending",
+"old_ta": "நிலுவையில் எதுவும் இல்லை",
+"new_ta": "காத்திருப்பது எதுவும் இல்லை",
+"new_en": null
+},
+{
+"en": "Show up before the world wakes up. Miss it, and the apps that distract you stay locked.",
+"old_ta": "உலகம் விழிப்பதற்கு முன் எழுங்கள். தவறினால், உங்களை திசைதிருப்பும் ஆப்கள் பூட்டியே இருக்கும்.",
+"new_ta": "எல்லோரும் எழுவதற்கு முன் நீங்கள் எழுந்து வாருங்கள். தவறினால், உங்கள் கவனத்தை இழுக்கும் ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Morning Challenge",
+"old_ta": "காலை சேலஞ்ச்",
+"new_ta": "காலை சவால்",
+"new_en": null
+},
+{
+"en": "Wake up, complete your set, earn your phone back.",
+"old_ta": "எழுந்திருங்கள், உங்கள் செட்டை முடியுங்கள், போனை திரும்பப் பெறுங்கள்.",
+"new_ta": "எழுந்திருங்கள், உங்கள் பயிற்சியை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள்.",
+"new_en": null
+},
+{
+"en": "Shows the wake-up alarm and keeps it running reliably.",
+"old_ta": "எழுப்பும் அலாரத்தை காட்டி, அது நம்பகமாக இயங்க உதவும்.",
+"new_ta": "எழுப்பும் அலாரத்தை காட்டி, அது தவறாமல் வேலை செய்ய உதவும்.",
+"new_en": null
+},
+{
+"en": "So the alarm screen can appear on top when your phone is locked.",
+"old_ta": "போன் பூட்டியிருக்கும்போது அலாரம் திரை மேலே தோன்ற.",
+"new_ta": "போன் பூட்டியிருக்கும்போது, அலாரம் திரை மேலே தோன்றுவதற்காக.",
+"new_en": null
+},
+{
+"en": "Only used live for pose detection during camera-based exercises — nothing is recorded or uploaded.",
+"old_ta": "கேமரா பயிற்சிகளின்போது உடல் நிலையை கண்டறிய மட்டும் நேரடியாக பயன்படும் — எதுவும் பதிவு செய்யப்படாது, பதிவேற்றப்படாது.",
+"new_ta": "கேமரா பயிற்சிகளின்போது உங்கள் உடல் நிலையை அறிய மட்டுமே நேரடியாக பயன்படும் — எதுவும் பதிவு செய்யப்படாது, பதிவேற்றப்படாது.",
+"new_en": null
+},
+{
+"en": "Counts your steps for the Walking challenge. Nothing leaves your phone.",
+"old_ta": "நடைப்பயிற்சி சேலஞ்சுக்கு உங்கள் அடிகளை எண்ண. எதுவும் போனை விட்டு வெளியே போகாது.",
+"new_ta": "நடைப்பயிற்சிக்காக உங்கள் அடிகளை எண்ணும். எதுவும் உங்கள் போனை விட்டு வெளியே போகாது.",
+"new_en": null
+},
+{
+"en": "Stops your phone's battery saver from killing the alarm or the app lock. Choose \\\"Allow\\\".",
+"old_ta": "பேட்டரி சேவர் அலாரத்தையோ ஆப் லாக்கையோ நிறுத்தாமல் தடுக்கும். \\\"Allow\\\" என்பதை தேர்ந்தெடுங்கள்.",
+"new_ta": "போனின் பேட்டரி சேமிப்பு அமைப்பு அலாரத்தையோ ஆப் பூட்டையோ நிறுத்திவிடாமல் தடுக்கும். \\\"Allow\\\" (அனுமதி) என்பதை தேர்ந்தெடுங்கள்.",
+"new_en": null
+},
+{
+"en": "Accessibility service",
+"old_ta": "அக்சசிபிலிட்டி சேவை",
+"new_ta": "அணுகல் வசதி சேவை",
+"new_en": null
+},
+{
+"en": "Only used to see which app is opening (including small floating windows), so it can send you back to your challenge. Never reads your messages or anything you type. Tap Allow, open \\\"DisciplineX App Lock\\\" and switch it on. If the switch is greyed out: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.",
+"old_ta": "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் சாளரங்கள் உட்பட) பார்க்க மட்டும் பயன்படும், அதனால் உங்களை சேலஞ்சுக்கு திருப்பி அனுப்ப முடியும். உங்கள் செய்திகளையோ தட்டச்சு செய்வதையோ படிக்காது. Allow தட்டி, \\\"DisciplineX App Lock\\\" திறந்து ஆன் செய்யுங்கள். சுவிட்ச் சாம்பல் நிறமாக இருந்தால்: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.",
+"new_ta": "எந்த ஆப் திறக்கிறது என்பதை (சிறிய மிதக்கும் திரைகள் உட்பட) பார்க்க மட்டுமே பயன்படும்; அதனால் உங்களை மீண்டும் சவாலுக்கு அனுப்ப முடியும். உங்கள் செய்திகளையோ, நீங்கள் தட்டச்சு செய்வதையோ ஒருபோதும் படிக்காது. அனுமதி என்பதை தட்டி, \\\"DisciplineX App Lock\\\" என்பதை திறந்து இயக்குங்கள். சுவிட்ச் சாம்பல் நிறத்தில் இருந்தால்: Settings → Apps → DisciplineX → ⋮ → Allow restricted settings.",
+"new_en": null
+},
+{
+"en": "Back",
+"old_ta": "பின்",
+"new_ta": "பின்செல்",
+"new_en": null
+},
+{
+"en": "DisciplineX only uses these for the features below — never for reading your messages, OTPs, or personal content.",
+"old_ta": "கீழுள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது.",
+"new_ta": "கீழே உள்ள வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும் — உங்கள் செய்திகள், OTP, தனிப்பட்ட தகவல்களை ஒருபோதும் படிக்காது.",
+"new_en": null
+},
+{
+"en": "Granted",
+"old_ta": "வழங்கப்பட்டது",
+"new_ta": "அனுமதிக்கப்பட்டது",
+"new_en": null
+},
+{
+"en": "DisciplineX can't work without these. Allow every item above to continue.",
+"old_ta": "இவை இல்லாமல் DisciplineX செயல்படாது. தொடர மேலுள்ள எல்லாவற்றையும் அனுமதியுங்கள்.",
+"new_ta": "இவை இல்லாமல் DisciplineX வேலை செய்யாது. தொடர, மேலே உள்ள எல்லாவற்றையும் அனுமதியுங்கள்.",
+"new_en": null
+},
+{
+"en": "Why these permissions",
+"old_ta": "இந்த அனுமதிகள் ஏன்",
+"new_ta": "இந்த அனுமதிகள் ஏன் தேவை",
+"new_en": null
+},
+{
+"en": "DisciplineX only uses these for the features listed. It never reads your messages, OTPs or personal content.",
+"old_ta": "பட்டியலிட்ட வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும். உங்கள் செய்திகள், OTP, தனிப்பட்ட உள்ளடக்கத்தை ஒருபோதும் படிக்காது.",
+"new_ta": "பட்டியலிடப்பட்ட வசதிகளுக்கு மட்டுமே DisciplineX இவற்றை பயன்படுத்தும். உங்கள் செய்திகள், OTP, தனிப்பட்ட தகவல்களை ஒருபோதும் படிக்காது.",
+"new_en": null
+},
+{
+"en": "Tap Allow next to each item. A tick means it is done. The app can't work properly until every one is on.",
+"old_ta": "ஒவ்வொன்றின் அருகிலும் Allow தட்டுங்கள். டிக் என்றால் முடிந்தது. எல்லாம் ஆன் ஆகும் வரை ஆப் சரியாக வேலை செய்யாது.",
+"new_ta": "ஒவ்வொன்றின் அருகிலும் அனுமதி என்பதை தட்டுங்கள். சரிக்குறி என்றால் முடிந்தது. எல்லாம் இயக்கத்தில் இருக்கும் வரை ஆப் சரியாக வேலை செய்யாது.",
+"new_en": null
+},
+{
+"en": "This unlocks only after every permission is allowed.",
+"old_ta": "எல்லா அனுமதிகளும் கொடுத்த பிறகுதான் இது திறக்கும்.",
+"new_ta": "எல்லா அனுமதிகளையும் கொடுத்த பிறகுதான் இது திறக்கும்.",
+"new_en": null
+},
+{
+"en": "Your streak \\uD83D\\uDD25",
+"old_ta": "உங்கள் ஸ்ட்ரீக் \\uD83D\\uDD25",
+"new_ta": "உங்கள் தொடர் சாதனை \\uD83D\\uDD25",
+"new_en": null
+},
+{
+"en": "Finish every challenge on time and this number grows. Miss one and it goes back to 0.",
+"old_ta": "ஒவ்வொரு சேலஞ்சையும் நேரத்துக்கு முடித்தால் இந்த எண் உயரும். ஒன்றைத் தவறவிட்டால் 0-க்கு திரும்பும்.",
+"new_ta": "ஒவ்வொரு சவாலையும் நேரத்துக்குள் முடித்தால் இந்த எண் கூடும். ஒன்றை தவறவிட்டால் மீண்டும் 0 ஆகிவிடும்.",
+"new_en": null
+},
+{
+"en": "Shows if your app lock is ready, and what is waiting after an alarm rings. You get the time limit you set on the alarm to finish after it rings.",
+"old_ta": "ஆப் லாக் தயாரா என்றும், அலாரம் அடித்த பின் என்ன காத்திருக்கிறது என்றும் காட்டும். அலாரம் அடித்த பின் முடிக்க நீங்கள் வைத்த நேர வரம்பு உண்டு.",
+"new_ta": "ஆப் பூட்டு தயாராக உள்ளதா என்பதையும், அலாரம் அடித்த பிறகு என்ன காத்திருக்கிறது என்பதையும் காட்டும். அலாரம் அடித்த பிறகு முடிக்க, நீங்கள் அந்த அலாரத்தில் வைத்த நேர வரம்பு உங்களுக்கு கிடைக்கும்.",
+"new_en": null
+},
+{
+"en": "Each card is one alarm. Tap it to change the time, repeat days, exercise and target. Add as many as you like \\u2014 morning, evening, any time.",
+"old_ta": "ஒவ்வொரு கார்டும் ஒரு அலாரம். நேரம், நாட்கள், பயிற்சி, இலக்கு மாற்ற தட்டுங்கள். காலை, மாலை, எப்போது வேண்டுமானாலும் எத்தனை வேண்டுமானாலும் சேர்க்கலாம்.",
+"new_ta": "ஒவ்வொரு அட்டையும் ஒரு அலாரம். நேரம், மீண்டும் அடிக்கும் நாட்கள், பயிற்சி, இலக்கு ஆகியவற்றை மாற்ற அதை தட்டுங்கள். காலை, மாலை, எப்போது வேண்டுமானாலும் \\u2014 எத்தனை வேண்டுமானாலும் சேர்க்கலாம்.",
+"new_en": null
+},
+{
+"en": "On / off",
+"old_ta": "ஆன் / ஆஃப்",
+"new_ta": "இயக்கு / அணை",
+"new_en": null
+},
+{
+"en": "Switch an alarm on or off without deleting it.",
+"old_ta": "அலாரத்தை நீக்காமல் ஆன் அல்லது ஆஃப் செய்யலாம்.",
+"new_ta": "அலாரத்தை நீக்காமலேயே இயக்கவோ அணைக்கவோ செய்யலாம்.",
+"new_en": null
+},
+{
+"en": "Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\\u2026) and how many reps or minutes.",
+"old_ta": "புதிய அலாரம் சேர்க்க + தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், நடைப்பயிற்சி\\u2026) மற்றும் எத்தனை முறை / நிமிடங்கள் என தேர்ந்தெடுங்கள்.",
+"new_ta": "புதிய அலாரம் சேர்க்க + ஐ தட்டுங்கள். நேரம், நாட்கள், பயிற்சி (புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ், நடைப்பயிற்சி\\u2026), இலக்கு (முறை, நிமிடங்கள் அல்லது தூரம்) ஆகியவற்றை தேர்ந்தெடுங்கள்.",
+"new_en": "Tap + to add a new alarm. Pick the time, the days, the exercise (push-ups, squats, jumping jacks, walking\\u2026) and the target: reps, minutes or distance."
+},
+{
+"en": "See your totals, the last 7 days, results for each exercise and your achievements.",
+"old_ta": "மொத்த எண்கள், கடந்த 7 நாட்கள், ஒவ்வொரு பயிற்சியின் முடிவு, சாதனைகளை பாருங்கள்.",
+"new_ta": "உங்கள் மொத்த எண்கள், கடந்த 7 நாட்கள், ஒவ்வொரு பயிற்சியின் முடிவுகள், உங்கள் சாதனைகளை பாருங்கள்.",
+"new_en": null
+},
+{
+"en": "Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.",
+"old_ta": "பூட்டியிருக்கும்போது எந்த ஆப்கள் திறந்திருக்க வேண்டும், தீம், மொழி, காப்பு பிரதி சேமிப்பு / மீட்பு, தனியுரிமை குறிப்புகள் அனைத்தும் இங்கே.",
+"new_ta": "பூட்டியிருக்கும்போது திறந்திருக்க வேண்டிய ஆப்களை தேர்ந்தெடுங்கள், தோற்றம் மற்றும் மொழியை மாற்றுங்கள், காப்பு நகலை சேமியுங்கள் அல்லது மீட்டெடுங்கள், தனியுரிமை குறிப்புகளை படியுங்கள்.",
+"new_en": null
+},
+{
+"en": "Need this again?",
+"old_ta": "மீண்டும் வேண்டுமா?",
+"new_ta": "இது மீண்டும் வேண்டுமா?",
+"new_en": null
+},
+{
+"en": "Tap this button any time to see this guide again.",
+"old_ta": "இந்த வழிகாட்டியை மீண்டும் காண எப்போது வேண்டுமானாலும் இந்த பட்டனை தட்டுங்கள்.",
+"new_ta": "இந்த வழிகாட்டியை மீண்டும் பார்க்க, எப்போது வேண்டுமானாலும் இந்த பொத்தானை தட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "\\uD83D\\uDD25 $streak day streak",
+"old_ta": "\\uD83D\\uDD25 $streak நாள் ஸ்ட்ரீக்",
+"new_ta": "\\uD83D\\uDD25 $streak நாள் தொடர் சாதனை",
+"new_en": null
+},
+{
+"en": "Best: $best days",
+"old_ta": "சிறந்தது: $best நாட்கள்",
+"new_ta": "அதிகபட்சம்: $best நாட்கள்",
+"new_en": null
+},
+{
+"en": "Alarms can't be changed while your phone is locked. Finish the challenge, or wait for the next alarm.",
+"old_ta": "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது. சேலஞ்சை முடியுங்கள், அல்லது அடுத்த அலாரம் வரை காத்திருங்கள்.",
+"new_ta": "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது. சவாலை முடியுங்கள், அல்லது அடுத்த அலாரம் வரை காத்திருங்கள்.",
+"new_en": null
+},
+{
+"en": "Set a wake-up time and a challenge. Miss it and your apps stay locked.",
+"old_ta": "எழுந்திருக்கும் நேரத்தையும் சேலஞ்சையும் அமையுங்கள். தவறினால் ஆப்கள் பூட்டியிருக்கும்.",
+"new_ta": "எழுந்திருக்கும் நேரத்தையும் ஒரு சவாலையும் அமைத்துக்கொள்ளுங்கள். அதை தவறவிட்டால், உங்கள் ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "App lock is OFF",
+"old_ta": "ஆப் லாக் அணைந்துள்ளது",
+"new_ta": "ஆப் பூட்டு அணைந்துள்ளது",
+"new_en": null
+},
+{
+"en": "Turn on the DisciplineX App Lock accessibility service. Without it, apps stay open even if you skip the challenge.",
+"old_ta": "DisciplineX App Lock அக்சசிபிலிட்டி சேவையை ஆன் செய்யுங்கள். இல்லையெனில் சேலஞ்சை தவிர்த்தாலும் ஆப்கள் திறந்தே இருக்கும்.",
+"new_ta": "DisciplineX App Lock அணுகல் வசதி சேவையை இயக்குங்கள். இது இல்லையென்றால், சவாலை தவிர்த்தாலும் ஆப்கள் திறந்தே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Turn on app lock",
+"old_ta": "ஆப் லாக் ஆன் செய்",
+"new_ta": "ஆப் பூட்டை இயக்கு",
+"new_en": null
+},
+{
+"en": "Challenge waiting",
+"old_ta": "சேலஞ்ச் காத்திருக்கிறது",
+"new_ta": "சவால் காத்திருக்கிறது",
+"new_en": null
+},
+{
+"en": "Finish within %02d:%02d or it counts as missed.",
+"old_ta": "%02d:%02d-க்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு.",
+"new_ta": "%02d:%02d-க்குள் முடியுங்கள், இல்லையென்றால் தவறியதாக எடுத்துக்கொள்ளப்படும்.",
+"new_en": null
+},
+{
+"en": "${ExerciseKinds.display(ChallengeSession.exercise(context))} \\u00b7 ${ChallengeSession.summary(context)}. Finish it to unlock your phone \\u2014 ${msLeft / 60000} min left.",
+"old_ta": "${ExerciseKinds.display(ChallengeSession.exercise(context))} \\u00b7 ${ChallengeSession.summary(context)}. முடித்தால் போன் திறக்கும் \\u2014 ${msLeft / 60000} நிமிடம் மீதம்.",
+"new_ta": "${ExerciseKinds.display(ChallengeSession.exercise(context))} \\u00b7 ${ChallengeSession.summary(context)}. இதை முடித்தால் போன் திறக்கும் \\u2014 ${msLeft / 60000} நிமிடம் மீதம்.",
+"new_en": null
+},
+{
+"en": "You didn't finish within the time limit, so your streak was reset. Apps stay locked until $unlockAt.",
+"old_ta": "நேர வரம்புக்குள் முடிக்கவில்லை, அதனால் ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது. $unlockAt வரை ஆப்கள் பூட்டியிருக்கும்.",
+"new_ta": "நேர வரம்புக்குள் முடிக்கவில்லை, அதனால் தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது. $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "No alarms yet \\u2014 tap + to add one.",
+"old_ta": "இன்னும் அலாரம் இல்லை \\u2014 சேர்க்க + தட்டுங்கள்.",
+"new_ta": "இன்னும் அலாரம் இல்லை \\u2014 சேர்க்க + ஐ தட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "Next alarm: $nextText. When it rings you have your time limit to finish, and every app except Phone, Camera and your allowed apps stays locked until you finish.",
+"old_ta": "அடுத்த அலாரம்: $nextText. அடித்ததும் முடிக்க உங்கள் நேர வரம்பு உண்டு; முடிக்கும் வரை போன், கேமரா, அனுமதித்த ஆப்கள் தவிர எல்லாம் பூட்டியிருக்கும்.",
+"new_ta": "அடுத்த அலாரம்: $nextText. அது அடித்ததும் முடிக்க உங்கள் நேர வரம்பு கிடைக்கும்; முடிக்கும் வரை போன், கேமரா, நீங்கள் அனுமதித்த ஆப்கள் தவிர மற்ற எல்லா ஆப்களும் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "All alarms are off. Switch one on to get started.",
+"old_ta": "எல்லா அலாரங்களும் அணைந்துள்ளன. தொடங்க ஒன்றை ஆன் செய்யுங்கள்.",
+"new_ta": "எல்லா அலாரங்களும் அணைந்துள்ளன. தொடங்க ஒன்றை இயக்குங்கள்.",
+"new_en": null
+},
+{
+"en": "\\uD83D\\uDD12 Rings within 2 hours \\u2014 it can't be changed or switched off now.",
+"old_ta": "\\uD83D\\uDD12 2 மணி நேரத்துக்குள் அடிக்கும் \\u2014 இப்போது மாற்றவோ அணைக்கவோ முடியாது.",
+"new_ta": "\\uD83D\\uDD12 2 மணி நேரத்துக்குள் அடிக்கும் \\u2014 இப்போது இதை மாற்றவோ அணைக்கவோ முடியாது.",
+"new_en": null
+},
+{
+"en": "Some permissions are off",
+"old_ta": "சில அனுமதிகள் அணைந்துள்ளன",
+"new_ta": "சில அனுமதிகள் கொடுக்கப்படவில்லை",
+"new_en": null
+},
+{
+"en": "Real emergency?",
+"old_ta": "உண்மையான அவசரமா?",
+"new_ta": "உண்மையிலேயே அவசரமா?",
+"new_en": null
+},
+{
+"en": "You can unlock early after a 10-minute wait. Today stays missed and your streak stays at 0.",
+"old_ta": "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும்.",
+"new_ta": "10 நிமிடம் காத்திருந்தால் முன்கூட்டியே திறக்கலாம். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Start emergency unlock",
+"old_ta": "அவசர அன்லாக் தொடங்கு",
+"new_ta": "அவசரத் திறப்பை தொடங்கு",
+"new_en": null
+},
+{
+"en": "Start emergency unlock?",
+"old_ta": "அவசர அன்லாக் தொடங்கவா?",
+"new_ta": "அவசரத் திறப்பை தொடங்கவா?",
+"new_en": null
+},
+{
+"en": "Your apps unlock after 10 minutes. Today stays missed and your streak stays at 0. Only use this for a real emergency.",
+"old_ta": "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே இருக்கும், ஸ்ட்ரீக் 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.",
+"new_ta": "10 நிமிடத்துக்கு பிறகு ஆப்கள் திறக்கும். இன்று தவறியதாகவே கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0-லேயே இருக்கும். உண்மையான அவசரத்துக்கு மட்டும் பயன்படுத்துங்கள்.",
+"new_en": null
+},
+{
+"en": "No challenges recorded yet. Finish your first alarm challenge and your numbers will appear here.",
+"old_ta": "இன்னும் சேலஞ்ச் பதிவுகள் இல்லை. முதல் அலாரம் சேலஞ்சை முடித்தால் இங்கே விவரங்கள் தெரியும்.",
+"new_ta": "இன்னும் சவால் பதிவுகள் இல்லை. உங்கள் முதல் அலாரம் சவாலை முடித்தால், உங்கள் எண்கள் இங்கே தெரியும்.",
+"new_en": null
+},
+{
+"en": "Completion",
+"old_ta": "நிறைவு",
+"new_ta": "நிறைவு சதவீதம்",
+"new_en": null
+},
+{
+"en": "Current streak",
+"old_ta": "தற்போதைய ஸ்ட்ரீக்",
+"new_ta": "தற்போதைய தொடர் சாதனை",
+"new_en": null
+},
+{
+"en": "Best streak",
+"old_ta": "சிறந்த ஸ்ட்ரீக்",
+"new_ta": "அதிகபட்ச தொடர் சாதனை",
+"new_en": null
+},
+{
+"en": "Timed minutes",
+"old_ta": "நேர நிமிடங்கள்",
+"new_ta": "டைமர் நிமிடங்கள்",
+"new_en": null
+},
+{
+"en": "Exercise details are recorded from version 1.2.1 onwards. Complete a challenge to see them.",
+"old_ta": "பயிற்சி விவரங்கள் பதிப்பு 1.2.1 முதல் பதிவாகும். சேலஞ்சை முடித்தால் இங்கே தெரியும்.",
+"new_ta": "பயிற்சி விவரங்கள் பதிப்பு 1.2.1 முதல் பதிவாகும். ஒரு சவாலை முடித்தால் இங்கே தெரியும்.",
+"new_en": null
+},
+{
+"en": "Challenges you finished, how many of your alarms you completed, your streaks, total reps, timed minutes and distance walked. All of it comes from your real activity.",
+"old_ta": "நீங்கள் முடித்த சேலஞ்ச்கள், அலாரங்களில் எத்தனை முடித்தீர்கள், ஸ்ட்ரீக், மொத்த முறைகள், நேர நிமிடங்கள், நடந்த தூரம். எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்து வருகிறது.",
+"new_ta": "நீங்கள் முடித்த சவால்கள், உங்கள் அலாரங்களில் எத்தனையை முடித்தீர்கள், தொடர் சாதனைகள், மொத்த முறைகள், டைமர் நிமிடங்கள், நடந்த தூரம் ஆகியவை. இவை எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்தே வருகின்றன.",
+"new_en": null
+},
+{
+"en": "Green bars are days you finished, red bars are days you missed. The number above a bar is how many challenges that day.",
+"old_ta": "பச்சை பார் முடித்த நாள், சிவப்பு பார் தவறிய நாள். பாருக்கு மேலுள்ள எண் அந்த நாளின் சேலஞ்ச் எண்ணிக்கை.",
+"new_ta": "பச்சை பட்டை நீங்கள் முடித்த நாள், சிவப்பு பட்டை தவறிய நாள். பட்டைக்கு மேலே உள்ள எண், அந்த நாளின் சவால்களின் எண்ணிக்கை.",
+"new_en": null
+},
+{
+"en": "Totals for each exercise. Details are saved from version 1.2.1 onwards, so older challenges are not listed here.",
+"old_ta": "ஒவ்வொரு பயிற்சிக்கான மொத்தம். விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும், பழைய சேலஞ்ச்கள் இங்கே இருக்காது.",
+"new_ta": "ஒவ்வொரு பயிற்சிக்கான மொத்தம். விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படுவதால், பழைய சவால்கள் இங்கே இருக்காது.",
+"new_en": null
+},
+{
+"en": "A badge unlocks only when your real activity reaches the goal, like a 7-day streak or 100 finished challenges.",
+"old_ta": "7 நாள் ஸ்ட்ரீக், 100 சேலஞ்ச் போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பேட்ஜ் திறக்கும்.",
+"new_ta": "7 நாள் தொடர்ச்சியான சாதனை அல்லது 100 சவால்களை முடித்தது போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பதக்கம் திறக்கும்.",
+"new_en": null
+},
+{
+"en": "This is how long you have to finish. When it reaches zero the challenge is missed, your streak resets and your apps stay locked for 24 hours.",
+"old_ta": "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. பூஜ்யம் ஆனால் சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்.",
+"new_ta": "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. இது 0 ஆனால் சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "The number is your reps so far. The ring fills as you go. When it is full you can unlock your phone.",
+"old_ta": "எண் என்பது இதுவரை செய்த முறை. நீங்கள் செய்ய செய்ய வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.",
+"new_ta": "இந்த எண் இதுவரை நீங்கள் செய்த முறைகள். நீங்கள் செய்யச் செய்ய வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.",
+"new_en": null
+},
+{
+"en": "How counting works",
+"old_ta": "எண்ணுதல் எப்படி",
+"new_ta": "எப்படி எண்ணப்படுகிறது",
+"new_en": null
+},
+{
+"en": "The timer only runs while this screen is open. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and the timer starts again from zero.",
+"old_ta": "இந்த திரை திறந்திருக்கும்போது மட்டுமே டைமர் ஓடும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் டைமர் பூஜ்யத்திலிருந்து தொடங்கும்.",
+"new_ta": "இந்த திரை திறந்திருக்கும்போது மட்டுமே டைமர் ஓடும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று திரும்பி தொடரலாம். அதைவிட அதிகமானால் டைமர் மீண்டும் 0-விலிருந்து தொடங்கும்.",
+"new_en": null
+},
+{
+"en": "Keep your whole body in the camera. Only full reps count. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and your reps start again from zero.",
+"old_ta": "உங்கள் முழு உடலும் கேமராவில் தெரியட்டும். முழு முறைகள் மட்டுமே கணக்கில் வரும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் எண்ணிக்கை பூஜ்யத்திலிருந்து தொடங்கும்.",
+"new_ta": "உங்கள் முழு உடலும் கேமராவில் தெரிய வேண்டும். முழுமையான முறைகள் மட்டுமே கணக்கில் வரும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று திரும்பி தொடரலாம். அதைவிட அதிகமானால் எண்ணிக்கை மீண்டும் 0-விலிருந்து தொடங்கும்.",
+"new_en": null
+},
+{
+"en": "You were away for more than 5 minutes, so your progress started again from zero.",
+"old_ta": "நீங்கள் 5 நிமிடத்துக்கு மேல் வெளியே இருந்ததால், முன்னேற்றம் மீண்டும் பூஜ்யத்திலிருந்து தொடங்கியது.",
+"new_ta": "நீங்கள் 5 நிமிடத்துக்கு மேல் வெளியே இருந்ததால், உங்கள் முன்னேற்றம் மீண்டும் 0-விலிருந்து தொடங்கியது.",
+"new_en": null
+},
+{
+"en": "Allow \\\"Physical activity\\\" so your steps can be checked.",
+"old_ta": "உங்கள் அடிகளை சரிபார்க்க \\\"Physical activity\\\" அனுமதியுங்கள்.",
+"new_ta": "உங்கள் அடிகளை சரிபார்க்க \\\"Physical activity\\\" (உடல் செயல்பாடு) அனுமதியை கொடுங்கள்.",
+"new_en": null
+},
+{
+"en": "Challenge complete!",
+"old_ta": "சேலஞ்ச் முடிந்தது!",
+"new_ta": "சவால் முடிந்தது!",
+"new_en": null
+},
+{
+"en": "Timer done \\u2014 keep walking: $stepsMissing more steps.",
+"old_ta": "டைமர் முடிந்தது \\u2014 தொடர்ந்து நடங்கள்: இன்னும் $stepsMissing அடிகள்.",
+"new_ta": "டைமர் முடிந்தது \\u2014 தொடர்ந்து நடங்கள்: இன்னும் $stepsMissing அடிகள் மீதம்.",
+"new_en": null
+},
+{
+"en": "Paused \\u2014 come back to this screen to continue.",
+"old_ta": "இடைநிறுத்தம் \\u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.",
+"new_ta": "இடைநிறுத்தப்பட்டது \\u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.",
+"new_en": null
+},
+{
+"en": "Paused \\u2014 another window is open on top. Close it to continue.",
+"old_ta": "இடைநிறுத்தம் \\u2014 மேலே வேறொரு சாளரம் திறந்துள்ளது. தொடர அதை மூடுங்கள்.",
+"new_ta": "இடைநிறுத்தப்பட்டது \\u2014 மேலே வேறொரு திரை திறந்துள்ளது. தொடர அதை மூடுங்கள்.",
+"new_en": null
+},
+{
+"en": "Timer running \\u2014 leaving the app pauses it, and there's no skipping.",
+"old_ta": "டைமர் ஓடுகிறது \\u2014 ஆப்பை விட்டு சென்றால் நிற்கும், தவிர்க்க முடியாது.",
+"new_ta": "டைமர் ஓடுகிறது \\u2014 ஆப்பை விட்டு வெளியே சென்றால் அது நின்றுவிடும், தவிர்க்கவும் முடியாது.",
+"new_en": null
+},
+{
+"en": "Keep going \\u2014 full range of motion counts.",
+"old_ta": "தொடருங்கள் \\u2014 முழு அசைவுதான் கணக்கில் வரும்.",
+"new_ta": "தொடருங்கள் \\u2014 முழு அசைவு மட்டுமே கணக்கில் வரும்.",
+"new_en": null
+},
+{
+"en": "Motion-sensor tracking for this exercise arrives next \\u2014 tap to count a rep for now.",
+"old_ta": "இந்த பயிற்சிக்கான மோஷன் சென்சார் விரைவில் வரும் \\u2014 இப்போது தட்டி எண்ணுங்கள்.",
+"new_ta": "இந்த பயிற்சிக்கான இயக்க சென்சார் கண்காணிப்பு விரைவில் வரும் \\u2014 இப்போதைக்கு தட்டி, முறையை எண்ணுங்கள்.",
+"new_en": null
+},
+{
+"en": "Camera access is needed to count reps",
+"old_ta": "எண்ணிக்கைக்கு கேமரா அனுமதி தேவை",
+"new_ta": "முறைகளை எண்ண கேமரா அனுமதி தேவை",
+"new_en": null
+},
+{
+"en": "Grant Camera Access",
+"old_ta": "கேமரா அனுமதி வழங்கு",
+"new_ta": "கேமரா அனுமதியை கொடு",
+"new_en": null
+},
+{
+"en": "The ring fills as you walk. Distance is estimated from your phone's step count. When it is full you can unlock your phone.",
+"old_ta": "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம் போன் எண்ணும் அடிகளிலிருந்து மதிப்பிடப்படும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.",
+"new_ta": "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம், உங்கள் போன் எண்ணும் அடிகளிலிருந்து தோராயமாக கணக்கிடப்படுகிறது. முழுதாக நிரம்பியதும் போனை திறக்கலாம்.",
+"new_en": null
+},
+{
+"en": "Steps are counted even when the screen is off. Walk, then come back here to finish.",
+"old_ta": "திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும். நடந்துவிட்டு இங்கே திரும்பி முடியுங்கள்.",
+"new_ta": "திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும். நடந்துவிட்டு, முடிக்க இங்கே திரும்பி வாருங்கள்.",
+"new_en": null
+},
+{
+"en": "Steps: $steps \\u00b7 distance is an estimate",
+"old_ta": "அடிகள்: $steps \\u00b7 தூரம் மதிப்பீடு",
+"new_ta": "அடிகள்: $steps \\u00b7 தூரம் தோராயமானது",
+"new_en": null
+},
+{
+"en": "No step counter available \\u2014 a timer replaces the distance.",
+"old_ta": "அடி கவுண்டர் கிடைக்கவில்லை \\u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.",
+"new_ta": "அடி எண்ணும் சென்சார் கிடைக்கவில்லை \\u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.",
+"new_en": null
+},
+{
+"en": "Physical activity is off \\u2014 a timer replaces the distance. Tap Allow to count steps.",
+"old_ta": "உடல் செயல்பாடு அனுமதி இல்லை \\u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும். அடிகளை எண்ண Allow தட்டுங்கள்.",
+"new_ta": "உடல் செயல்பாடு அனுமதி இல்லை \\u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும். அடிகளை எண்ண அனுமதி என்பதை தட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "Keep this screen open until the timer ends.",
+"old_ta": "டைமர் முடியும் வரை இந்த திரையை திறந்து வையுங்கள்.",
+"new_ta": "டைமர் முடியும் வரை இந்த திரையை திறந்தே வையுங்கள்.",
+"new_en": null
+},
+{
+"en": "You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.",
+"old_ta": "நேர வரம்புக்குள் நீங்கள் முடிக்கவில்லை, அதனால் இன்றைய சேலஞ்ச் முடிந்தது, ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது.\n\n$unlockAt வரை உங்கள் ஆப்கள் பூட்டியே இருக்கும்.",
+"new_ta": "நேர வரம்புக்குள் நீங்கள் முடிக்கவில்லை, அதனால் இன்றைய சவால் முடிந்துவிட்டது, தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது.\n\n$unlockAt வரை உங்கள் ஆப்கள் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Nothing to do right now",
+"old_ta": "இப்போது எதுவும் இல்லை",
+"new_ta": "இப்போது செய்ய எதுவும் இல்லை",
+"new_en": null
+},
+{
+"en": "A challenge appears here when one of your alarms rings.",
+"old_ta": "உங்கள் அலாரம் அடிக்கும்போது சேலஞ்ச் இங்கே தோன்றும்.",
+"new_ta": "உங்கள் அலாரங்களில் ஒன்று அடிக்கும்போது, சவால் இங்கே தோன்றும்.",
+"new_en": null
+},
+{
+"en": "That time has already passed on the date(s) you picked. Pick a later date or time.",
+"old_ta": "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. பிந்தைய தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.",
+"new_ta": "நீங்கள் தேர்ந்தெடுத்த தேதியில் அந்த நேரம் ஏற்கனவே கடந்துவிட்டது. இதற்கு பிறகு வரும் தேதி அல்லது நேரத்தை தேர்ந்தெடுங்கள்.",
+"new_en": null
+},
+{
+"en": "Alarms can't be changed while your phone is locked.",
+"old_ta": "போன் பூட்டப்பட்டிருக்கும்போது அலாரங்களை மாற்ற முடியாது.",
+"new_ta": "போன் பூட்டியிருக்கும்போது அலாரங்களை மாற்ற முடியாது.",
+"new_en": null
+},
+{
+"en": "This alarm rings within 2 hours, so it can't be changed or deleted now. That keeps tomorrow's alarm from being switched off at the last minute.",
+"old_ta": "இந்த அலாரம் 2 மணி நேரத்துக்குள் அடிக்கும், அதனால் இப்போது மாற்றவோ நீக்கவோ முடியாது. நாளைய அலாரத்தை கடைசி நிமிடத்தில் அணைப்பதை இது தடுக்கும்.",
+"new_ta": "இந்த அலாரம் 2 மணி நேரத்துக்குள் அடிக்கும், அதனால் இப்போது மாற்றவோ நீக்கவோ முடியாது. நாளைய அலாரத்தை கடைசி நேரத்தில் அணைப்பதை இது தடுக்கும்.",
+"new_en": null
+},
+{
+"en": "Custom \\u2014 rings only on the dates you pick below.",
+"old_ta": "தனிப்பயன் \\u2014 கீழே தேர்ந்தெடுக்கும் தேதிகளில் மட்டும் அடிக்கும்.",
+"new_ta": "தனிப்பயன் \\u2014 கீழே நீங்கள் தேர்ந்தெடுக்கும் தேதிகளில் மட்டுமே அடிக்கும்.",
+"new_en": null
+},
+{
+"en": "Once \\u2014 rings the next time this clock time comes, then switches itself off.",
+"old_ta": "ஒருமுறை \\u2014 இந்த நேரம் அடுத்து வரும்போது அடித்து, தானாக அணைந்துவிடும்.",
+"new_ta": "ஒருமுறை \\u2014 இந்த நேரம் அடுத்து வரும்போது ஒருமுறை அடித்து, தானாகவே அணைந்துவிடும்.",
+"new_en": null
+},
+{
+"en": "Tap the days you want. Selected: ${repeatSummary(daysMask)}.",
+"old_ta": "வேண்டிய நாட்களை தட்டுங்கள். தேர்வு: ${repeatSummary(daysMask)}.",
+"new_ta": "வேண்டிய நாட்களை தட்டுங்கள். தேர்ந்தெடுத்தது: ${repeatSummary(daysMask)}.",
+"new_en": null
+},
+{
+"en": "Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.",
+"old_ta": "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டரிலிருந்து மதிப்பீடு). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.",
+"new_ta": "கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது.",
+"new_en": null
+},
+{
+"en": "Distance is estimated from your phone's step counter.",
+"old_ta": "தூரம் போனின் அடி கவுண்டரிலிருந்து மதிப்பிடப்படும்.",
+"new_ta": "தூரம் போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படுகிறது.",
+"new_en": null
+},
+{
+"en": "How long after the alarm rings you have to finish. If you don't finish in time the day counts as missed, your streak resets and every app stays locked for 24 hours.",
+"old_ta": "அலாரம் அடித்த பிறகு முடிக்க உங்களுக்கு எவ்வளவு நேரம் உண்டு. நேரத்துக்குள் முடிக்காவிட்டால் அன்றைய நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்.",
+"new_ta": "அலாரம் அடித்த பிறகு முடிக்க உங்களுக்கு எவ்வளவு நேரம் உண்டு. நேரத்துக்குள் முடிக்கவில்லை என்றால், அன்றைய நாள் தவறியதாக கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Scroll the hour, minute and AM / PM wheels to choose when the alarm rings.",
+"old_ta": "அலாரம் அடிக்க வேண்டிய நேரத்தை மணி, நிமிடம், AM / PM சக்கரங்களை உருட்டி தேர்ந்தெடுங்கள்.",
+"new_ta": "அலாரம் அடிக்க வேண்டிய நேரத்தை தேர்ந்தெடுக்க, மணி, நிமிடம், AM / PM சக்கரங்களை உருட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "Every day, only once, or tap the days you want. Custom lets you pick exact dates from a calendar.",
+"old_ta": "தினமும், ஒருமுறை, அல்லது வேண்டிய நாட்களை தட்டுங்கள். தனிப்பயன் மூலம் காலெண்டரில் குறிப்பிட்ட தேதிகளை தேர்ந்தெடுக்கலாம்.",
+"new_ta": "தினமும், ஒருமுறை மட்டும், அல்லது வேண்டிய நாட்களை தட்டுங்கள். தனிப்பயன் என்பதில் நாட்காட்டியிலிருந்து குறிப்பிட்ட தேதிகளை தேர்ந்தெடுக்கலாம்.",
+"new_en": null
+},
+{
+"en": "An optional name for this alarm, like Morning workout. It shows on the alarm.",
+"old_ta": "இந்த அலாரத்துக்கு விருப்பமான பெயர், உதாரணம் காலை உடற்பயிற்சி. அலாரத்தில் தெரியும்.",
+"new_ta": "இந்த அலாரத்துக்கான விருப்பப் பெயர், எ.கா. காலை உடற்பயிற்சி. இது அலாரத்தில் தெரியும்.",
+"new_en": null
+},
+{
+"en": "Pick what you must do to unlock your phone, then set how many reps or minutes. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.",
+"old_ta": "போனை திறக்க என்ன செய்ய வேண்டும் என தேர்ந்தெடுத்து, எத்தனை முறை அல்லது நிமிடங்கள் என அமையுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் கேமரா எண்ணும். நடைப்பயிற்சி நீங்கள் நடக்கும் தூரத்தால் அளக்கப்படும் (போனின் அடி கவுண்டரிலிருந்து மதிப்பீடு). தியானம், வாசிப்பு தவிர்க்க முடியாத டைமரில் ஓடும்.",
+"new_ta": "போனை திறக்க நீங்கள் என்ன செய்ய வேண்டும் என்பதை தேர்ந்தெடுத்து, இலக்கை (முறை, நிமிடங்கள் அல்லது தூரம்) அமைத்துக்கொள்ளுங்கள். கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது.",
+"new_en": "Pick what you must do to unlock your phone, then set the target: reps, minutes, or distance. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip."
+},
+{
+"en": "How long after the alarm rings you have to finish. Miss it and the day counts as missed, your streak resets and every app stays locked for 24 hours.",
+"old_ta": "அலாரம் அடித்த பிறகு முடிக்க எவ்வளவு நேரம் உண்டு. தவறினால் அந்த நாள் தவறியதாக கணக்கு, ஸ்ட்ரீக் மீட்டமையும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டப்படும்.",
+"new_ta": "அலாரம் அடித்த பிறகு முடிக்க எவ்வளவு நேரம் உண்டு. தவறினால், அன்றைய நாள் தவறியதாக கணக்கிடப்படும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், எல்லா ஆப்களும் 24 மணி நேரம் பூட்டியே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Tap the tick at the top any time to save. The alarm is set straight away.",
+"old_ta": "சேமிக்க மேலே உள்ள டிக்கை எப்போது வேண்டுமானாலும் தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.",
+"new_ta": "சேமிக்க, எப்போது வேண்டுமானாலும் மேலே உள்ள சரிக்குறியை தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.",
+"new_en": null
+},
+{
+"en": "Theme",
+"old_ta": "தீம்",
+"new_ta": "தோற்றம்",
+"new_en": null
+},
+{
+"en": "System",
+"old_ta": "சிஸ்டம்",
+"new_ta": "போன் படி",
+"new_en": null
+},
+{
+"en": "Change ringtone",
+"old_ta": "ரிங்டோனை மாற்று",
+"new_ta": "ஒலியை மாற்று",
+"new_en": null
+},
+{
+"en": "Plays for a few seconds so you can check the volume. It doesn't start a challenge or lock anything.",
+"old_ta": "ஒலி அளவை சரிபார்க்க சில வினாடிகள் ஒலிக்கும். சேலஞ்ச் தொடங்காது, எதையும் பூட்டாது.",
+"new_ta": "ஒலி அளவை சரிபார்க்க சில வினாடிகள் ஒலிக்கும். இது சவாலை தொடங்காது, எதையும் பூட்டாது.",
+"new_en": null
+},
+{
+"en": "Phone and Camera are always open. Pick any other apps you still need, like WhatsApp.",
+"old_ta": "போன், கேமரா எப்போதும் திறந்திருக்கும். WhatsApp போல உங்களுக்கு தேவையான மற்ற ஆப்களை தேர்ந்தெடுங்கள்.",
+"new_ta": "போன், கேமரா எப்போதும் திறந்திருக்கும். WhatsApp போல, உங்களுக்கு இன்னும் தேவையான மற்ற ஆப்களை தேர்ந்தெடுங்கள்.",
+"new_en": null
+},
+{
+"en": "Locked until your challenge ends, so the list can't be changed right now.",
+"old_ta": "சேலஞ்ச் முடியும் வரை பூட்டப்பட்டுள்ளது, அதனால் பட்டியலை இப்போது மாற்ற முடியாது.",
+"new_ta": "சவால் முடியும் வரை பூட்டப்பட்டுள்ளது, அதனால் இந்த பட்டியலை இப்போது மாற்ற முடியாது.",
+"new_en": null
+},
+{
+"en": "Something is off. The alarm or the app lock may not work properly until it is fixed.",
+"old_ta": "ஏதோ அணைந்துள்ளது. சரிசெய்யும் வரை அலாரம் அல்லது ஆப் லாக் சரியாக வேலை செய்யாமல் போகலாம்.",
+"new_ta": "ஏதோ ஒன்று இயக்கத்தில் இல்லை. சரிசெய்யும் வரை அலாரம் அல்லது ஆப் பூட்டு சரியாக வேலை செய்யாமல் போகலாம்.",
+"new_en": null
+},
+{
+"en": "Everything is on.",
+"old_ta": "எல்லாம் ஆன் ஆக உள்ளது.",
+"new_ta": "எல்லாம் இயக்கத்தில் உள்ளது.",
+"new_en": null
+},
+{
+"en": "Streak history",
+"old_ta": "ஸ்ட்ரீக் வரலாறு",
+"new_ta": "தொடர் சாதனை வரலாறு",
+"new_en": null
+},
+{
+"en": "See which days you finished and which you missed.",
+"old_ta": "எந்த நாட்கள் முடித்தீர்கள், எவை தவறின என்று பாருங்கள்.",
+"new_ta": "எந்த நாட்களில் முடித்தீர்கள், எந்த நாட்களில் தவறவிட்டீர்கள் என்று பாருங்கள்.",
+"new_en": null
+},
+{
+"en": "Open calendar",
+"old_ta": "காலெண்டரை திற",
+"new_ta": "நாட்காட்டியை திற",
+"new_en": null
+},
+{
+"en": "Wake up, finish your challenge, earn your phone back. No account needed, and your data stays on this phone.",
+"old_ta": "எழுந்திருங்கள், சேலஞ்சை முடியுங்கள், போனை திரும்பப் பெறுங்கள். கணக்கு தேவையில்லை, உங்கள் தரவு இந்த போனிலேயே இருக்கும்.",
+"new_ta": "எழுந்திருங்கள், சவாலை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள். கணக்கு தேவையில்லை, உங்கள் தகவல்கள் இந்த போனிலேயே இருக்கும்.",
+"new_en": null
+},
+{
+"en": "Pick Light, Dark, or System to follow your phone. It changes the whole app straight away.",
+"old_ta": "ஒளி, இருள், அல்லது உங்கள் போனை பின்பற்ற சிஸ்டம் என தேர்ந்தெடுங்கள். முழு ஆப்பும் உடனே மாறும்.",
+"new_ta": "ஒளி, இருள் அல்லது போனை பின்பற்ற போன் படி என்பதை தேர்ந்தெடுங்கள். முழு ஆப்பும் உடனே மாறும்.",
+"new_en": null
+},
+{
+"en": "Choose the ringtone, turn vibration on or off, and press Test to hear it for a few seconds. Testing never starts a challenge or locks anything.",
+"old_ta": "ரிங்டோனை தேர்ந்தெடுங்கள், அதிர்வை ஆன் / ஆஃப் செய்யுங்கள், சில வினாடிகள் கேட்க Test அழுத்துங்கள். சோதனை சேலஞ்சை தொடங்காது, எதையும் பூட்டாது.",
+"new_ta": "அலாரம் ஒலியை தேர்ந்தெடுங்கள், அதிர்வை இயக்கவோ அணைக்கவோ செய்யுங்கள், சில வினாடிகள் கேட்க சோதி என்பதை அழுத்துங்கள். சோதனை சவாலை தொடங்காது, எதையும் பூட்டாது.",
+"new_en": null
+},
+{
+"en": "Choose which apps still work while your phone is locked, like WhatsApp. Phone and Camera always work. This list can't be changed while a challenge is pending.",
+"old_ta": "போன் பூட்டியிருக்கும்போதும் WhatsApp போன்ற எந்த ஆப்கள் வேலை செய்ய வேண்டும் என தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் வேலை செய்யும். சேலஞ்ச் நிலுவையில் இருக்கும்போது இந்த பட்டியலை மாற்ற முடியாது.",
+"new_ta": "போன் பூட்டியிருக்கும்போதும் WhatsApp போன்ற எந்த ஆப்கள் வேலை செய்ய வேண்டும் என்பதை தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் வேலை செய்யும். சவால் முடியாமல் காத்திருக்கும்போது இந்த பட்டியலை மாற்ற முடியாது.",
+"new_en": null
+},
+{
+"en": "A tick means it is on. A cross means it is off, and the alarm or app lock may not work. Tap Fix to open the right screen.",
+"old_ta": "டிக் என்றால் ஆன். குறுக்கு என்றால் ஆஃப், அலாரம் அல்லது ஆப் லாக் வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க Fix தட்டுங்கள்.",
+"new_ta": "சரிக்குறி என்றால் இயக்கத்தில் உள்ளது. தவறுக்குறி என்றால் இயக்கத்தில் இல்லை, அலாரம் அல்லது ஆப் பூட்டு வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க சரிசெய் என்பதை தட்டுங்கள்.",
+"new_en": null
+},
+{
+"en": "Open a calendar of the days you finished and the days you missed.",
+"old_ta": "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் காலெண்டரை திறக்கவும்.",
+"new_ta": "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் நாட்காட்டியை திறந்து பாருங்கள்.",
+"new_en": null
+},
+{
+"en": "Data and backup",
+"old_ta": "தரவு மற்றும் பேக்கப்",
+"new_ta": "தரவு மற்றும் காப்பு நகல்",
+"new_en": null
+},
+{
+"en": "Save your alarms, streak, history and allowed apps to a file. Restore works only on a fresh start (no recorded days yet), so a backup can never undo a missed day.",
+"old_ta": "அலாரங்கள், ஸ்ட்ரீக், வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை கோப்பாக சேமிக்கலாம். எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும், எனவே தவறிய நாளை அழிக்க முடியாது.",
+"new_ta": "அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை ஒரு கோப்பாக சேமிக்கலாம். இன்னும் எந்த நாளும் பதிவாகாத புதிய தொடக்கத்தில் மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது.",
+"new_en": null
+},
+{
+"en": "What the camera, the accessibility service and your data are used for. Nothing leaves your phone.",
+"old_ta": "கேமரா, அக்சசிபிலிட்டி சேவை, உங்கள் தரவு எதற்கு பயன்படுகிறது என்பது. எதுவும் போனை விட்டு வெளியே போகாது.",
+"new_ta": "கேமரா, அணுகல் வசதி சேவை, உங்கள் தகவல்கள் எதற்காக பயன்படுத்தப்படுகின்றன என்பது. எதுவும் உங்கள் போனை விட்டு வெளியே போகாது.",
+"new_en": null
+},
+{
+"en": "Backup saved",
+"old_ta": "பேக்கப் சேமிக்கப்பட்டது",
+"new_ta": "காப்பு நகல் சேமிக்கப்பட்டது",
+"new_en": null
+},
+{
+"en": "Could not save the backup",
+"old_ta": "பேக்கப்பை சேமிக்க முடியவில்லை",
+"new_ta": "காப்பு நகலை சேமிக்க முடியவில்லை",
+"new_en": null
+},
+{
+"en": "Save your alarms, streak, history and allowed apps to a file on your phone. The file stays wherever you put it; nothing is uploaded.",
+"old_ta": "உங்கள் அலாரங்கள், ஸ்ட்ரீக், வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள். எதுவும் இணையத்தில் பதிவேற்றப்படாது.",
+"new_ta": "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள். அந்த கோப்பு நீங்கள் வைக்கும் இடத்திலேயே இருக்கும்; எதுவும் இணையத்தில் பதிவேற்றப்படாது.",
+"new_en": null
+},
+{
+"en": "Save backup",
+"old_ta": "பேக்கப் சேமி",
+"new_ta": "காப்பு நகலை சேமி",
+"new_en": null
+},
+{
+"en": "Restore from backup",
+"old_ta": "பேக்கப்பிலிருந்து மீட்டெடு",
+"new_ta": "காப்பு நகலிலிருந்து மீட்டெடு",
+"new_en": null
+},
+{
+"en": "Restore only works before any day is recorded (for example on a new phone), so a backup can never undo a missed day. It also cannot run while a challenge is active or an alarm is about to ring.",
+"old_ta": "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போன்), அதனால் பேக்கப் தவறிய நாளை அழிக்க முடியாது. சேலஞ்ச் நடக்கும்போதோ அலாரம் அடிக்கப்போகும்போதோ முடியாது.",
+"new_ta": "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போனில்), அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. சவால் நடந்துகொண்டிருக்கும்போதோ, அலாரம் அடிக்கப்போகும்போதோ இதை செய்ய முடியாது.",
+"new_en": null
+},
+{
+"en": "Restore this backup?",
+"old_ta": "இந்த பேக்கப்பை மீட்டெடுக்கவா?",
+"new_ta": "இந்த காப்பு நகலை மீட்டெடுக்கவா?",
+"new_en": null
+},
+{
+"en": "Camera: exercise counting runs on your phone. Camera images are not saved and not sent anywhere.",
+"old_ta": "கேமரா: உடற்பயிற்சி எண்ணுதல் உங்கள் போனிலேயே நடக்கும். கேமரா படங்கள் சேமிக்கப்படாது, எங்கும் அனுப்பப்படாது.",
+"new_ta": "கேமரா: பயிற்சிகளை எண்ணுவது உங்கள் போனிலேயே நடக்கும். கேமரா படங்கள் சேமிக்கப்படாது, எங்கும் அனுப்பப்படாது.",
+"new_en": null
+},
+{
+"en": "Accessibility service: used only to see which app is open so it can be blocked during a challenge. Apps you choose as allowed stay open. Nothing it sees is stored or sent.",
+"old_ta": "அக்சசிபிலிட்டி சேவை: சேலஞ்ச் நேரத்தில் எந்த ஆப் திறந்துள்ளது என்று பார்த்து தடுக்க மட்டுமே. நீங்கள் அனுமதித்த ஆப்கள் திறந்தே இருக்கும். அது பார்ப்பது எதுவும் சேமிக்கப்படாது, அனுப்பப்படாது.",
+"new_ta": "அணுகல் வசதி சேவை: சவால் நேரத்தில் எந்த ஆப் திறந்துள்ளது என்பதை பார்த்து, அதை தடுக்க மட்டுமே பயன்படும். நீங்கள் அனுமதித்த ஆப்கள் திறந்தே இருக்கும். அது பார்ப்பது எதுவும் சேமிக்கப்படாது, அனுப்பப்படாது.",
+"new_en": null
+},
+{
+"en": "Your alarms, streak and history are stored only on this phone. DisciplineX does not ask for the Internet permission and has no account or sign-in.",
+"old_ta": "உங்கள் அலாரங்கள், ஸ்ட்ரீக், வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதி கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை.",
+"new_ta": "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதியை கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை.",
+"new_en": null
+},
+{
+"en": "The app lock uses an accessibility service, which is not the same as device-level security. A determined person can still get around it (for example by switching the service off in system settings).",
+"old_ta": "ஆப் லாக் அக்சசிபிலிட்டி சேவையை பயன்படுத்துகிறது; இது போன் அளவிலான பாதுகாப்புக்கு சமமல்ல. உறுதியாக முயன்றால் (எ.கா. சிஸ்டம் அமைப்புகளில் சேவையை அணைத்து) தவிர்க்க முடியும்.",
+"new_ta": "ஆப் பூட்டு அணுகல் வசதி சேவையை பயன்படுத்துகிறது; இது போன் அளவிலான பாதுகாப்புக்கு சமமானது அல்ல. உறுதியாக முயன்றால் ஒருவர் இதை தவிர்க்க முடியும் (எ.கா. சிஸ்டம் அமைப்புகளில் அந்த சேவையை அணைத்து).",
+"new_en": null
+},
+{
+"en": "Backup restored. Reopen the app to see everything.",
+"old_ta": "பேக்கப் மீட்டெடுக்கப்பட்டது. அனைத்தையும் காண ஆப்பை மீண்டும் திறக்கவும்.",
+"new_ta": "காப்பு நகல் மீட்டெடுக்கப்பட்டது. அனைத்தையும் பார்க்க ஆப்பை மீண்டும் திறந்து பாருங்கள்.",
+"new_en": null
+},
+{
+"en": "That file is not a valid DisciplineX backup.",
+"old_ta": "இது சரியான DisciplineX பேக்கப் கோப்பு அல்ல.",
+"new_ta": "இது சரியான DisciplineX காப்பு நகல் கோப்பு அல்ல.",
+"new_en": null
+},
+{
+"en": "This phone already has recorded days, so restore is blocked. Restore only works on a fresh install (for example a new phone), so a backup can never undo a missed day. Your backup file itself is fine.",
+"old_ta": "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் மீட்டெடுப்பு தடுக்கப்பட்டது. புதிய இன்ஸ்டாலில் (எ.கா. புதிய போன்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் பேக்கப் தவறிய நாளை அழிக்க முடியாது. உங்கள் பேக்கப் கோப்பு சரியாகவே உள்ளது.",
+"new_ta": "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் இப்போது மீட்டெடுக்க முடியாது. புதிய நிறுவலில் (எ.கா. புதிய போனில்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. உங்கள் காப்பு நகல் கோப்பு சரியாகவே உள்ளது.",
+"new_en": null
+},
+{
+"en": "A challenge is active right now. Finish it first, then try again.",
+"old_ta": "இப்போது ஒரு சேலஞ்ச் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு மீண்டும் முயலுங்கள்.",
+"new_ta": "இப்போது ஒரு சவால் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு, மீண்டும் முயலுங்கள்.",
+"new_en": null
+},
+{
+"en": "An alarm will ring within 2 hours, so restore is blocked. Try again later.",
+"old_ta": "2 மணி நேரத்துக்குள் அலாரம் அடிக்கும், அதனால் மீட்டெடுப்பு தடுக்கப்பட்டது. பிறகு முயலுங்கள்.",
+"new_ta": "2 மணி நேரத்துக்குள் ஒரு அலாரம் அடிக்கும், அதனால் இப்போது மீட்டெடுக்க முடியாது. பிறகு மீண்டும் முயலுங்கள்.",
+"new_en": null
+},
+{
+"en": "Completed challenges",
+"old_ta": "முடித்த சேலஞ்ச்கள்",
+"new_ta": "முடித்த சவால்கள்",
+"new_en": null
+},
+{
+"en": "No detailed records for this month. Details are saved from version 1.2.1 onwards.",
+"old_ta": "இந்த மாதத்திற்கு விரிவான பதிவுகள் இல்லை. விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும்.",
+"new_ta": "இந்த மாதத்துக்கு விவரமான பதிவுகள் இல்லை. விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும்.",
+"new_en": null
+},
+{
+"en": "Your streaks",
+"old_ta": "உங்கள் ஸ்ட்ரீக்",
+"new_ta": "உங்கள் தொடர் சாதனைகள்",
+"new_en": null
+},
+{
+"en": "Current streak is how many days in a row you finished. Best streak is your longest run ever.",
+"old_ta": "தற்போதைய ஸ்ட்ரீக் என்பது தொடர்ச்சியாக முடித்த நாட்கள். சிறந்த ஸ்ட்ரீக் என்பது இதுவரை உங்கள் நீண்ட தொடர்.",
+"new_ta": "தற்போதைய தொடர் சாதனை என்பது, தொடர்ச்சியாக நீங்கள் முடித்த நாட்கள். அதிகபட்ச தொடர் சாதனை என்பது, இதுவரை உங்கள் மிக நீண்ட தொடர்ச்சி.",
+"new_en": null
+},
+{
+"en": "Calendar",
+"old_ta": "காலெண்டர்",
+"new_ta": "நாட்காட்டி",
+"new_en": null
+},
+{
+"en": "Green is a day you finished, red is a day you missed. The orange ring is today. Use the arrows to move between months.",
+"old_ta": "பச்சை என்றால் முடித்த நாள், சிவப்பு என்றால் தவறிய நாள். ஆரஞ்சு வளையம் இன்று. மாதங்களுக்கு இடையே செல்ல அம்புகளை பயன்படுத்துங்கள்.",
+"new_ta": "பச்சை என்பது முடித்த நாள், சிவப்பு என்பது தவறிய நாள். ஆரஞ்சு வளையம் இன்றைய நாள். மாதங்களுக்கு இடையே செல்ல அம்புக்குறிகளை பயன்படுத்துங்கள்.",
+"new_en": null
+},
+{
+"en": "A grey day means there is no result: no alarm was due, or it hasn't come yet.",
+"old_ta": "சாம்பல் நாள் என்றால் முடிவு இல்லை: அலாரம் இல்லை அல்லது இன்னும் வரவில்லை.",
+"new_ta": "சாம்பல் நிற நாள் என்றால் முடிவு இல்லை என்று அர்த்தம்: அன்று அலாரம் இல்லை, அல்லது அந்த நாள் இன்னும் வரவில்லை.",
+"new_en": null
+},
+{
+"en": "alarm to finish $took",
+"old_ta": "அலாரம் முதல் முடிவு வரை $took",
+"new_ta": "அலாரம் முதல் முடிக்கும் வரை $took",
+"new_en": null
+},
+{
+"en": "Ticked apps stay usable while your apps are locked. Phone, Camera, keyboards and system screens are always allowed.",
+"old_ta": "டிக் செய்த ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.",
+"new_ta": "தேர்வு செய்த ஆப்களை, ஆப்கள் பூட்டியிருக்கும்போதும் பயன்படுத்தலாம். போன், கேமரா, கீபோர்டுகள், சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.",
+"new_en": null
+},
+{
+"en": "Locked until you finish today's challenge.",
+"old_ta": "இன்றைய சேலஞ்சை முடிக்கும் வரை பூட்டப்பட்டுள்ளது.",
+"new_ta": "இன்றைய சவாலை முடிக்கும் வரை பூட்டப்பட்டுள்ளது.",
+"new_en": null
+},
+{
+"en": "Apps you tick keep working while your phone is locked. Phone, Camera, keyboards and system screens are always allowed.",
+"old_ta": "நீங்கள் டிக் செய்யும் ஆப்கள் போன் பூட்டியிருக்கும்போதும் வேலை செய்யும். போன், கேமரா, கீபோர்டு, சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.",
+"new_ta": "நீங்கள் தேர்வு செய்யும் ஆப்கள், போன் பூட்டியிருக்கும்போதும் வேலை செய்யும். போன், கேமரா, கீபோர்டுகள், சிஸ்டம் திரைகள் எப்போதும் அனுமதிக்கப்படும்.",
+"new_en": null
+},
+{
+"en": "Tap an app to tick or untick it. Only tick what you really need, like WhatsApp or a bank app, so distractions stay locked.",
+"old_ta": "ஆப்பை தட்டி டிக் அல்லது நீக்கவும். WhatsApp, வங்கி ஆப் போல உண்மையில் தேவையானவற்றை மட்டும் டிக் செய்யுங்கள், அப்போதுதான் கவனச்சிதறல் பூட்டியிருக்கும்.",
+"new_ta": "ஒரு ஆப்பை தட்டி தேர்வு செய்யலாம் அல்லது தேர்வை நீக்கலாம். WhatsApp அல்லது வங்கி ஆப் போல, உண்மையிலேயே தேவையானவற்றை மட்டும் தேர்வு செய்யுங்கள்; அப்போதுதான் கவனத்தை சிதறடிப்பவை பூட்டியே இருக்கும்.",
+"new_en": null
+}
+]

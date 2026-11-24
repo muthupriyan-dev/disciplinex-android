@@ -108,9 +108,9 @@ class AlarmService : Service() {
     private fun buildNotification(): android.app.Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "Alarm", NotificationManager.IMPORTANCE_HIGH
+                CHANNEL_ID, tr("Alarm", "அலாரம்"), NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "DisciplineX wake-up alarm"
+                description = tr("DisciplineX wake-up alarm", "DisciplineX எழுப்பும் அலாரம்")
                 setSound(null, null) // we play the alarm sound ourselves, not via the notification
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -146,11 +146,11 @@ class AlarmService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(ChallengeSession.label(this).ifBlank { tr("Time for your challenge!", "உங்கள் சேலஞ்ச் நேரம்!") })
+            .setContentTitle(ChallengeSession.label(this).ifBlank { tr("Time for your challenge!", "உங்கள் சவாலுக்கான நேரம் இது!") })
             .setContentText(
                 tr(
                     "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.",
-                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடிக்கவும், இல்லையெனில் தவறியதாக கணக்கு."
+                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடியுங்கள், இல்லையென்றால் தவறியதாக எடுத்துக்கொள்ளப்படும்."
                 )
             )
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
@@ -159,7 +159,7 @@ class AlarmService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(ringPendingIntent)
             .setFullScreenIntent(ringPendingIntent, true)
-            .addAction(0, tr("Start challenge", "சேலஞ்சை தொடங்கு"), dismissPendingIntent)
+            .addAction(0, tr("Start challenge", "சவாலை தொடங்கு"), dismissPendingIntent)
             .build()
     }
 

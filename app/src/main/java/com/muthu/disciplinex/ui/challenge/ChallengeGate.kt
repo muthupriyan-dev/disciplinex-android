@@ -69,9 +69,9 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
             val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                 .format(Date(ChallengeSession.lockEndsAtMillis(context)))
             GateMessage(
-                title = tr("Challenge missed", "சேலஞ்ச் தவறிவிட்டது"),
+                title = tr("Challenge missed", "சவால் தவறிவிட்டது"),
                 titleColor = Danger,
-                body = tr("You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.", "நேர வரம்புக்குள் நீங்கள் முடிக்கவில்லை, அதனால் இன்றைய சேலஞ்ச் முடிந்தது, ஸ்ட்ரீக் மீட்டமைக்கப்பட்டது.\n\n$unlockAt வரை உங்கள் ஆப்கள் பூட்டியே இருக்கும்."),
+                body = tr("You didn't finish within the time limit, so today's challenge is over and your streak was reset.\n\nYour apps stay locked until $unlockAt.", "நேர வரம்புக்குள் நீங்கள் முடிக்கவில்லை, அதனால் இன்றைய சவால் முடிந்துவிட்டது, தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது.\n\n$unlockAt வரை உங்கள் ஆப்கள் பூட்டியே இருக்கும்."),
                 buttonText = tr("Back to home", "முகப்புக்கு திரும்பு"),
                 onClick = onClose
             )
@@ -79,9 +79,9 @@ fun ChallengeGate(onComplete: () -> Unit, onClose: () -> Unit) {
 
         else -> {
             GateMessage(
-                title = tr("Nothing to do right now", "இப்போது எதுவும் இல்லை"),
+                title = tr("Nothing to do right now", "இப்போது செய்ய எதுவும் இல்லை"),
                 titleColor = TextPrimary,
-                body = tr("A challenge appears here when one of your alarms rings.", "உங்கள் அலாரம் அடிக்கும்போது சேலஞ்ச் இங்கே தோன்றும்."),
+                body = tr("A challenge appears here when one of your alarms rings.", "உங்கள் அலாரங்களில் ஒன்று அடிக்கும்போது, சவால் இங்கே தோன்றும்."),
                 buttonText = tr("Back to home", "முகப்புக்கு திரும்பு"),
                 onClick = onClose
             )

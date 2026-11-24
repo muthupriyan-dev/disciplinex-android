@@ -64,8 +64,8 @@ fun BackupCard(modifier: Modifier = Modifier) {
             val ok = BackupManager.export(context, uri)
             Toast.makeText(
                 context,
-                if (ok) tr("Backup saved", "பேக்கப் சேமிக்கப்பட்டது")
-                else tr("Could not save the backup", "பேக்கப்பை சேமிக்க முடியவில்லை"),
+                if (ok) tr("Backup saved", "காப்பு நகல் சேமிக்கப்பட்டது")
+                else tr("Could not save the backup", "காப்பு நகலை சேமிக்க முடியவில்லை"),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -74,11 +74,11 @@ fun BackupCard(modifier: Modifier = Modifier) {
         ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) pendingRestore = uri }
 
-    InfoCard(tr("Data and backup", "தரவு மற்றும் பேக்கப்"), modifier) {
+    InfoCard(tr("Data and backup", "தரவு மற்றும் காப்பு நகல்"), modifier) {
         Text(
             tr(
                 "Save your alarms, streak, history and allowed apps to a file on your phone. The file stays wherever you put it; nothing is uploaded.",
-                "உங்கள் அலாரங்கள், ஸ்ட்ரீக், வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள். எதுவும் இணையத்தில் பதிவேற்றப்படாது."
+                "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள். அந்த கோப்பு நீங்கள் வைக்கும் இடத்திலேயே இருக்கும்; எதுவும் இணையத்தில் பதிவேற்றப்படாது."
             ),
             color = TextMuted,
             style = MaterialTheme.typography.bodyMedium
@@ -89,7 +89,7 @@ fun BackupCard(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
-        ) { Text(tr("Save backup", "பேக்கப் சேமி"), fontWeight = FontWeight.SemiBold) }
+        ) { Text(tr("Save backup", "காப்பு நகலை சேமி"), fontWeight = FontWeight.SemiBold) }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = {
@@ -102,12 +102,12 @@ fun BackupCard(modifier: Modifier = Modifier) {
             },
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(26.dp)
-        ) { Text(tr("Restore from backup", "பேக்கப்பிலிருந்து மீட்டெடு"), fontWeight = FontWeight.SemiBold) }
+        ) { Text(tr("Restore from backup", "காப்பு நகலிலிருந்து மீட்டெடு"), fontWeight = FontWeight.SemiBold) }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             tr(
                 "Restore only works before any day is recorded (for example on a new phone), so a backup can never undo a missed day. It also cannot run while a challenge is active or an alarm is about to ring.",
-                "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போன்), அதனால் பேக்கப் தவறிய நாளை அழிக்க முடியாது. சேலஞ்ச் நடக்கும்போதோ அலாரம் அடிக்கப்போகும்போதோ முடியாது."
+                "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போனில்), அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. சவால் நடந்துகொண்டிருக்கும்போதோ, அலாரம் அடிக்கப்போகும்போதோ இதை செய்ய முடியாது."
             ),
             color = TextMuted,
             style = MaterialTheme.typography.bodySmall
@@ -117,7 +117,7 @@ fun BackupCard(modifier: Modifier = Modifier) {
     pendingRestore?.let { uri ->
         AlertDialog(
             onDismissRequest = { pendingRestore = null },
-            title = { Text(tr("Restore this backup?", "இந்த பேக்கப்பை மீட்டெடுக்கவா?")) },
+            title = { Text(tr("Restore this backup?", "இந்த காப்பு நகலை மீட்டெடுக்கவா?")) },
             text = {
                 Text(
                     tr(
@@ -149,7 +149,7 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
         Text(
             tr(
                 "Camera: exercise counting runs on your phone. Camera images are not saved and not sent anywhere.",
-                "கேமரா: உடற்பயிற்சி எண்ணுதல் உங்கள் போனிலேயே நடக்கும். கேமரா படங்கள் சேமிக்கப்படாது, எங்கும் அனுப்பப்படாது."
+                "கேமரா: பயிற்சிகளை எண்ணுவது உங்கள் போனிலேயே நடக்கும். கேமரா படங்கள் சேமிக்கப்படாது, எங்கும் அனுப்பப்படாது."
             ),
             color = TextMuted, style = style
         )
@@ -157,7 +157,7 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
         Text(
             tr(
                 "Accessibility service: used only to see which app is open so it can be blocked during a challenge. Apps you choose as allowed stay open. Nothing it sees is stored or sent.",
-                "அக்சசிபிலிட்டி சேவை: சேலஞ்ச் நேரத்தில் எந்த ஆப் திறந்துள்ளது என்று பார்த்து தடுக்க மட்டுமே. நீங்கள் அனுமதித்த ஆப்கள் திறந்தே இருக்கும். அது பார்ப்பது எதுவும் சேமிக்கப்படாது, அனுப்பப்படாது."
+                "அணுகல் வசதி சேவை: சவால் நேரத்தில் எந்த ஆப் திறந்துள்ளது என்பதை பார்த்து, அதை தடுக்க மட்டுமே பயன்படும். நீங்கள் அனுமதித்த ஆப்கள் திறந்தே இருக்கும். அது பார்ப்பது எதுவும் சேமிக்கப்படாது, அனுப்பப்படாது."
             ),
             color = TextMuted, style = style
         )
@@ -165,7 +165,7 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
         Text(
             tr(
                 "Your alarms, streak and history are stored only on this phone. DisciplineX does not ask for the Internet permission and has no account or sign-in.",
-                "உங்கள் அலாரங்கள், ஸ்ட்ரீக், வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதி கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை."
+                "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதியை கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை."
             ),
             color = TextMuted, style = style
         )
@@ -173,7 +173,7 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
         Text(
             tr(
                 "The app lock uses an accessibility service, which is not the same as device-level security. A determined person can still get around it (for example by switching the service off in system settings).",
-                "ஆப் லாக் அக்சசிபிலிட்டி சேவையை பயன்படுத்துகிறது; இது போன் அளவிலான பாதுகாப்புக்கு சமமல்ல. உறுதியாக முயன்றால் (எ.கா. சிஸ்டம் அமைப்புகளில் சேவையை அணைத்து) தவிர்க்க முடியும்."
+                "ஆப் பூட்டு அணுகல் வசதி சேவையை பயன்படுத்துகிறது; இது போன் அளவிலான பாதுகாப்புக்கு சமமானது அல்ல. உறுதியாக முயன்றால் ஒருவர் இதை தவிர்க்க முடியும் (எ.கா. சிஸ்டம் அமைப்புகளில் அந்த சேவையை அணைத்து)."
             ),
             color = TextMuted, style = style
         )
@@ -182,18 +182,18 @@ fun PrivacyCard(modifier: Modifier = Modifier) {
 
 private fun restoreMessage(result: BackupManager.RestoreResult): String = when (result) {
     BackupManager.RestoreResult.OK ->
-        tr("Backup restored. Reopen the app to see everything.", "பேக்கப் மீட்டெடுக்கப்பட்டது. அனைத்தையும் காண ஆப்பை மீண்டும் திறக்கவும்.")
+        tr("Backup restored. Reopen the app to see everything.", "காப்பு நகல் மீட்டெடுக்கப்பட்டது. அனைத்தையும் பார்க்க ஆப்பை மீண்டும் திறந்து பாருங்கள்.")
     BackupManager.RestoreResult.INVALID_FILE ->
-        tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX பேக்கப் கோப்பு அல்ல.")
+        tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX காப்பு நகல் கோப்பு அல்ல.")
     BackupManager.RestoreResult.BLOCKED_HISTORY ->
         tr(
             "This phone already has recorded days, so restore is blocked. Restore only works on a fresh install (for example a new phone), so a backup can never undo a missed day. Your backup file itself is fine.",
-            "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் மீட்டெடுப்பு தடுக்கப்பட்டது. புதிய இன்ஸ்டாலில் (எ.கா. புதிய போன்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் பேக்கப் தவறிய நாளை அழிக்க முடியாது. உங்கள் பேக்கப் கோப்பு சரியாகவே உள்ளது."
+            "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் இப்போது மீட்டெடுக்க முடியாது. புதிய நிறுவலில் (எ.கா. புதிய போனில்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. உங்கள் காப்பு நகல் கோப்பு சரியாகவே உள்ளது."
         )
     BackupManager.RestoreResult.BLOCKED_ACTIVE ->
-        tr("A challenge is active right now. Finish it first, then try again.", "இப்போது ஒரு சேலஞ்ச் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு மீண்டும் முயலுங்கள்.")
+        tr("A challenge is active right now. Finish it first, then try again.", "இப்போது ஒரு சவால் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு, மீண்டும் முயலுங்கள்.")
     BackupManager.RestoreResult.BLOCKED_ALARM_SOON ->
-        tr("An alarm will ring within 2 hours, so restore is blocked. Try again later.", "2 மணி நேரத்துக்குள் அலாரம் அடிக்கும், அதனால் மீட்டெடுப்பு தடுக்கப்பட்டது. பிறகு முயலுங்கள்.")
+        tr("An alarm will ring within 2 hours, so restore is blocked. Try again later.", "2 மணி நேரத்துக்குள் ஒரு அலாரம் அடிக்கும், அதனால் இப்போது மீட்டெடுக்க முடியாது. பிறகு மீண்டும் முயலுங்கள்.")
     BackupManager.RestoreResult.IO_ERROR ->
         tr("Could not read the file.", "கோப்பை படிக்க முடியவில்லை.")
 }

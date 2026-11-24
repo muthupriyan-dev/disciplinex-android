@@ -12,6 +12,14 @@ workflows:
       - name: Build debug APK
         script: |
           ./gradlew assembleDebug
+      - name: Show merged manifest permissions
+        script: |
+          echo "=== merged manifest permissions ==="
+          find app/build -path "*merged_manifest*" -name AndroidManifest.xml -exec grep -H "uses-permission" {} \;
+          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          AAPT=$(find "$ANDROID_SDK_ROOT/build-tools" "$ANDROID_HOME/build-tools" -name aapt2 2>/dev/null | sort | tail -1)
+          if [ -n "$AAPT" ] && [ -n "$APK" ]; then "$AAPT" dump permissions "$APK"; fi
+        ignore_failure: true
       - name: Run unit tests
         script: |
           ./gradlew testDebugUnitTest

@@ -49,8 +49,12 @@ import com.muthu.disciplinex.ui.theme.*
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-/** Small live angle readout under the camera. Set to false to hide it. */
-private const val SHOW_REP_DEBUG = true
+/**
+ * Small live readout under the camera (angle, "skipped: ..."). Shown only in DEBUGGABLE builds
+ * (the Codemagic debug APK); signed release builds hide it. Nothing else about debugging changes.
+ */
+private fun isDebugBuild(context: android.content.Context): Boolean =
+    (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
 /**
  * Two kinds of challenge:
@@ -101,7 +105,7 @@ private fun challengeTourSteps(timed: Boolean): List<TourStep> = listOf(
     TourStep(
         "deadline", tr("Time left", "மீதமுள்ள நேரம்"),
         tr("This is how long you have to finish. When it reaches zero the challenge is missed, your streak resets and your apps stay locked for 24 hours.",
-            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. பூஜ்யம் ஆனால் சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்.")
+            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. இது 0 ஆனால் சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்.")
     ),
     TourStep(
         "ring", tr("Your progress", "உங்கள் முன்னேற்றம்"),
@@ -110,17 +114,17 @@ private fun challengeTourSteps(timed: Boolean): List<TourStep> = listOf(
                 "டைமர் ஓடும்போது வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
         } else {
             tr("The number is your reps so far. The ring fills as you go. When it is full you can unlock your phone.",
-                "எண் என்பது இதுவரை செய்த முறை. நீங்கள் செய்ய செய்ய வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+                "இந்த எண் இதுவரை நீங்கள் செய்த முறைகள். நீங்கள் செய்யச் செய்ய வளையம் நிரம்பும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
         }
     ),
     TourStep(
-        "bottom", if (timed) tr("Stay on this screen", "இந்த திரையிலேயே இருங்கள்") else tr("How counting works", "எண்ணுதல் எப்படி"),
+        "bottom", if (timed) tr("Stay on this screen", "இந்த திரையிலேயே இருங்கள்") else tr("How counting works", "எப்படி எண்ணப்படுகிறது"),
         if (timed) {
             tr("The timer only runs while this screen is open. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and the timer starts again from zero.",
-                "இந்த திரை திறந்திருக்கும்போது மட்டுமே டைமர் ஓடும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் டைமர் பூஜ்யத்திலிருந்து தொடங்கும்.")
+                "இந்த திரை திறந்திருக்கும்போது மட்டுமே டைமர் ஓடும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று திரும்பி தொடரலாம். அதைவிட அதிகமானால் டைமர் மீண்டும் 0-விலிருந்து தொடங்கும்.")
         } else {
             tr("Keep your whole body in the camera. Only full reps count. Emergency? You can leave for up to 5 minutes and carry on. Longer than that and your reps start again from zero.",
-                "உங்கள் முழு உடலும் கேமராவில் தெரியட்டும். முழு முறைகள் மட்டுமே கணக்கில் வரும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று தொடரலாம். அதற்கு மேல் ஆனால் எண்ணிக்கை பூஜ்யத்திலிருந்து தொடங்கும்.")
+                "உங்கள் முழு உடலும் கேமராவில் தெரிய வேண்டும். முழுமையான முறைகள் மட்டுமே கணக்கில் வரும். அவசரமா? 5 நிமிடம் வரை வெளியே சென்று திரும்பி தொடரலாம். அதைவிட அதிகமானால் எண்ணிக்கை மீண்டும் 0-விலிருந்து தொடங்கும்.")
         }
     )
 )
@@ -191,7 +195,7 @@ private fun AwayResetNote(visible: Boolean, onHide: () -> Unit) {
         onHide()
     }
     Text(
-        text = tr("You were away for more than 5 minutes, so your progress started again from zero.", "நீங்கள் 5 நிமிடத்துக்கு மேல் வெளியே இருந்ததால், முன்னேற்றம் மீண்டும் பூஜ்யத்திலிருந்து தொடங்கியது."),
+        text = tr("You were away for more than 5 minutes, so your progress started again from zero.", "நீங்கள் 5 நிமிடத்துக்கு மேல் வெளியே இருந்ததால், உங்கள் முன்னேற்றம் மீண்டும் 0-விலிருந்து தொடங்கியது."),
         color = Danger,
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier.padding(top = 8.dp)
@@ -332,7 +336,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
                     text = if (stepsNow != null) {
                         tr("Steps: $stepsNow / $requiredSteps", "அடிகள்: $stepsNow / $requiredSteps")
                     } else {
-                        tr("Allow \"Physical activity\" so your steps can be checked.", "உங்கள் அடிகளை சரிபார்க்க \"Physical activity\" அனுமதியுங்கள்.")
+                        tr("Allow \"Physical activity\" so your steps can be checked.", "உங்கள் அடிகளை சரிபார்க்க \"Physical activity\" (உடல் செயல்பாடு) அனுமதியை கொடுங்கள்.")
                     },
                     color = TextMuted,
                     fontWeight = FontWeight.SemiBold,
@@ -354,7 +358,7 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
 
             if (isComplete) {
                 Text(
-                    text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
+                    text = tr("Challenge complete!", "சவால் முடிந்தது!"),
                     color = Success,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleLarge,
@@ -364,10 +368,10 @@ private fun TimedChallenge(exerciseName: String, durationMinutes: Int, onComplet
             } else {
                 Text(
                     text = when {
-                        timerDone && stepsMissing > 0 -> tr("Timer done \u2014 keep walking: $stepsMissing more steps.", "டைமர் முடிந்தது \u2014 தொடர்ந்து நடங்கள்: இன்னும் $stepsMissing அடிகள்.")
-                        !isResumed -> tr("Paused \u2014 come back to this screen to continue.", "இடைநிறுத்தம் \u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.")
-                        !windowActive -> tr("Paused \u2014 another window is open on top. Close it to continue.", "இடைநிறுத்தம் \u2014 மேலே வேறொரு சாளரம் திறந்துள்ளது. தொடர அதை மூடுங்கள்.")
-                        else -> tr("Timer running \u2014 leaving the app pauses it, and there's no skipping.", "டைமர் ஓடுகிறது \u2014 ஆப்பை விட்டு சென்றால் நிற்கும், தவிர்க்க முடியாது.")
+                        timerDone && stepsMissing > 0 -> tr("Timer done \u2014 keep walking: $stepsMissing more steps.", "டைமர் முடிந்தது \u2014 தொடர்ந்து நடங்கள்: இன்னும் $stepsMissing அடிகள் மீதம்.")
+                        !isResumed -> tr("Paused \u2014 come back to this screen to continue.", "இடைநிறுத்தப்பட்டது \u2014 தொடர இந்த திரைக்கு திரும்பி வாருங்கள்.")
+                        !windowActive -> tr("Paused \u2014 another window is open on top. Close it to continue.", "இடைநிறுத்தப்பட்டது \u2014 மேலே வேறொரு திரை திறந்துள்ளது. தொடர அதை மூடுங்கள்.")
+                        else -> tr("Timer running \u2014 leaving the app pauses it, and there's no skipping.", "டைமர் ஓடுகிறது \u2014 ஆப்பை விட்டு வெளியே சென்றால் அது நின்றுவிடும், தவிர்க்கவும் முடியாது.")
                     },
                     color = if (isResumed && windowActive) TextMuted else OrangeEnd,
                     style = MaterialTheme.typography.labelMedium,
@@ -480,7 +484,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
             when {
                 isComplete -> {
                     Text(
-                        text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
+                        text = tr("Challenge complete!", "சவால் முடிந்தது!"),
                         color = Success,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
@@ -492,7 +496,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                     )
                 }
                 usesCamera -> {
-                    if (SHOW_REP_DEBUG && debugText.isNotBlank()) {
+                    if (isDebugBuild(LocalContext.current) && debugText.isNotBlank()) {
                         Text(
                             text = debugText,
                             color = TextMuted,
@@ -501,7 +505,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                         )
                     }
                     Text(
-                        text = if (isTracking) tr("Keep going \u2014 full range of motion counts.", "தொடருங்கள் \u2014 முழு அசைவுதான் கணக்கில் வரும்.")
+                        text = if (isTracking) tr("Keep going \u2014 full range of motion counts.", "தொடருங்கள் \u2014 முழு அசைவு மட்டுமே கணக்கில் வரும்.")
                         else tr("Get your whole body in frame to start counting.", "எண்ணத் தொடங்க உங்கள் முழு உடலும் கேமராவில் தெரிய வேண்டும்."),
                         color = if (isTracking) TextMuted else OrangeEnd,
                         style = MaterialTheme.typography.labelMedium,
@@ -510,7 +514,7 @@ private fun RepChallenge(exerciseName: String, target: Int, onComplete: () -> Un
                 }
                 else -> {
                     Text(
-                        text = tr("Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.", "இந்த பயிற்சிக்கான மோஷன் சென்சார் விரைவில் வரும் \u2014 இப்போது தட்டி எண்ணுங்கள்."),
+                        text = tr("Motion-sensor tracking for this exercise arrives next \u2014 tap to count a rep for now.", "இந்த பயிற்சிக்கான இயக்க சென்சார் கண்காணிப்பு விரைவில் வரும் \u2014 இப்போதைக்கு தட்டி, முறையை எண்ணுங்கள்."),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.tour("bottom").padding(bottom = 16.dp)
@@ -572,13 +576,13 @@ private fun CameraRepTracker(exerciseName: String, onUpdate: (RepUpdate) -> Unit
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    tr("Camera access is needed to count reps", "எண்ணிக்கைக்கு கேமரா அனுமதி தேவை"),
+                    tr("Camera access is needed to count reps", "முறைகளை எண்ண கேமரா அனுமதி தேவை"),
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 PrimaryPillButton(
-                    text = tr("Grant Camera Access", "கேமரா அனுமதி வழங்கு"),
+                    text = tr("Grant Camera Access", "கேமரா அனுமதியை கொடு"),
                     onClick = { launcher.launch(Manifest.permission.CAMERA) }
                 )
             }
@@ -655,17 +659,17 @@ private fun challengeTourStepsDistance(): List<TourStep> = listOf(
     TourStep(
         "deadline", tr("Time left", "மீதமுள்ள நேரம்"),
         tr("This is how long you have to finish. When it reaches zero the challenge is missed, your streak resets and your apps stay locked for 24 hours.",
-            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. பூஜ்யம் ஆனால் சேலஞ்ச் தவறியதாகும், ஸ்ட்ரீக் மீட்டமையும், ஆப்கள் 24 மணி நேரம் பூட்டப்படும்.")
+            "முடிக்க உங்களுக்கு இருக்கும் நேரம் இது. இது 0 ஆனால் சவால் தவறியதாகிவிடும், தொடர்ச்சியான சாதனை 0 ஆகிவிடும், ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்.")
     ),
     TourStep(
         "ring", tr("Distance walked", "நடந்த தூரம்"),
         tr("The ring fills as you walk. Distance is estimated from your phone's step count. When it is full you can unlock your phone.",
-            "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம் போன் எண்ணும் அடிகளிலிருந்து மதிப்பிடப்படும். முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
+            "நீங்கள் நடக்க நடக்க வளையம் நிரம்பும். தூரம், உங்கள் போன் எண்ணும் அடிகளிலிருந்து தோராயமாக கணக்கிடப்படுகிறது. முழுதாக நிரம்பியதும் போனை திறக்கலாம்.")
     ),
     TourStep(
         "bottom", tr("Keep the phone with you", "போனை உங்களுடன் வைத்திருங்கள்"),
         tr("Steps are counted even when the screen is off. Walk, then come back here to finish.",
-            "திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும். நடந்துவிட்டு இங்கே திரும்பி முடியுங்கள்.")
+            "திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும். நடந்துவிட்டு, முடிக்க இங்கே திரும்பி வாருங்கள்.")
     )
 )
 
@@ -729,7 +733,7 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
         label = "walkProgress"
     )
     val centerText = if (sensorReady) {
-        "${walkedM.toInt().coerceAtMost(target)} m"
+        tr("${walkedM.toInt().coerceAtMost(target)} m", "${walkedM.toInt().coerceAtMost(target)} மீ")
     } else {
         val rem = ((fallbackMs - fallbackElapsedMs + 999) / 1000).coerceAtLeast(0)
         String.format(Locale.US, "%02d:%02d", rem / 60, rem % 60)
@@ -762,12 +766,12 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = if (sensorReady) {
-                    tr("Steps: $steps \u00b7 distance is an estimate", "அடிகள்: $steps \u00b7 தூரம் மதிப்பீடு")
+                    tr("Steps: $steps \u00b7 distance is an estimate", "அடிகள்: $steps \u00b7 தூரம் தோராயமானது")
                 } else {
                     if (WalkSteps.hasPermission(context)) {
-                        tr("No step counter available \u2014 a timer replaces the distance.", "அடி கவுண்டர் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
+                        tr("No step counter available \u2014 a timer replaces the distance.", "அடி எண்ணும் சென்சார் கிடைக்கவில்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும்.")
                     } else {
-                        tr("Physical activity is off \u2014 a timer replaces the distance. Tap Allow to count steps.", "உடல் செயல்பாடு அனுமதி இல்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும். அடிகளை எண்ண Allow தட்டுங்கள்.")
+                        tr("Physical activity is off \u2014 a timer replaces the distance. Tap Allow to count steps.", "உடல் செயல்பாடு அனுமதி இல்லை \u2014 தூரத்துக்கு பதிலாக டைமர் ஓடும். அடிகளை எண்ண அனுமதி என்பதை தட்டுங்கள்.")
                     }
                 },
                 color = TextMuted,
@@ -797,7 +801,7 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
 
             if (isComplete) {
                 Text(
-                    text = tr("Challenge complete!", "சேலஞ்ச் முடிந்தது!"),
+                    text = tr("Challenge complete!", "சவால் முடிந்தது!"),
                     color = Success,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleLarge,
@@ -809,7 +813,7 @@ private fun WalkChallenge(targetMeters: Int, onComplete: () -> Unit, onMissed: (
                     text = if (sensorReady) {
                         tr("Walk with your phone \u2014 steps count even with the screen off.", "போனுடன் நடங்கள் \u2014 திரை அணைந்திருந்தாலும் அடிகள் எண்ணப்படும்.")
                     } else {
-                        tr("Keep this screen open until the timer ends.", "டைமர் முடியும் வரை இந்த திரையை திறந்து வையுங்கள்.")
+                        tr("Keep this screen open until the timer ends.", "டைமர் முடியும் வரை இந்த திரையை திறந்தே வையுங்கள்.")
                     },
                     color = TextMuted,
                     style = MaterialTheme.typography.labelMedium,

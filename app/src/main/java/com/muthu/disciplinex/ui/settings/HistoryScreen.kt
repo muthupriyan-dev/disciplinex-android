@@ -88,10 +88,10 @@ fun HistoryScreen(onBack: () -> Unit) {
         containerColor = Background,
         topBar = {
             TopAppBar(
-                title = { Text(tr("Streak history", "ஸ்ட்ரீக் வரலாறு"), fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Streak history", "தொடர் சாதனை வரலாறு"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
                     }
                 },
                 actions = { GuideButton(onClick = { showTour = true }) },
@@ -112,12 +112,12 @@ fun HistoryScreen(onBack: () -> Unit) {
             Row(modifier = Modifier.tourTarget(tour, "stats"), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatBox(
                     value = "\uD83D\uDD25 $streak",
-                    label = tr("Current streak", "தற்போதைய ஸ்ட்ரீக்"),
+                    label = tr("Current streak", "தற்போதைய தொடர் சாதனை"),
                     modifier = Modifier.weight(1f)
                 )
                 StatBox(
                     value = "\uD83C\uDFC6 $best",
-                    label = tr("Best streak", "சிறந்த ஸ்ட்ரீக்"),
+                    label = tr("Best streak", "அதிகபட்ச தொடர் சாதனை"),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -207,7 +207,7 @@ fun HistoryScreen(onBack: () -> Unit) {
                 try { YearMonth.from(LocalDate.parse(e.date)) == month } catch (ex: Exception) { false }
             }
             Text(
-                tr("Completed challenges", "முடித்த சேலஞ்ச்கள்"),
+                tr("Completed challenges", "முடித்த சவால்கள்"),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
             )
@@ -216,7 +216,7 @@ fun HistoryScreen(onBack: () -> Unit) {
                 Text(
                     tr(
                         "No detailed records for this month. Details are saved from version 1.2.1 onwards.",
-                        "இந்த மாதத்திற்கு விரிவான பதிவுகள் இல்லை. விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும்."
+                        "இந்த மாதத்துக்கு விவரமான பதிவுகள் இல்லை. விவரங்கள் பதிப்பு 1.2.1 முதல் சேமிக்கப்படும்."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
@@ -287,19 +287,19 @@ private fun LegendDot(color: Color, label: String) {
 
 private fun historyTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "stats", tr("Your streaks", "உங்கள் ஸ்ட்ரீக்"),
+        "stats", tr("Your streaks", "உங்கள் தொடர் சாதனைகள்"),
         tr("Current streak is how many days in a row you finished. Best streak is your longest run ever.",
-            "தற்போதைய ஸ்ட்ரீக் என்பது தொடர்ச்சியாக முடித்த நாட்கள். சிறந்த ஸ்ட்ரீக் என்பது இதுவரை உங்கள் நீண்ட தொடர்.")
+            "தற்போதைய தொடர் சாதனை என்பது, தொடர்ச்சியாக நீங்கள் முடித்த நாட்கள். அதிகபட்ச தொடர் சாதனை என்பது, இதுவரை உங்கள் மிக நீண்ட தொடர்ச்சி.")
     ),
     TourStep(
-        "calendar", tr("Calendar", "காலெண்டர்"),
+        "calendar", tr("Calendar", "நாட்காட்டி"),
         tr("Green is a day you finished, red is a day you missed. The orange ring is today. Use the arrows to move between months.",
-            "பச்சை என்றால் முடித்த நாள், சிவப்பு என்றால் தவறிய நாள். ஆரஞ்சு வளையம் இன்று. மாதங்களுக்கு இடையே செல்ல அம்புகளை பயன்படுத்துங்கள்.")
+            "பச்சை என்பது முடித்த நாள், சிவப்பு என்பது தவறிய நாள். ஆரஞ்சு வளையம் இன்றைய நாள். மாதங்களுக்கு இடையே செல்ல அம்புக்குறிகளை பயன்படுத்துங்கள்.")
     ),
     TourStep(
         "legend", tr("Colours", "நிறங்கள்"),
         tr("A grey day means there is no result: no alarm was due, or it hasn't come yet.",
-            "சாம்பல் நாள் என்றால் முடிவு இல்லை: அலாரம் இல்லை அல்லது இன்னும் வரவில்லை.")
+            "சாம்பல் நிற நாள் என்றால் முடிவு இல்லை என்று அர்த்தம்: அன்று அலாரம் இல்லை, அல்லது அந்த நாள் இன்னும் வரவில்லை.")
     )
 )
 
@@ -329,7 +329,7 @@ private fun CompletionRow(e: HistoryStore.Entry) {
         Column(modifier = Modifier.weight(1f)) {
             Text(ExerciseKinds.display(e.exercise), fontWeight = FontWeight.SemiBold)
             Text(
-                dayLabel + " \u00b7 " + tr("alarm to finish $took", "அலாரம் முதல் முடிவு வரை $took"),
+                dayLabel + " \u00b7 " + tr("alarm to finish $took", "அலாரம் முதல் முடிக்கும் வரை $took"),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodySmall
             )

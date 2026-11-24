@@ -75,8 +75,8 @@ data class AlarmEntry(
         const val ALL_DAYS = 127
         val DAY_NAMES: List<String>
             get() = listOf(
-                tr("Mon", "திங்"), tr("Tue", "செவ்"), tr("Wed", "புதன்"), tr("Thu", "வியா"),
-                tr("Fri", "வெள்"), tr("Sat", "சனி"), tr("Sun", "ஞாயிறு")
+                tr("Mon", "திங்"), tr("Tue", "செவ்"), tr("Wed", "புத"), tr("Thu", "வியா"),
+                tr("Fri", "வெள்"), tr("Sat", "சனி"), tr("Sun", "ஞாயி")
             )
 
         /** One short label per weekday for the round day buttons. */

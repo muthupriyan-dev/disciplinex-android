@@ -29,9 +29,9 @@ object AlarmFallback {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
-                    CHANNEL_ID, "Alarm (backup)", NotificationManager.IMPORTANCE_HIGH
+                    CHANNEL_ID, tr("Alarm (backup)", "அலாரம் (மாற்று)"), NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "Used only if the main alarm service can't start"
+                    description = tr("Used only if the main alarm service can't start", "முதன்மை அலாரம் சேவை தொடங்க முடியாதபோது மட்டுமே பயன்படும்")
                     setSound(
                         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                         AudioAttributes.Builder()
@@ -55,8 +55,8 @@ object AlarmFallback {
             )
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setContentTitle(tr("Wake up!", "எழுந்திரு!"))
-                .setContentText(tr("Tap to start your DisciplineX challenge.", "உங்கள் DisciplineX சேலஞ்சை தொடங்க தட்டுங்கள்."))
+                .setContentTitle(tr("Wake up!", "எழுந்திருங்கள்!"))
+                .setContentText(tr("Tap to start your DisciplineX challenge.", "DisciplineX சவாலை தொடங்க தட்டுங்கள்."))
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)

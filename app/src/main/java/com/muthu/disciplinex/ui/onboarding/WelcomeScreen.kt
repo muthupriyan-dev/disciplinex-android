@@ -41,14 +41,14 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = tr("Show up before the world wakes up. Miss it, and the apps that distract you stay locked.", "உலகம் விழிப்பதற்கு முன் எழுங்கள். தவறினால், உங்களை திசைதிருப்பும் ஆப்கள் பூட்டியே இருக்கும்."),
+                text = tr("Show up before the world wakes up. Miss it, and the apps that distract you stay locked.", "எல்லோரும் எழுவதற்கு முன் நீங்கள் எழுந்து வாருங்கள். தவறினால், உங்கள் கவனத்தை இழுக்கும் ஆப்கள் பூட்டியே இருக்கும்."),
                 color = TextMuted,
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(28.dp))
             GradientHeroCard(
-                title = tr("Morning Challenge", "காலை சேலஞ்ச்"),
-                subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் செட்டை முடியுங்கள், போனை திரும்பப் பெறுங்கள்.")
+                title = tr("Morning Challenge", "காலை சவால்"),
+                subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் பயிற்சியை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள்.")
             ) {
                 Text(
                     tr("5:00 AM  →  20 push-ups  →  unlocked", "காலை 5:00  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),

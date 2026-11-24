@@ -22,11 +22,11 @@ object PermissionChecks {
 
     fun title(kind: Kind): String = when (kind) {
         Kind.NOTIFICATIONS -> tr("Notifications", "அறிவிப்புகள்")
-        Kind.FULL_SCREEN -> tr("Alarm over lock screen", "லாக் ஸ்கிரீன் மேல் அலாரம்")
+        Kind.FULL_SCREEN -> tr("Alarm over lock screen", "பூட்டுத் திரையில் அலாரம்")
         Kind.CAMERA -> tr("Camera", "கேமரா")
         Kind.ACTIVITY -> tr("Physical activity (walking)", "உடல் செயல்பாடு (நடைப்பயிற்சி)")
-        Kind.BATTERY -> tr("Run in background", "பின்னணியில் இயங்கு")
-        Kind.ACCESSIBILITY -> tr("App lock (Accessibility)", "ஆப் லாக் (Accessibility)")
+        Kind.BATTERY -> tr("Run in background", "பின்னணியில் இயங்க அனுமதி")
+        Kind.ACCESSIBILITY -> tr("App lock (Accessibility)", "ஆப் பூட்டு (அணுகல் வசதி)")
     }
 
     fun isGranted(context: Context, kind: Kind): Boolean = when (kind) {

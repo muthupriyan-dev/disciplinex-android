@@ -142,7 +142,7 @@ fun SettingsScreen(
                 title = { Text(tr("Settings", "அமைப்புகள்"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்"))
+                        Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
                     }
                 },
                 actions = { GuideButton(onClick = { showTour = true }) },
@@ -161,10 +161,10 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(2.dp))
 
             // ---- Theme ----
-            SettingsCard(tr("Theme", "தீம்"), Modifier.tourTarget(tour, "theme")) {
+            SettingsCard(tr("Theme", "தோற்றம்"), Modifier.tourTarget(tour, "theme")) {
                 ChoiceRow(
                     options = listOf(
-                        AppSettings.THEME_SYSTEM to tr("System", "சிஸ்டம்"),
+                        AppSettings.THEME_SYSTEM to tr("System", "போன் படி"),
                         AppSettings.THEME_LIGHT to tr("Light", "ஒளி"),
                         AppSettings.THEME_DARK to tr("Dark", "இருள்")
                     ),
@@ -205,7 +205,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
-                ) { Text(tr("Change ringtone", "ரிங்டோனை மாற்று"), fontWeight = FontWeight.SemiBold) }
+                ) { Text(tr("Change ringtone", "ஒலியை மாற்று"), fontWeight = FontWeight.SemiBold) }
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
@@ -245,7 +245,7 @@ fun SettingsScreen(
                 Text(
                     tr(
                         "Plays for a few seconds so you can check the volume. It doesn't start a challenge or lock anything.",
-                        "ஒலி அளவை சரிபார்க்க சில வினாடிகள் ஒலிக்கும். சேலஞ்ச் தொடங்காது, எதையும் பூட்டாது."
+                        "ஒலி அளவை சரிபார்க்க சில வினாடிகள் ஒலிக்கும். இது சவாலை தொடங்காது, எதையும் பூட்டாது."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.labelMedium
@@ -257,7 +257,7 @@ fun SettingsScreen(
                 Text(
                     tr(
                         "Phone and Camera are always open. Pick any other apps you still need, like WhatsApp.",
-                        "போன், கேமரா எப்போதும் திறந்திருக்கும். WhatsApp போல உங்களுக்கு தேவையான மற்ற ஆப்களை தேர்ந்தெடுங்கள்."
+                        "போன், கேமரா எப்போதும் திறந்திருக்கும். WhatsApp போல, உங்களுக்கு இன்னும் தேவையான மற்ற ஆப்களை தேர்ந்தெடுங்கள்."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
@@ -275,7 +275,7 @@ fun SettingsScreen(
                     Text(
                         tr(
                             "Locked until your challenge ends, so the list can't be changed right now.",
-                            "சேலஞ்ச் முடியும் வரை பூட்டப்பட்டுள்ளது, அதனால் பட்டியலை இப்போது மாற்ற முடியாது."
+                            "சவால் முடியும் வரை பூட்டப்பட்டுள்ளது, அதனால் இந்த பட்டியலை இப்போது மாற்ற முடியாது."
                         ),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium
@@ -319,14 +319,14 @@ fun SettingsScreen(
                     Text(
                         tr(
                             "Something is off. The alarm or the app lock may not work properly until it is fixed.",
-                            "ஏதோ அணைந்துள்ளது. சரிசெய்யும் வரை அலாரம் அல்லது ஆப் லாக் சரியாக வேலை செய்யாமல் போகலாம்."
+                            "ஏதோ ஒன்று இயக்கத்தில் இல்லை. சரிசெய்யும் வரை அலாரம் அல்லது ஆப் பூட்டு சரியாக வேலை செய்யாமல் போகலாம்."
                         ),
                         color = Danger,
                         style = MaterialTheme.typography.labelMedium
                     )
                 } else {
                     Text(
-                        tr("Everything is on.", "எல்லாம் ஆன் ஆக உள்ளது."),
+                        tr("Everything is on.", "எல்லாம் இயக்கத்தில் உள்ளது."),
                         color = TextMuted,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -334,11 +334,11 @@ fun SettingsScreen(
             }
 
             // ---- Streak history ----
-            SettingsCard(tr("Streak history", "ஸ்ட்ரீக் வரலாறு"), Modifier.tourTarget(tour, "history")) {
+            SettingsCard(tr("Streak history", "தொடர் சாதனை வரலாறு"), Modifier.tourTarget(tour, "history")) {
                 Text(
                     tr(
                         "See which days you finished and which you missed.",
-                        "எந்த நாட்கள் முடித்தீர்கள், எவை தவறின என்று பாருங்கள்."
+                        "எந்த நாட்களில் முடித்தீர்கள், எந்த நாட்களில் தவறவிட்டீர்கள் என்று பாருங்கள்."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
@@ -349,7 +349,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd, contentColor = Color.White)
-                ) { Text(tr("Open calendar", "காலெண்டரை திற"), fontWeight = FontWeight.SemiBold) }
+                ) { Text(tr("Open calendar", "நாட்காட்டியை திற"), fontWeight = FontWeight.SemiBold) }
             }
 
             // ---- Data and backup / Privacy ----
@@ -367,7 +367,7 @@ fun SettingsScreen(
                 Text(
                     tr(
                         "Wake up, finish your challenge, earn your phone back. No account needed, and your data stays on this phone.",
-                        "எழுந்திருங்கள், சேலஞ்சை முடியுங்கள், போனை திரும்பப் பெறுங்கள். கணக்கு தேவையில்லை, உங்கள் தரவு இந்த போனிலேயே இருக்கும்."
+                        "எழுந்திருங்கள், சவாலை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள். கணக்கு தேவையில்லை, உங்கள் தகவல்கள் இந்த போனிலேயே இருக்கும்."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
@@ -432,9 +432,9 @@ private fun ringtoneTitleOf(context: Context): String {
 
 private fun settingsTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "theme", tr("Theme", "தீம்"),
+        "theme", tr("Theme", "தோற்றம்"),
         tr("Pick Light, Dark, or System to follow your phone. It changes the whole app straight away.",
-            "ஒளி, இருள், அல்லது உங்கள் போனை பின்பற்ற சிஸ்டம் என தேர்ந்தெடுங்கள். முழு ஆப்பும் உடனே மாறும்.")
+            "ஒளி, இருள் அல்லது போனை பின்பற்ற போன் படி என்பதை தேர்ந்தெடுங்கள். முழு ஆப்பும் உடனே மாறும்.")
     ),
     TourStep(
         "language", tr("Language", "மொழி"),
@@ -444,32 +444,32 @@ private fun settingsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "sound", tr("Alarm sound", "அலாரம் ஒலி"),
         tr("Choose the ringtone, turn vibration on or off, and press Test to hear it for a few seconds. Testing never starts a challenge or locks anything.",
-            "ரிங்டோனை தேர்ந்தெடுங்கள், அதிர்வை ஆன் / ஆஃப் செய்யுங்கள், சில வினாடிகள் கேட்க Test அழுத்துங்கள். சோதனை சேலஞ்சை தொடங்காது, எதையும் பூட்டாது.")
+            "அலாரம் ஒலியை தேர்ந்தெடுங்கள், அதிர்வை இயக்கவோ அணைக்கவோ செய்யுங்கள், சில வினாடிகள் கேட்க சோதி என்பதை அழுத்துங்கள். சோதனை சவாலை தொடங்காது, எதையும் பூட்டாது.")
     ),
     TourStep(
         "apps", tr("Allowed apps", "அனுமதிக்கப்பட்ட ஆப்கள்"),
         tr("Choose which apps still work while your phone is locked, like WhatsApp. Phone and Camera always work. This list can't be changed while a challenge is pending.",
-            "போன் பூட்டியிருக்கும்போதும் WhatsApp போன்ற எந்த ஆப்கள் வேலை செய்ய வேண்டும் என தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் வேலை செய்யும். சேலஞ்ச் நிலுவையில் இருக்கும்போது இந்த பட்டியலை மாற்ற முடியாது.")
+            "போன் பூட்டியிருக்கும்போதும் WhatsApp போன்ற எந்த ஆப்கள் வேலை செய்ய வேண்டும் என்பதை தேர்ந்தெடுங்கள். போன், கேமரா எப்போதும் வேலை செய்யும். சவால் முடியாமல் காத்திருக்கும்போது இந்த பட்டியலை மாற்ற முடியாது.")
     ),
     TourStep(
         "permissions", tr("Permissions", "அனுமதிகள்"),
         tr("A tick means it is on. A cross means it is off, and the alarm or app lock may not work. Tap Fix to open the right screen.",
-            "டிக் என்றால் ஆன். குறுக்கு என்றால் ஆஃப், அலாரம் அல்லது ஆப் லாக் வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க Fix தட்டுங்கள்.")
+            "சரிக்குறி என்றால் இயக்கத்தில் உள்ளது. தவறுக்குறி என்றால் இயக்கத்தில் இல்லை, அலாரம் அல்லது ஆப் பூட்டு வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க சரிசெய் என்பதை தட்டுங்கள்.")
     ),
     TourStep(
-        "history", tr("Streak history", "ஸ்ட்ரீக் வரலாறு"),
+        "history", tr("Streak history", "தொடர் சாதனை வரலாறு"),
         tr("Open a calendar of the days you finished and the days you missed.",
-            "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் காலெண்டரை திறக்கவும்.")
+            "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் நாட்காட்டியை திறந்து பாருங்கள்.")
     ),
     TourStep(
-        "backup", tr("Data and backup", "தரவு மற்றும் பேக்கப்"),
+        "backup", tr("Data and backup", "தரவு மற்றும் காப்பு நகல்"),
         tr("Save your alarms, streak, history and allowed apps to a file. Restore works only on a fresh start (no recorded days yet), so a backup can never undo a missed day.",
-            "அலாரங்கள், ஸ்ட்ரீக், வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை கோப்பாக சேமிக்கலாம். எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும், எனவே தவறிய நாளை அழிக்க முடியாது.")
+            "அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை ஒரு கோப்பாக சேமிக்கலாம். இன்னும் எந்த நாளும் பதிவாகாத புதிய தொடக்கத்தில் மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது.")
     ),
     TourStep(
         "privacy", tr("Privacy", "தனியுரிமை"),
         tr("What the camera, the accessibility service and your data are used for. Nothing leaves your phone.",
-            "கேமரா, அக்சசிபிலிட்டி சேவை, உங்கள் தரவு எதற்கு பயன்படுகிறது என்பது. எதுவும் போனை விட்டு வெளியே போகாது.")
+            "கேமரா, அணுகல் வசதி சேவை, உங்கள் தகவல்கள் எதற்காக பயன்படுத்தப்படுகின்றன என்பது. எதுவும் உங்கள் போனை விட்டு வெளியே போகாது.")
     ),
     TourStep(
         "about", tr("About", "பற்றி"),
