@@ -8,6 +8,10 @@ import com.muthu.disciplinex.ui.components.TourOverlay
 import com.muthu.disciplinex.ui.components.GuideButton
 import com.muthu.disciplinex.data.tr
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -233,31 +237,24 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                val chipColors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = OrangeEnd,
-                    selectedLabelColor = Color.White
-                )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        colors = chipColors,
+                    ChoicePill(
+                        text = tr("Every day", "தினமும்"),
                         selected = customDates.isEmpty() && daysMask == AlarmEntry.ALL_DAYS,
                         onClick = { customDates = emptyList(); daysMask = AlarmEntry.ALL_DAYS; saveError = null },
-                        label = { Text(tr("Every day", "தினமும்"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                        modifier = Modifier.weight(1f)
                     )
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        colors = chipColors,
+                    ChoicePill(
+                        text = tr("Once", "ஒருமுறை"),
                         selected = customDates.isEmpty() && daysMask == 0,
                         onClick = { customDates = emptyList(); daysMask = 0; saveError = null },
-                        label = { Text(tr("Once", "ஒருமுறை"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                        modifier = Modifier.weight(1f)
                     )
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        colors = chipColors,
+                    ChoicePill(
+                        text = tr("Custom", "தனிப்பயன்"),
                         selected = customDates.isNotEmpty(),
                         onClick = { showDatePicker = true },
-                        label = { Text(tr("Custom", "தனிப்பயன்"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
@@ -492,3 +489,42 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
             "சேமிக்க, எப்போது வேண்டுமானாலும் மேலே உள்ள சரிக்குறியை தட்டுங்கள். அலாரம் உடனே அமைக்கப்படும்.")
     )
 )
+
+/**
+ * One option of a "pick one" row (Every day / Once / Custom). Every pill gets the same width
+ * and the label shrinks a little if a language needs more room, so it never wraps or gets cut.
+ */
+@Composable
+private fun ChoicePill(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(22.dp)
+    Box(
+        modifier = modifier
+            .height(44.dp)
+            .clip(shape)
+            .background(if (selected) OrangeEnd else Surface)
+            .border(1.dp, if (selected) OrangeEnd else TextMuted.copy(alpha = 0.45f), shape)
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        FitText(text = text, color = if (selected) Color.White else TextPrimary)
+    }
+}
+
+/** A single-line label that gets smaller until it fits its space (Tamil words are wider). */
+@Composable
+private fun FitText(text: String, color: Color, modifier: Modifier = Modifier, maxSize: TextUnit = 15.sp) {
+    var size by remember(text) { mutableStateOf(maxSize) }
+    Text(
+        text = text,
+        color = color,
+        fontSize = size,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { result ->
+            if (result.hasVisualOverflow && size > 10.sp) size = size * 0.92f
+        },
+        modifier = modifier
+    )
+}

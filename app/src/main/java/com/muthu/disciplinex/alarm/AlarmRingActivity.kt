@@ -12,6 +12,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import com.muthu.disciplinex.ui.theme.OrangeStart
+import java.text.SimpleDateFormat
+import kotlin.math.sin
+import kotlin.math.cos
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -126,6 +135,12 @@ class AlarmRingActivity : ComponentActivity() {
     }
 }
 
+// The ring screen always uses this light look (it must read well at 5 AM, whatever the app theme is).
+private val RingInk = Color(0xFF1E1E24)
+private val RingMuted = Color(0xFF6B6B75)
+private val RingBg = Color(0xFFFAFAFC)
+private val RingBorder = Color(0xFFEDEDF2)
+
 @Composable
 private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
@@ -146,17 +161,46 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
     val summary = ChallengeSession.summary(context)
     val label = ChallengeSession.label(context)
 
+    // Current time, in the phone's own 12/24-hour style.
+    val now = Date()
+    val is24 = android.text.format.DateFormat.is24HourFormat(context)
+    val clock = SimpleDateFormat(if (is24) "HH:mm" else "h:mm", AppSettings.locale).format(now)
+    val suffix = if (is24) "" else SimpleDateFormat("a", AppSettings.locale).format(now)
+
+    // The content eases in once when the screen opens.
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    val appear by animateFloatAsState(
+        targetValue = if (shown) 1f else 0f,
+        animationSpec = tween(500),
+        label = "ringAppear"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFFFF1ED))))
+            .background(RingBg)
+            .drawBehind {
+                // A soft red glow at the top of the screen.
+                drawRect(
+                    Brush.radialGradient(
+                        colors = listOf(OrangeEnd.copy(alpha = 0.13f), Color.Transparent),
+                        center = Offset(size.width / 2f, 0f),
+                        radius = size.width * 1.15f
+                    )
+                )
+            }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)
+                .graphicsLayer {
+                    alpha = appear
+                    translationY = (1f - appear) * 24.dp.toPx()
+                }
         ) {
-            // ---- Top: what is happening (scrolls on small screens / long Tamil text) ----
+            // ---- What is happening (scrolls on small screens / long Tamil text) ----
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -167,28 +211,18 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
             ) {
                 when (phase) {
                     ChallengeSession.Phase.WAITING -> {
-                        Text(
-                            text = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()),
-                            color = OrangeDeep,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        PulsingBadge(Icons.Filled.Alarm, pulse = true)
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Text(
+                        LiveEyebrow(
                             text = if (label.isBlank()) tr("Time to move!", "உடலை அசைக்க வேண்டிய நேரம்!") else label,
-                            color = OrangeEnd,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
+                            live = true
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ClockHero(clock, suffix)
+                        Spacer(modifier = Modifier.height(16.dp))
                         InfoPill("$exercise \u00b7 $summary")
+                        Spacer(modifier = Modifier.height(32.dp))
+                        CountdownRing(msLeft = msLeft, windowMs = windowMs, pulse = true)
                         Spacer(modifier = Modifier.height(24.dp))
-                        CountdownRing(msLeft = msLeft, windowMs = windowMs)
-                        Spacer(modifier = Modifier.height(22.dp))
-                        WarningCard(
+                        LockCaption(
                             tr(
                                 "Miss it and your streak resets. Your apps stay locked for 24 hours.",
                                 "தவறினால் தொடர்ச்சியான சாதனை 0 ஆகும். ஆப்கள் 24 மணி நேரம் பூட்டியே இருக்கும்."
@@ -197,30 +231,22 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                     }
 
                     ChallengeSession.Phase.IN_PROGRESS -> {
-                        PulsingBadge(Icons.Filled.Alarm, pulse = false)
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Text(
-                            tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"),
-                            color = OrangeEnd,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        LiveEyebrow(text = tr("Challenge in progress", "சவால் நடந்துகொண்டிருக்கிறது"), live = true)
+                        Spacer(modifier = Modifier.height(16.dp))
                         InfoPill("$exercise \u00b7 $summary")
-                        Spacer(modifier = Modifier.height(24.dp))
-                        CountdownRing(msLeft = msLeft, windowMs = windowMs)
+                        Spacer(modifier = Modifier.height(32.dp))
+                        CountdownRing(msLeft = msLeft, windowMs = windowMs, pulse = false)
                     }
 
                     ChallengeSession.Phase.MISSED -> {
                         val unlockAt = DateFormat.getTimeInstance(DateFormat.SHORT)
                             .format(Date(ChallengeSession.lockEndsAtMillis(context)))
-                        PulsingBadge(Icons.Filled.Lock, pulse = false)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        StatusBadge(Icons.Filled.Lock)
+                        Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             tr("Challenge missed", "சவால் தவறிவிட்டது"),
-                            color = OrangeEnd,
-                            fontSize = 32.sp,
+                            color = RingInk,
+                            fontSize = 30.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
@@ -230,18 +256,19 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                                 "You didn't finish in time. Your streak is reset and your apps stay locked until $unlockAt.",
                                 "நீங்கள் நேரத்துக்குள் முடிக்கவில்லை. தொடர்ச்சியான சாதனை 0 ஆகிவிட்டது; $unlockAt வரை ஆப்கள் பூட்டியே இருக்கும்."
                             ),
-                            color = OrangeDeep,
+                            color = RingMuted,
                             fontSize = 16.sp,
+                            lineHeight = 24.sp,
                             textAlign = TextAlign.Center
                         )
                     }
 
                     ChallengeSession.Phase.IDLE -> {
-                        PulsingBadge(Icons.Filled.CheckCircle, pulse = false)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        StatusBadge(Icons.Filled.CheckCircle)
+                        Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             tr("Nothing pending", "காத்திருப்பது எதுவும் இல்லை"),
-                            color = OrangeEnd,
+                            color = RingInk,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -250,62 +277,233 @@ private fun AlarmRingScreen(onStart: () -> Unit, onClose: () -> Unit) {
                 }
             }
 
-            // ---- Bottom: the buttons stay in the same place, easy to reach with a thumb ----
-            Spacer(modifier = Modifier.height(12.dp))
+            // ---- Buttons stay in the same place, easy to reach with a thumb ----
+            Spacer(modifier = Modifier.height(16.dp))
             when (phase) {
                 ChallengeSession.Phase.WAITING -> {
-                    BigButton(tr("Start challenge", "சவாலை தொடங்கு"), SuccessButton, 62.dp, onStart)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    BigButton(tr("Dismiss", "நிறுத்து"), OrangeEnd, 50.dp, onClose)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    PrimaryRingButton(tr("Start challenge", "சவாலை தொடங்கு"), SuccessButton, onStart, Icons.Filled.PlayArrow)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TonalRingButton(tr("Dismiss", "நிறுத்து"), onClose)
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = tr(
                             "Dismiss only stops the sound. The time limit keeps running and your apps stay locked.",
                             "நிறுத்து என்பது ஒலியை மட்டுமே நிறுத்தும். நேர வரம்பு தொடர்ந்து ஓடும், ஆப்கள் பூட்டியே இருக்கும்."
                         ),
-                        color = OrangeDeep,
+                        color = RingMuted,
                         fontSize = 12.sp,
+                        lineHeight = 17.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
                 ChallengeSession.Phase.IN_PROGRESS ->
-                    BigButton(tr("Continue challenge", "சவாலை தொடர்"), SuccessButton, 62.dp, onStart)
+                    PrimaryRingButton(tr("Continue challenge", "சவாலை தொடர்"), SuccessButton, onStart, Icons.Filled.PlayArrow)
                 ChallengeSession.Phase.MISSED ->
-                    BigButton(tr("OK", "சரி"), OrangeEnd, 56.dp, onClose)
+                    PrimaryRingButton(tr("OK", "சரி"), OrangeEnd, onClose)
                 ChallengeSession.Phase.IDLE ->
-                    BigButton(tr("Close", "மூடு"), OrangeEnd, 56.dp, onClose)
+                    PrimaryRingButton(tr("Close", "மூடு"), OrangeEnd, onClose)
             }
         }
     }
 }
 
-/** A round red badge with an icon. While the alarm rings it gently pulses. */
+/** Small red label with a blinking dot, like a "live" indicator. */
 @Composable
-private fun PulsingBadge(icon: ImageVector, pulse: Boolean) {
-    val transition = rememberInfiniteTransition(label = "badgePulse")
-    val scale by transition.animateFloat(
+private fun LiveEyebrow(text: String, live: Boolean) {
+    val transition = rememberInfiniteTransition(label = "liveDot")
+    val dotAlpha by transition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
-        label = "badgeScale"
+        targetValue = 0.25f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "liveDotAlpha"
     )
-    val glow by transition.animateFloat(
-        initialValue = 0.22f,
-        targetValue = 0.04f,
-        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
-        label = "badgeGlow"
-    )
-    Box(modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center) {
-        if (pulse) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .graphicsLayer { scaleX = scale; scaleY = scale }
-                    .clip(CircleShape)
-                    .background(OrangeEnd.copy(alpha = glow))
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(OrangeEnd.copy(alpha = if (live) dotAlpha else 1f))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = OrangeEnd,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+    }
+}
+
+/** The current time, big, like a real alarm clock. */
+@Composable
+private fun ClockHero(clock: String, suffix: String) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text(
+            text = clock,
+            color = RingInk,
+            fontSize = 68.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-1.5).sp
+        )
+        if (suffix.isNotEmpty()) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = suffix,
+                color = RingMuted,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 14.dp)
             )
         }
+    }
+}
+
+/** White pill with a soft shadow, e.g. "Squats - 10 reps". */
+@Composable
+private fun InfoPill(text: String) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        modifier = Modifier
+            .shadow(3.dp, shape, ambientColor = Color(0x22000000), spotColor = Color(0x22000000))
+            .background(Color.White, shape)
+            .border(1.dp, RingBorder, shape)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(OrangeEnd)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, color = RingInk, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * The time left, as a thin gradient ring that shrinks with a glowing dot at its end.
+ * The time turns red only in the last minute, so red means "hurry".
+ */
+@Composable
+private fun CountdownRing(msLeft: Long, windowMs: Long, pulse: Boolean) {
+    val progress = (msLeft.toFloat() / windowMs).coerceIn(0f, 1f)
+    val sec = (msLeft / 1000).toInt()
+    val timeText = if (sec >= 3600) {
+        String.format(Locale.US, "%d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60)
+    } else {
+        String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60)
+    }
+
+    val transition = rememberInfiniteTransition(label = "ringGlow")
+    val breathing by transition.animateFloat(
+        initialValue = 0.05f,
+        targetValue = 0.16f,
+        animationSpec = infiniteRepeatable(tween(1400), RepeatMode.Reverse),
+        label = "ringGlowAlpha"
+    )
+    val glow = if (pulse) breathing else 0f
+
+    Box(modifier = Modifier.size(240.dp), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = 12.dp.toPx()
+            val diameter = size.minDimension - stroke * 2
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+
+            if (glow > 0f) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(OrangeEnd.copy(alpha = glow), Color.Transparent),
+                        center = center,
+                        radius = size.minDimension * 0.62f
+                    )
+                )
+            }
+            // Track
+            drawArc(
+                color = OrangeEnd.copy(alpha = 0.10f),
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+            if (progress > 0f) {
+                // Progress: starts at the top and runs clockwise.
+                rotate(degrees = -90f, pivot = center) {
+                    drawArc(
+                        brush = Brush.sweepGradient(listOf(OrangeStart, OrangeEnd, OrangeStart), center = center),
+                        startAngle = 0f,
+                        sweepAngle = 360f * progress,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                }
+                // Glowing dot at the end of the arc.
+                val angle = Math.toRadians((-90f + 360f * progress).toDouble())
+                val radius = diameter / 2f
+                val head = Offset(
+                    center.x + (radius * cos(angle)).toFloat(),
+                    center.y + (radius * sin(angle)).toFloat()
+                )
+                drawCircle(color = Color.White, radius = stroke * 0.85f, center = head)
+                drawCircle(color = OrangeEnd, radius = stroke * 0.45f, center = head)
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = timeText,
+                color = if (sec < 60) OrangeEnd else RingInk,
+                fontSize = 48.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-1).sp
+            )
+            Text(
+                text = tr("left to finish", "முடிக்க மீதம்"),
+                color = RingMuted,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+/** One quiet line under the ring: what happens if you miss it. */
+@Composable
+private fun LockCaption(text: String) {
+    Row(
+        modifier = Modifier.padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(Icons.Filled.Lock, contentDescription = null, tint = RingMuted, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = RingMuted,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+    }
+}
+
+/** A big round icon for the "missed" and "nothing pending" screens. */
+@Composable
+private fun StatusBadge(icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .size(96.dp)
+            .clip(CircleShape)
+            .background(OrangeEnd.copy(alpha = 0.10f)),
+        contentAlignment = Alignment.Center
+    ) {
         Box(
             modifier = Modifier
                 .size(68.dp)
@@ -318,89 +516,38 @@ private fun PulsingBadge(icon: ImageVector, pulse: Boolean) {
     }
 }
 
-/** Soft red pill, e.g. "Squats - 10 reps". */
+/** The main action: tall, rounded, with a soft shadow. */
 @Composable
-private fun InfoPill(text: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(OrangeEnd.copy(alpha = 0.10f))
-            .padding(horizontal = 18.dp, vertical = 8.dp)
-    ) {
-        Text(text, color = OrangeDeep, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-    }
-}
-
-/** A ring that empties as the time limit runs out, with the time in the middle. */
-@Composable
-private fun CountdownRing(msLeft: Long, windowMs: Long) {
-    val progress = (msLeft.toFloat() / windowMs).coerceIn(0f, 1f)
-    val sec = (msLeft / 1000).toInt()
-    val timeText = if (sec >= 3600) {
-        String.format(Locale.US, "%d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60)
-    } else {
-        String.format(Locale.US, "%02d:%02d", sec / 60, sec % 60)
-    }
-    Box(modifier = Modifier.size(230.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 16.dp.toPx()
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            val topLeft = Offset(stroke / 2, stroke / 2)
-            drawArc(
-                color = OrangeEnd.copy(alpha = 0.12f),
-                startAngle = -90f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-            drawArc(
-                color = OrangeEnd,
-                startAngle = -90f,
-                sweepAngle = 360f * progress,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(timeText, color = OrangeEnd, fontSize = 50.sp, fontWeight = FontWeight.Bold)
-            Text(tr("left to finish", "முடிக்க மீதம்"), color = OrangeDeep, fontSize = 14.sp)
-        }
-    }
-}
-
-/** What happens if the challenge is missed, in a small card with a lock icon. */
-@Composable
-private fun WarningCard(text: String) {
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(Color.White)
-            .border(1.dp, OrangeEnd.copy(alpha = 0.25f), shape)
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Filled.Lock, contentDescription = null, tint = OrangeEnd, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(text, color = OrangeDeep, fontSize = 13.sp)
-    }
-}
-
-@Composable
-private fun BigButton(text: String, color: Color, height: Dp, onClick: () -> Unit) {
+private fun PrimaryRingButton(text: String, color: Color, onClick: () -> Unit, icon: ImageVector? = null) {
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(30.dp),
         colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = Color.White),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(height)
+            .height(60.dp)
     ) {
-        Text(text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** The second action: soft red background with red text, so it does not compete with the main one. */
+@Composable
+private fun TonalRingButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(26.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = OrangeEnd.copy(alpha = 0.10f), contentColor = OrangeEnd),
+        elevation = null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+    ) {
+        Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
 }
