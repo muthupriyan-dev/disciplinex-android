@@ -149,7 +149,7 @@ class AlarmService : Service() {
             .setContentTitle(ChallengeSession.label(this).ifBlank { tr("Time for your challenge!", "உங்கள் சவாலுக்கான நேரம் இது!") })
             .setContentText(
                 tr(
-                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} minutes or it counts as missed.",
+                    "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 finish within ${ChallengeSession.windowMs(this) / 60_000} ${if (ChallengeSession.windowMs(this) / 60_000 == 1L) "minute" else "minutes"} or it counts as missed.",
                     "${ExerciseKinds.display(ChallengeSession.exercise(this))} \u00b7 ${ChallengeSession.summary(this)} \u2014 ${ChallengeSession.windowMs(this) / 60_000} நிமிடங்களுக்குள் முடியுங்கள், இல்லையென்றால் தவறியதாக எடுத்துக்கொள்ளப்படும்."
                 )
             )

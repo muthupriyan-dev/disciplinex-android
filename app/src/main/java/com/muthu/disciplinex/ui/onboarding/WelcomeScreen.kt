@@ -48,11 +48,11 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             Spacer(modifier = Modifier.height(28.dp))
             GradientHeroCard(
                 modifier = Modifier.fillMaxWidth(),
-                title = tr("Morning Challenge", "காலை சவால்"),
-                subtitle = tr("Wake up, complete your set, earn your phone back.", "எழுந்திருங்கள், உங்கள் பயிற்சியை முடியுங்கள், உங்கள் போனை திரும்ப பெறுங்கள்.")
+                title = tr("Earn Your Phone Back", "போனை திரும்ப பெறுங்கள்"),
+                subtitle = tr("Set an alarm, finish your challenge, unlock your apps.", "அலாரம் வையுங்கள், சவாலை முடியுங்கள், ஆப்களை திறங்கள்.")
             ) {
                 Text(
-                    tr("5:00 AM  →  20 push-ups  →  unlocked", "காலை 5:00  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),
+                    tr("Alarm rings  →  20 push-ups  →  unlocked", "அலாரம் அடிக்கும்  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),
                     color = com.muthu.disciplinex.ui.theme.Surface,
                     style = MaterialTheme.typography.labelLarge
                 )

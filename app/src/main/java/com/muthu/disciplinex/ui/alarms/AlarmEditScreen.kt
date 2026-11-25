@@ -237,24 +237,27 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                     selectedContainerColor = OrangeEnd,
                     selectedLabelColor = Color.White
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
+                        modifier = Modifier.weight(1f),
                         colors = chipColors,
                         selected = customDates.isEmpty() && daysMask == AlarmEntry.ALL_DAYS,
                         onClick = { customDates = emptyList(); daysMask = AlarmEntry.ALL_DAYS; saveError = null },
-                        label = { Text(tr("Every day", "தினமும்")) }
+                        label = { Text(tr("Every day", "தினமும்"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
                     )
                     FilterChip(
+                        modifier = Modifier.weight(1f),
                         colors = chipColors,
                         selected = customDates.isEmpty() && daysMask == 0,
                         onClick = { customDates = emptyList(); daysMask = 0; saveError = null },
-                        label = { Text(tr("Once", "ஒருமுறை")) }
+                        label = { Text(tr("Once", "ஒருமுறை"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
                     )
                     FilterChip(
+                        modifier = Modifier.weight(1f),
                         colors = chipColors,
                         selected = customDates.isNotEmpty(),
                         onClick = { showDatePicker = true },
-                        label = { Text(tr("Custom", "தனிப்பயன்")) }
+                        label = { Text(tr("Custom", "தனிப்பயன்"), maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
                     )
                 }
 
