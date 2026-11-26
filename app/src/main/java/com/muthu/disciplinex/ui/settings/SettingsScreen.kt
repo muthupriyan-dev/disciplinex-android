@@ -26,6 +26,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Apps
@@ -109,6 +110,7 @@ import kotlinx.coroutines.delay
 fun SettingsScreen(
     onOpenAllowedApps: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenHowItWorks: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -387,6 +389,17 @@ fun SettingsScreen(
                 // ---- About ----
                 SettingsSection(tr("About DisciplineX", "DisciplineX பற்றி")) {
                     SettingsGroup(Modifier.tourTarget(tour, "about")) {
+                        SettingsRow(
+                            icon = Icons.AutoMirrored.Filled.HelpOutline,
+                            title = tr("How this app works", "இந்த ஆப் எப்படி வேலை செய்கிறது"),
+                            subtitle = tr(
+                                "See what happens in each situation: finishing, missing, leaving the app and more.",
+                                "சவாலை முடித்தால், தவறினால், ஆப்பை விட்டு வெளியே சென்றால் என்ன நடக்கும் என்று பாருங்கள்."
+                            ),
+                            onClick = onOpenHowItWorks,
+                            showChevron = true
+                        )
+                        GroupDivider()
                         SettingsRow(
                             icon = Icons.Filled.Info,
                             title = "DisciplineX",
@@ -689,7 +702,7 @@ private fun settingsTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "about", tr("About", "பற்றி"),
-        tr("Shows the app version. Everything stays on your phone.",
-            "ஆப் பதிப்பை காட்டும். எல்லாம் உங்கள் போனிலேயே இருக்கும்.")
+        tr("Tap How this app works to read what happens in each situation. Also shows the app version. Everything stays on your phone.",
+            "ஒவ்வொரு சூழலிலும் என்ன நடக்கும் என்று படிக்க இந்த ஆப் எப்படி வேலை செய்கிறது என்பதை தட்டுங்கள். ஆப் பதிப்பையும் காட்டும். எல்லாம் உங்கள் போனிலேயே இருக்கும்.")
     )
 )

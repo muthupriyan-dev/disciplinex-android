@@ -24,6 +24,7 @@ import com.muthu.disciplinex.ui.onboarding.PermissionsScreen
 import com.muthu.disciplinex.ui.onboarding.WelcomeScreen
 import com.muthu.disciplinex.ui.settings.AllowedAppsScreen
 import com.muthu.disciplinex.ui.settings.HistoryScreen
+import com.muthu.disciplinex.ui.settings.HowAppWorksScreen
 import com.muthu.disciplinex.ui.settings.SettingsScreen
 import com.muthu.disciplinex.ui.stats.StatsScreen
 
@@ -37,6 +38,7 @@ private object Routes {
     const val ALLOWED_APPS = "allowed_apps"
     const val HISTORY = "history"
     const val STATS = "stats"
+    const val HOW_APP_WORKS = "how_app_works"
     const val ALARM_EDIT = "alarm_edit/{id}"
 
     fun alarmEdit(id: Int) = "alarm_edit/$id"
@@ -126,8 +128,12 @@ fun DisciplineXNavGraph(startChallenge: Boolean = false, challengeRequest: Int =
             SettingsScreen(
                 onOpenAllowedApps = { navController.navigate(Routes.ALLOWED_APPS) },
                 onOpenHistory = { navController.navigate(Routes.HISTORY) },
+                onOpenHowItWorks = { navController.navigate(Routes.HOW_APP_WORKS) },
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable(Routes.HOW_APP_WORKS) {
+            HowAppWorksScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.HISTORY) {
             HistoryScreen(onBack = { navController.popBackStack() })
