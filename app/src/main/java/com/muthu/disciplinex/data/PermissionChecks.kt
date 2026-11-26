@@ -46,7 +46,9 @@ object PermissionChecks {
             (context.getSystemService(Context.POWER_SERVICE) as? PowerManager)
                 ?.isIgnoringBatteryOptimizations(context.packageName) ?: true
         Kind.ACCESSIBILITY -> LockAccessibilityService.isEnabled(context)
-        Kind.DEVICE_ADMIN -> UninstallGuard.isAdminActive(context)
+        Kind.DEVICE_ADMIN ->
+            !context.packageManager.hasSystemFeature(PackageManager.FEATURE_DEVICE_ADMIN) ||
+                UninstallGuard.isAdminActive(context)
     }
 
     /** Everything that is switched off right now. */

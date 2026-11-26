@@ -24,3 +24,7 @@ so the first version never saw it. Added Watched.LAUNCHER: launcher windows are 
 emergency-unlock any launcher window asking to uninstall DisciplineX is blocked. The device admin (enable the
 "Uninstall protection" card) is the real safety net: Android refuses to uninstall an active admin app for
 every caller, including the launcher.
+
+## Round 3
+Onboarding "Why we ask for this" screen now has an "Uninstall protection" (device admin) row; Continue stays locked
+until it is active. Phones without FEATURE_DEVICE_ADMIN count it as granted so nobody gets stuck.

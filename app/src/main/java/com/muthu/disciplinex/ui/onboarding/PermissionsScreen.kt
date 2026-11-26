@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.muthu.disciplinex.data.UninstallGuard
 import com.muthu.disciplinex.lock.LockAccessibilityService
 import com.muthu.disciplinex.ui.components.PrimaryPillButton
 import com.muthu.disciplinex.ui.theme.OrangeEnd
@@ -165,6 +166,11 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
     val activityGranted = remember(refreshTick) { com.muthu.disciplinex.data.WalkSteps.hasPermission(context) }
     val batteryGranted = remember(refreshTick) { isIgnoringBatteryOptimizations(context) }
     val accessibilityGranted = remember(refreshTick) { LockAccessibilityService.isEnabled(context) }
+    // Phones without device-admin support (rare) must not get stuck on this screen.
+    val adminGranted = remember(refreshTick) {
+        !context.packageManager.hasSystemFeature(PackageManager.FEATURE_DEVICE_ADMIN) ||
+            UninstallGuard.isAdminActive(context)
+    }
 
     val permissions = buildList {
         add(
@@ -232,6 +238,31 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
                 isGranted = accessibilityGranted,
                 onRequest = {
                     context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                }
+            )
+        )
+        add(
+            PermissionRow(
+                title = tr("Uninstall protection", "நிறுவல் நீக்கப் பாதுகாப்பு"),
+                reason = tr(
+                    "Stops DisciplineX from being uninstalled in one tap to dodge the lock. It asks for no control over your phone. Tap Allow, then \"Activate this device admin app\".",
+                    "பூட்டை தவிர்க்க DisciplineX-ஐ ஒரே தட்டலில் நிறுவல் நீக்குவதை தடுக்கும். உங்கள் போனை கட்டுப்படுத்த அனுமதி கேட்காது. அனுமதி என்பதை தட்டி, \"Activate this device admin app\" என்பதை தேர்ந்தெடுங்கள்."
+                ),
+                isGranted = adminGranted,
+                onRequest = {
+                    try {
+                        settingsLauncher.launch(
+                            UninstallGuard.addAdminIntent(
+                                context,
+                                tr(
+                                    "Makes DisciplineX impossible to uninstall in one tap. It asks for no permissions over your phone.",
+                                    "DisciplineX-ஐ ஒரே தட்டலில் நிறுவல் நீக்க முடியாதபடி செய்யும். உங்கள் போனில் எந்த கட்டுப்பாட்டையும் கேட்காது."
+                                )
+                            )
+                        )
+                    } catch (e: Exception) {
+                        // No device-admin screen on this phone: nothing to do.
+                    }
                 }
             )
         )
