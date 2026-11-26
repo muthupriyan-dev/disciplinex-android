@@ -49,7 +49,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             GradientHeroCard(
                 modifier = Modifier.fillMaxWidth(),
                 title = tr("Earn Your Phone Back", "போனை திரும்ப பெறுங்கள்"),
-                subtitle = tr("Set an alarm, finish your challenge, unlock your apps.", "அலாரம் வையுங்கள், சவாலை முடியுங்கள், ஆப்களை திறங்கள்.")
+                subtitle = tr("Set an alarm, finish your challenge, unlock your apps.", "அலாரம் வையுங்கள், சவாலை முடியுங்கள், ஆப்களை திறந்துகொள்ளுங்கள்.")
             ) {
                 Text(
                     tr("Alarm rings  →  20 push-ups  →  unlocked", "அலாரம் அடிக்கும்  →  20 புஷ்-அப்ஸ்  →  திறந்தது"),

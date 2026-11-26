@@ -89,7 +89,7 @@ fun UninstallPasswordDialog(onDismiss: () -> Unit) {
                 Text(
                     tr(
                         "Enter this when you try to uninstall DisciplineX. It is hidden while a challenge is pending or missed, so the app can't be removed to skip it.",
-                        "DisciplineX-ஐ நிறுவல் நீக்க முயலும்போது இதை உள்ளிடுங்கள். சவால் நிலுவையில் இருக்கும்போதோ தவறியிருக்கும்போதோ இது மறைக்கப்படும், அதனால் சவாலை தவிர்க்க ஆப்பை நீக்க முடியாது."
+                        "DisciplineX-ஐ நிறுவல் நீக்க முயலும்போது இதை உள்ளிடுங்கள். சவால் முடிக்கப்படாமல் இருக்கும்போதோ தவறியிருக்கும்போதோ இது மறைக்கப்படும், அதனால் சவாலை தவிர்க்க ஆப்பை நீக்க முடியாது."
                     ),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall

@@ -193,10 +193,10 @@ private fun UninstallPasswordScreen(
                     Text(
                         if (forUninstall) tr(
                             "Finish your challenge first. While a challenge is pending or missed, DisciplineX can't be uninstalled.",
-                            "முதலில் சவாலை முடியுங்கள். சவால் நிலுவையில் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX-ஐ நிறுவல் நீக்க முடியாது."
+                            "முதலில் சவாலை முடியுங்கள். சவால் முடிக்கப்படாமல் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX-ஐ நிறுவல் நீக்க முடியாது."
                         ) else tr(
                             "Finish your challenge first. While a challenge is pending or missed, DisciplineX's protection can't be switched off.",
-                            "முதலில் சவாலை முடியுங்கள். சவால் நிலுவையில் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX பாதுகாப்பை அணைக்க முடியாது."
+                            "முதலில் சவாலை முடியுங்கள். சவால் முடிக்கப்படாமல் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX பாதுகாப்பை அணைக்க முடியாது."
                         ),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodyMedium,

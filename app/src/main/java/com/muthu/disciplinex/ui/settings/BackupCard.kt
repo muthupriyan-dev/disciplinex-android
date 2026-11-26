@@ -63,8 +63,8 @@ fun BackupSection(groupModifier: Modifier = Modifier) {
             val ok = BackupManager.export(context, uri)
             Toast.makeText(
                 context,
-                if (ok) tr("Backup saved", "காப்பு நகல் சேமிக்கப்பட்டது")
-                else tr("Could not save the backup", "காப்பு நகலை சேமிக்க முடியவில்லை"),
+                if (ok) tr("Backup saved", "பேக்கப் சேமிக்கப்பட்டது")
+                else tr("Could not save the backup", "பேக்கப்பை சேமிக்க முடியவில்லை"),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -77,10 +77,10 @@ fun BackupSection(groupModifier: Modifier = Modifier) {
         SettingsGroup(groupModifier) {
             SettingsRow(
                 icon = Icons.Filled.Backup,
-                title = tr("Save backup", "காப்பு நகலை சேமி"),
+                title = tr("Save backup", "பேக்கப்பை சேமி"),
                 subtitle = tr(
                     "Save your alarms, streak, history and allowed apps to a file on your phone.",
-                    "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள்."
+                    "உங்கள் அலாரங்கள், தொடர்ச்சியான சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை போனில் ஒரு கோப்பாக சேமியுங்கள்."
                 ),
                 onClick = { exportLauncher.launch("disciplinex-backup-${LocalDate.now()}.json") },
                 showChevron = true
@@ -88,7 +88,7 @@ fun BackupSection(groupModifier: Modifier = Modifier) {
             GroupDivider()
             SettingsRow(
                 icon = Icons.Filled.Restore,
-                title = tr("Restore from backup", "காப்பு நகலிலிருந்து மீட்டெடு"),
+                title = tr("Restore from backup", "பேக்கப்பிலிருந்து மீட்டெடு"),
                 subtitle = tr(
                     "Works only on a fresh start, before any day is recorded.",
                     "எந்த நாளும் பதிவாகும் முன், புதிய தொடக்கத்தில் மட்டுமே வேலை செய்யும்."
@@ -110,7 +110,7 @@ fun BackupSection(groupModifier: Modifier = Modifier) {
                     "Restore only works before any day is recorded (for example on a new phone), so a backup can never undo a missed day. " +
                     "It also cannot run while a challenge is active or an alarm is about to ring.",
                 "அந்த கோப்பு நீங்கள் வைக்கும் இடத்திலேயே இருக்கும்; எதுவும் இணையத்தில் பதிவேற்றப்படாது. " +
-                    "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போனில்), அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. " +
+                    "எந்த நாளும் பதிவாகும் முன் மட்டுமே மீட்டெடுக்க முடியும் (எ.கா. புதிய போனில்), அதனால் பேக்கப்பால் தவறிய நாளை அழிக்க முடியாது. " +
                     "சவால் நடந்துகொண்டிருக்கும்போதோ, அலாரம் அடிக்கப்போகும்போதோ இதை செய்ய முடியாது."
             )
         )
@@ -122,7 +122,7 @@ fun BackupSection(groupModifier: Modifier = Modifier) {
             containerColor = Surface,
             titleContentColor = TextPrimary,
             textContentColor = TextPrimary,
-            title = { Text(tr("Restore this backup?", "இந்த காப்பு நகலை மீட்டெடுக்கவா?")) },
+            title = { Text(tr("Restore this backup?", "இந்த பேக்கப்பை மீட்டெடுக்கவா?")) },
             text = {
                 Text(
                     tr(
@@ -210,7 +210,7 @@ fun PrivacyRowGroup(groupModifier: Modifier = Modifier) {
                     heading = tr("Your data", "உங்கள் தரவு"),
                     body = tr(
                         "Your alarms, streak and history are stored only on this phone. DisciplineX does not ask for the Internet permission and has no account or sign-in.",
-                        "உங்கள் அலாரங்கள், தொடர் சாதனை, வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதியை கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை."
+                        "உங்கள் அலாரங்கள், தொடர்ச்சியான சாதனை, வரலாறு இந்த போனில் மட்டுமே சேமிக்கப்படும். DisciplineX இணைய அனுமதியை கேட்காது, கணக்கு அல்லது உள்நுழைவு இல்லை."
                     )
                 )
                 PrivacyItem(
@@ -252,13 +252,13 @@ private fun PrivacyItem(icon: ImageVector, heading: String, body: String, last: 
 
 private fun restoreMessage(result: BackupManager.RestoreResult): String = when (result) {
     BackupManager.RestoreResult.OK ->
-        tr("Backup restored. Reopen the app to see everything.", "காப்பு நகல் மீட்டெடுக்கப்பட்டது. அனைத்தையும் பார்க்க ஆப்பை மீண்டும் திறந்து பாருங்கள்.")
+        tr("Backup restored. Reopen the app to see everything.", "பேக்கப் மீட்டெடுக்கப்பட்டது. அனைத்தையும் பார்க்க ஆப்பை மீண்டும் திறந்து பாருங்கள்.")
     BackupManager.RestoreResult.INVALID_FILE ->
-        tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX காப்பு நகல் கோப்பு அல்ல.")
+        tr("That file is not a valid DisciplineX backup.", "இது சரியான DisciplineX பேக்கப் கோப்பு அல்ல.")
     BackupManager.RestoreResult.BLOCKED_HISTORY ->
         tr(
             "This phone already has recorded days, so restore is blocked. Restore only works on a fresh install (for example a new phone), so a backup can never undo a missed day. Your backup file itself is fine.",
-            "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் இப்போது மீட்டெடுக்க முடியாது. புதிய நிறுவலில் (எ.கா. புதிய போனில்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது. உங்கள் காப்பு நகல் கோப்பு சரியாகவே உள்ளது."
+            "இந்த போனில் ஏற்கனவே நாட்கள் பதிவாகியுள்ளதால் இப்போது மீட்டெடுக்க முடியாது. புதிய நிறுவலில் (எ.கா. புதிய போனில்) மட்டுமே மீட்டெடுக்க முடியும், அதனால் பேக்கப்பால் தவறிய நாளை அழிக்க முடியாது. உங்கள் பேக்கப் கோப்பு சரியாகவே உள்ளது."
         )
     BackupManager.RestoreResult.BLOCKED_ACTIVE ->
         tr("A challenge is active right now. Finish it first, then try again.", "இப்போது ஒரு சவால் நடந்துகொண்டிருக்கிறது. முதலில் அதை முடித்துவிட்டு, மீண்டும் முயலுங்கள்.")

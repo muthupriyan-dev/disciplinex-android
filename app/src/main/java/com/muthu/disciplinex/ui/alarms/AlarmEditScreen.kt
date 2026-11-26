@@ -308,7 +308,7 @@ fun AlarmEditScreen(alarmId: Int, onClose: () -> Unit) {
                 Text(tr("Exercise", "பயிற்சி"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.", "கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது."),
+                    tr("Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை கேமரா எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது."),
                     color = TextMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -476,7 +476,7 @@ private fun alarmEditTourSteps(): List<TourStep> = listOf(
     TourStep(
         "exercise", tr("Exercise and target", "பயிற்சி மற்றும் இலக்கு"),
         tr("Pick what you must do to unlock your phone, then set the target: reps, minutes, or distance. Push-ups, squats and jumping jacks are counted by the camera. Walking is measured by the distance you walk (estimated from your phone's step counter). Meditation and reading run on a timer you can't skip.",
-            "போனை திறக்க நீங்கள் என்ன செய்ய வேண்டும் என்பதை தேர்ந்தெடுத்து, இலக்கை (முறை, நிமிடங்கள் அல்லது தூரம்) அமைத்துக்கொள்ளுங்கள். கேமரா, புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது.")
+            "போனை திறக்க நீங்கள் என்ன செய்ய வேண்டும் என்பதை தேர்ந்தெடுத்து, இலக்கை (முறை, நிமிடங்கள் அல்லது தூரம்) அமைத்துக்கொள்ளுங்கள். புஷ்-அப்ஸ், ஸ்குவாட்ஸ், ஜம்பிங் ஜாக்ஸ் ஆகியவற்றை கேமரா எண்ணும். நடைப்பயிற்சியில், நீங்கள் நடக்கும் தூரம் அளக்கப்படும் (போனின் அடி எண்ணும் சென்சாரிலிருந்து தோராயமாக கணக்கிடப்படும்). தியானம், வாசிப்புக்கு டைமர் ஓடும், அதை தவிர்க்க முடியாது.")
     ),
     TourStep(
         "limit", tr("Time limit", "நேர வரம்பு"),

@@ -321,7 +321,7 @@ fun SettingsScreen(
                         GroupDivider()
                         SettingsRow(
                             icon = Icons.Filled.Info,
-                            title = tr("Emergency unlock", "அவசரத் திறப்பு"),
+                            title = tr("Emergency unlock", "அவசர காலத் திறப்பு"),
                             subtitle = tr(
                                 "Missed a challenge? Keep the app open for 10 minutes (the time pauses when you leave) and your phone unlocks for 30 minutes, then it locks again by itself. The day stays missed.",
                                 "சவால் தவறிவிட்டதா? ஆப்பை 10 நிமிடம் திறந்து வையுங்கள் (வெளியே சென்றால் நேரம் நின்றுவிடும்). பிறகு போன் 30 நிமிடம் திறந்திருக்கும், தானாகவே மீண்டும் பூட்டிக்கொள்ளும். அந்த நாள் தவறியதாகவே இருக்கும்."
@@ -368,7 +368,7 @@ fun SettingsScreen(
                     SettingsGroup(Modifier.tourTarget(tour, "history")) {
                         SettingsRow(
                             icon = Icons.Filled.CalendarMonth,
-                            title = tr("Streak history", "தொடர் சாதனை வரலாறு"),
+                            title = tr("Streak history", "தொடர்ச்சியான சாதனை வரலாறு"),
                             subtitle = tr(
                                 "See which days you finished and which you missed.",
                                 "எந்த நாட்களில் முடித்தீர்கள், எந்த நாட்களில் தவறவிட்டீர்கள் என்று பாருங்கள்."
@@ -391,10 +391,10 @@ fun SettingsScreen(
                     SettingsGroup(Modifier.tourTarget(tour, "about")) {
                         SettingsRow(
                             icon = Icons.AutoMirrored.Filled.HelpOutline,
-                            title = tr("How this app works", "இந்த ஆப் எப்படி வேலை செய்கிறது"),
+                            title = tr("How DisciplineX Works", "DisciplineX எப்படி செயல்படுகிறது?"),
                             subtitle = tr(
-                                "See what happens in each situation: finishing, missing, leaving the app and more.",
-                                "சவாலை முடித்தால், தவறினால், ஆப்பை விட்டு வெளியே சென்றால் என்ன நடக்கும் என்று பாருங்கள்."
+                                "See what happens when your alarm rings, when you finish and when you miss.",
+                                "அலாரம் ஒலிக்கும்போது, சவாலை முடிக்கும்போது, தவறும்போது என்ன நடக்கும் என்று பாருங்கள்."
                             ),
                             onClick = onOpenHowItWorks,
                             showChevron = true
@@ -521,7 +521,7 @@ private fun permissionReason(kind: PermissionChecks.Kind): String = when (kind) 
     )
     PermissionChecks.Kind.ACTIVITY -> tr(
         "Counts your steps for walking challenges.",
-        "நடைப்பயிற்சி சவாலுக்கு உங்கள் அடிகளை எண்ண."
+        "நடைப்பயிற்சி சவாலுக்கு உங்கள் காலடிகளை எண்ண."
     )
     PermissionChecks.Kind.BATTERY -> tr(
         "Keeps the alarm reliable when the phone is idle.",
@@ -683,17 +683,17 @@ private fun settingsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "permissions", tr("Permissions", "அனுமதிகள்"),
         tr("A green On means it is on. A red Off means it is off, and the alarm or app lock may not work. Tap that row to open the right screen.",
-            "பச்சை நிற இயக்கத்தில் என்றால் இயக்கத்தில் உள்ளது. சிவப்பு நிற இயக்கத்தில் இல்லை என்றால் அலாரம் அல்லது ஆப் பூட்டு வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க அந்த வரிசையை தட்டுங்கள்.")
+            "பச்சை நிற \"இயக்கத்தில்\" என்றால் அது இயக்கப்பட்டுள்ளது. சிவப்பு நிற \"இயக்கத்தில் இல்லை\" என்றால் அலாரம் அல்லது ஆப் பூட்டு வேலை செய்யாமல் போகலாம். சரியான திரையை திறக்க அந்த வரிசையை தட்டுங்கள்.")
     ),
     TourStep(
-        "history", tr("Streak history", "தொடர் சாதனை வரலாறு"),
+        "history", tr("Streak history", "தொடர்ச்சியான சாதனை வரலாறு"),
         tr("Open a calendar of the days you finished and the days you missed.",
             "நீங்கள் முடித்த நாட்கள், தவறவிட்ட நாட்களின் நாட்காட்டியை திறந்து பாருங்கள்.")
     ),
     TourStep(
-        "backup", tr("Data and backup", "தரவு மற்றும் காப்பு நகல்"),
+        "backup", tr("Data and backup", "தரவு மற்றும் பேக்கப்"),
         tr("Save your alarms, streak, history and allowed apps to a file. Restore works only on a fresh start (no recorded days yet), so a backup can never undo a missed day.",
-            "அலாரங்கள், தொடர் சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை ஒரு கோப்பாக சேமிக்கலாம். இன்னும் எந்த நாளும் பதிவாகாத புதிய தொடக்கத்தில் மட்டுமே மீட்டெடுக்க முடியும், அதனால் காப்பு நகலால் தவறிய நாளை அழிக்க முடியாது.")
+            "அலாரங்கள், தொடர்ச்சியான சாதனை, வரலாறு, அனுமதிக்கப்பட்ட ஆப்களை ஒரு கோப்பாக சேமிக்கலாம். இன்னும் எந்த நாளும் பதிவாகாத புதிய தொடக்கத்தில் மட்டுமே மீட்டெடுக்க முடியும், அதனால் பேக்கப்பால் தவறிய நாளை அழிக்க முடியாது.")
     ),
     TourStep(
         "privacy", tr("Privacy", "தனியுரிமை"),
@@ -702,7 +702,7 @@ private fun settingsTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "about", tr("About", "பற்றி"),
-        tr("Tap How this app works to read what happens in each situation. Also shows the app version. Everything stays on your phone.",
-            "ஒவ்வொரு சூழலிலும் என்ன நடக்கும் என்று படிக்க இந்த ஆப் எப்படி வேலை செய்கிறது என்பதை தட்டுங்கள். ஆப் பதிப்பையும் காட்டும். எல்லாம் உங்கள் போனிலேயே இருக்கும்.")
+        tr("Tap How DisciplineX Works to read what happens in each situation. Also shows the app version. Everything stays on your phone.",
+            "ஒவ்வொரு சூழலிலும் என்ன நடக்கும் என்று படிக்க DisciplineX எப்படி செயல்படுகிறது? என்பதை தட்டுங்கள். ஆப் பதிப்பையும் காட்டும். எல்லாம் உங்கள் போனிலேயே இருக்கும்.")
     )
 )

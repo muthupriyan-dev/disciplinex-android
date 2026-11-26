@@ -55,7 +55,7 @@ fun HowItWorksScreen(onContinue: () -> Unit, onBack: () -> Unit) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = tr("How it works", "இது எப்படி வேலை செய்கிறது"),
+                    text = tr("How it works", "இது எப்படி செயல்படுகிறது?"),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.headlineMedium
                 )
@@ -75,13 +75,13 @@ fun HowItWorksScreen(onContinue: () -> Unit, onBack: () -> Unit) {
                 Step(
                     number = "2",
                     title = tr("Do your challenge", "சவாலை செய்யுங்கள்"),
-                    body = tr("Push-ups and squats are counted by the camera. Other exercises use a timer or your steps.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமராவால் எண்ணப்படும். மற்ற பயிற்சிகளுக்கு டைமர் அல்லது உங்கள் அடிகள் பயன்படும்.")
+                    body = tr("Push-ups and squats are counted by the camera. Other exercises use a timer or your steps.", "புஷ்-அப்ஸ், ஸ்குவாட்ஸ் கேமராவால் எண்ணப்படும். மற்ற பயிற்சிகளுக்கு டைமர் அல்லது உங்கள் காலடிகள் பயன்படும்.")
                 )
                 Spacer(modifier = Modifier.height(14.dp))
                 Step(
                     number = "3",
                     title = tr("Earn your phone back", "போனை திரும்ப பெறுங்கள்"),
-                    body = tr("Finish in time and your apps unlock and your streak grows. Miss it and they stay locked for 24 hours.", "நேரத்துக்குள் முடித்தால் ஆப்கள் திறக்கும், தொடர் சாதனை கூடும். தவறினால் 24 மணி நேரம் பூட்டியே இருக்கும்.")
+                    body = tr("Finish in time and your apps unlock and your streak grows. Miss it and they stay locked for 24 hours.", "நேரத்துக்குள் முடித்தால் ஆப்கள் திறக்கும், தொடர்ச்சியான சாதனை கூடும். தவறினால் 24 மணி நேரம் பூட்டியே இருக்கும்.")
                 )
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(

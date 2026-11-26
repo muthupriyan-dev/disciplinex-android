@@ -154,8 +154,8 @@ fun StatsScreen(onBack: () -> Unit) {
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatTile(tr("Current streak", "தற்போதைய தொடர் சாதனை"), currentStreak.toString(), Modifier.weight(1f))
-                StatTile(tr("Best streak", "அதிகபட்ச தொடர் சாதனை"), bestStreak.toString(), Modifier.weight(1f))
+                StatTile(tr("Current streak", "தற்போதைய தொடர்ச்சியான சாதனை"), currentStreak.toString(), Modifier.weight(1f))
+                StatTile(tr("Best streak", "அதிகபட்ச தொடர்ச்சியான சாதனை"), bestStreak.toString(), Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(tr("Total reps", "மொத்த முறைகள்"), stats.totalReps.toString(), Modifier.weight(1f))
@@ -218,7 +218,7 @@ private fun statsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "numbers", tr("Your numbers", "உங்கள் எண்கள்"),
         tr("Challenges you finished, how many of your alarms you completed, your streaks, total reps, timed minutes and distance walked. All of it comes from your real activity.",
-            "நீங்கள் முடித்த சவால்கள், உங்கள் அலாரங்களில் எத்தனையை முடித்தீர்கள், தொடர் சாதனைகள், மொத்த முறைகள், டைமர் நிமிடங்கள், நடந்த தூரம் ஆகியவை. இவை எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்தே வருகின்றன.")
+            "நீங்கள் முடித்த சவால்கள், உங்கள் அலாரங்களில் எத்தனையை முடித்தீர்கள், தொடர்ச்சியான சாதனைகள், மொத்த முறைகள், டைமர் நிமிடங்கள், நடந்த தூரம் ஆகியவை. இவை எல்லாம் உங்கள் உண்மையான செயல்பாட்டிலிருந்தே வருகின்றன.")
     ),
     TourStep(
         "chart", tr("Last 7 days", "கடந்த 7 நாட்கள்"),

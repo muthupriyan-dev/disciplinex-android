@@ -90,7 +90,7 @@ import java.util.Locale
 
 private fun homeTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "streak", tr("Your streak \uD83D\uDD25", "உங்கள் தொடர் சாதனை \uD83D\uDD25"),
+        "streak", tr("Your streak \uD83D\uDD25", "உங்கள் தொடர்ச்சியான சாதனை \uD83D\uDD25"),
         tr("Finish every challenge on time and this number grows. Miss one and it goes back to 0.", "ஒவ்வொரு சவாலையும் நேரத்துக்குள் முடித்தால் இந்த எண் கூடும். ஒன்றை தவறவிட்டால் மீண்டும் 0 ஆகிவிடும்.")
     ),
     TourStep(
@@ -115,7 +115,7 @@ private fun homeTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "settings", tr("Settings", "அமைப்புகள்"),
-        tr("Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.", "பூட்டியிருக்கும்போது திறந்திருக்க வேண்டிய ஆப்களை தேர்ந்தெடுங்கள், தோற்றம் மற்றும் மொழியை மாற்றுங்கள், காப்பு நகலை சேமியுங்கள் அல்லது மீட்டெடுங்கள், தனியுரிமை குறிப்புகளை படியுங்கள்.")
+        tr("Choose which apps stay open while locked, change theme and language, save or restore a backup, and read the privacy notes.", "பூட்டியிருக்கும்போது திறந்திருக்க வேண்டிய ஆப்களை தேர்ந்தெடுங்கள், தோற்றம் மற்றும் மொழியை மாற்றுங்கள், பேக்கப்பை சேமியுங்கள் அல்லது மீட்டெடுங்கள், தனியுரிமை குறிப்புகளை படியுங்கள்.")
     ),
     TourStep(
         "help", tr("Need this again?", "இது மீண்டும் வேண்டுமா?"),
@@ -271,7 +271,7 @@ fun HomeScreen(
 
                 // ---- Streak ----
                 GradientHeroCard(
-                    title = tr("\uD83D\uDD25 $streak day streak", "\uD83D\uDD25 $streak நாள் தொடர் சாதனை"),
+                    title = tr("\uD83D\uDD25 $streak day streak", "\uD83D\uDD25 $streak நாள் தொடர்ச்சியான சாதனை"),
                     subtitle = tr("Best: $best days", "அதிகபட்சம்: $best நாட்கள்"),
                     modifier = Modifier.fillMaxWidth().tourTarget(tour, "streak").clickable { onOpenHistory() }
                 ) {
@@ -322,7 +322,7 @@ fun HomeScreen(
                             .background(Surface)
                             .padding(16.dp)
                     ) {
-                        Text(tr("Emergency unlock is on", "அவசரத் திறப்பு இயக்கத்தில் உள்ளது"), fontWeight = FontWeight.Bold)
+                        Text(tr("Emergency unlock is on", "அவசர காலத் திறப்பு இயக்கத்தில் உள்ளது"), fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             tr("Your phone locks again in ${sec / 60}:${"%02d".format(sec % 60)}.",
@@ -735,7 +735,7 @@ private fun PermissionWarningCard(names: String, onReview: () -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                tr("Some permissions are off", "சில அனுமதிகள் கொடுக்கப்படவில்லை"),
+                tr("Some permissions are off", "சில அனுமதிகள் இயக்கப்படவில்லை"),
                 fontWeight = FontWeight.Bold,
                 color = Danger
             )

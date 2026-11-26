@@ -212,7 +212,7 @@ fun PermissionsScreen(onFinish: () -> Unit, onBack: () -> Unit) {
             add(
                 PermissionRow(
                     title = tr("Physical activity", "உடல் செயல்பாடு"),
-                    reason = tr("Counts your steps for the Walking challenge. Nothing leaves your phone.", "நடைப்பயிற்சிக்காக உங்கள் அடிகளை எண்ணும். எதுவும் உங்கள் போனை விட்டு வெளியே போகாது."),
+                    reason = tr("Counts your steps for the Walking challenge. Nothing leaves your phone.", "நடைப்பயிற்சிக்காக உங்கள் காலடிகளை எண்ணும். எதுவும் உங்கள் போனை விட்டு வெளியே போகாது."),
                     isGranted = activityGranted,
                     onRequest = { activityLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
                 )
@@ -381,6 +381,6 @@ private fun permissionsTourSteps(): List<TourStep> = listOf(
     TourStep(
         "continue", tr("Continue", "தொடர்"),
         tr("This unlocks only after every permission is allowed.",
-            "எல்லா அனுமதிகளையும் கொடுத்த பிறகுதான் இது திறக்கும்.")
+            "எல்லா அனுமதிகளையும் இயக்கிய பிறகுதான் இது திறக்கும்.")
     )
 )

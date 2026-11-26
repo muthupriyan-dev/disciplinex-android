@@ -88,7 +88,7 @@ fun HistoryScreen(onBack: () -> Unit) {
         containerColor = Background,
         topBar = {
             TopAppBar(
-                title = { Text(tr("Streak history", "தொடர் சாதனை வரலாறு"), fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Streak history", "தொடர்ச்சியான சாதனை வரலாறு"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
@@ -112,12 +112,12 @@ fun HistoryScreen(onBack: () -> Unit) {
             Row(modifier = Modifier.tourTarget(tour, "stats"), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatBox(
                     value = "\uD83D\uDD25 $streak",
-                    label = tr("Current streak", "தற்போதைய தொடர் சாதனை"),
+                    label = tr("Current streak", "தற்போதைய தொடர்ச்சியான சாதனை"),
                     modifier = Modifier.weight(1f)
                 )
                 StatBox(
                     value = "\uD83C\uDFC6 $best",
-                    label = tr("Best streak", "அதிகபட்ச தொடர் சாதனை"),
+                    label = tr("Best streak", "அதிகபட்ச தொடர்ச்சியான சாதனை"),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -287,9 +287,9 @@ private fun LegendDot(color: Color, label: String) {
 
 private fun historyTourSteps(): List<TourStep> = listOf(
     TourStep(
-        "stats", tr("Your streaks", "உங்கள் தொடர் சாதனைகள்"),
+        "stats", tr("Your streaks", "உங்கள் தொடர்ச்சியான சாதனைகள்"),
         tr("Current streak is how many days in a row you finished. Best streak is your longest run ever.",
-            "தற்போதைய தொடர் சாதனை என்பது, தொடர்ச்சியாக நீங்கள் முடித்த நாட்கள். அதிகபட்ச தொடர் சாதனை என்பது, இதுவரை உங்கள் மிக நீண்ட தொடர்ச்சி.")
+            "தற்போதைய தொடர்ச்சியான சாதனை என்பது, தொடர்ச்சியாக நீங்கள் முடித்த நாட்கள். அதிகபட்ச தொடர்ச்சியான சாதனை என்பது, இதுவரை உங்கள் மிக நீண்ட தொடர்ச்சி.")
     ),
     TourStep(
         "calendar", tr("Calendar", "நாட்காட்டி"),

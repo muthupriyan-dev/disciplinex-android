@@ -17,9 +17,9 @@ A discipline app: **an alarm rings, and your phone stays locked down until you f
 - **Lock & Protection:** allowed apps (with icons), emergency unlock info, uninstall password, permission status with fix buttons.
 - **Progress & History:** streak history calendar. Statistics and Achievements open from Home.
 - **Data & Privacy:** save / restore a backup file, privacy explanation.
-- **About:** **How this app works**, app version.
+- **About:** **How DisciplineX Works**, app version.
 
-**How this app works** (Settings → About) explains every rule as IF / THEN / ELSE cards: finishing in time, missing the time limit, leaving the app for more or less than 5 minutes, emergency unlock, the 2-hour alarm lock-in, what opens while the phone is locked, switched-off phone, permissions off and uninstall protection. It is read-only text, so it never changes any setting. If you change a rule in the code (for example the 24 hours, 5 minutes or 2 hours), update `ui/settings/HowAppWorksScreen.kt` and this README too.
+**How DisciplineX Works** (Settings → About; Tamil: *DisciplineX எப்படி செயல்படுகிறது?*) explains the app in plain language, in five sections: *When Your Alarm Rings*, *Complete Your Challenge*, *What Happens When You Miss a Challenge?*, *Alarm & Security* and *Permissions & Privacy*. Each section is a group of short situation cards with an icon, a title and a description. It is read-only text, so it never changes any setting. Every number in it (5 minutes away, 10 minutes wait, 30 minutes unlock, 24 hours lock, 2 hours before an alarm) comes from the code. If you change one of those rules, update `ui/settings/HowAppWorksScreen.kt` and this README too.
 
 Every screen also has an **(i)** button that explains what is on it.
 
@@ -27,7 +27,7 @@ Every screen also has an **(i)** button that explains what is on it.
 - An accessibility service blocks every app except Phone, Camera, your allowed apps, keyboards, the home screen and system screens.
 - It also checks split-screen and floating windows.
 - System Settings is blocked while locked, so the lock can't be switched off from the Accessibility page.
-- It only reads *which app owns a window* (package name), never text, messages or typing.
+- It watches *which app is opening* (package name). It reads on-screen text only on the system's uninstall dialog, the device-admin screen and the "stop the service" dialog, to see whether they are about DisciplineX. It never reads messages, other apps' screens or what you type, and it does not listen to typing events.
 - **Uninstall protection:** DisciplineX is a device admin (it asks for no control over your phone). While a challenge is pending, missed or in emergency unlock, Android refuses to uninstall it and the uninstall password stays hidden. When the phone is not locked, the password in Settings lets you uninstall.
 - Alarms and the allowed-apps list can't be edited while locked.
 
@@ -57,4 +57,4 @@ Every screen also has an **(i)** button that explains what is on it.
 - `pose/` — camera preview, ML Kit analyzer, rep counters (push-ups, squats, jumping jacks)
 - `data/` — alarms, `ChallengeSession` (lock, time limit, away rule, emergency unlock), streaks, challenge history, settings, backup, uninstall guard, step check
 - `domain/` — statistics and achievements calculation
-- `ui/` — Compose screens: `home/`, `alarms/` (editor), `challenge/`, `onboarding/`, `stats/` (Statistics + Achievements), `settings/` (Settings, history calendar, allowed apps, backup, **How this app works**), `navigation/`, `components/` (guide tour)
+- `ui/` — Compose screens: `home/`, `alarms/` (editor), `challenge/`, `onboarding/`, `stats/` (Statistics + Achievements), `settings/` (Settings, history calendar, allowed apps, backup, **How DisciplineX Works**), `navigation/`, `components/` (guide tour)
