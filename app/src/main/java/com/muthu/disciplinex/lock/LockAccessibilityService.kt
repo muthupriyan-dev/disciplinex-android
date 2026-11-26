@@ -78,7 +78,7 @@ class LockAccessibilityService : AccessibilityService() {
 
     private var lastUninstallPromptAt = 0L
 
-    private enum class Watched { INSTALLER, STORE, SETTINGS }
+    private enum class Watched { INSTALLER, STORE, SETTINGS, LAUNCHER }
 
     /** Result of looking at one window: [purpose] set = guard it, [recheck] = look again shortly. */
     private class Verdict(val purpose: UninstallGuard.Purpose? = null, val recheck: Boolean = false)
@@ -92,7 +92,32 @@ class LockAccessibilityService : AccessibilityService() {
         pkg.contains("packageinstaller", ignoreCase = true) -> Watched.INSTALLER
         pkg == PLAY_STORE -> Watched.STORE
         pkg == SETTINGS_PKG -> Watched.SETTINGS
+        // Long-press on the icon -> "Uninstall": many launchers (Samsung, Xiaomi, Oppo, Vivo...)
+        // show their OWN confirm dialog, which belongs to the launcher, not to the installer.
+        pkg in homePackages() -> Watched.LAUNCHER
         else -> null
+    }
+
+    private var homeCache: Set<String> = emptySet()
+    private var homeCachedAt = 0L
+
+    private fun homePackages(): Set<String> {
+        val now = SystemClock.elapsedRealtime()
+        if (homeCache.isEmpty() || now - homeCachedAt > ALLOWED_CACHE_MS) {
+            val set = HashSet<String>()
+            try {
+                @Suppress("DEPRECATION")
+                packageManager.queryIntentActivities(
+                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+                    PackageManager.MATCH_ALL
+                ).forEach { set += it.activityInfo.packageName }
+            } catch (e: Exception) {
+                Log.w(TAG, "home app lookup failed", e)
+            }
+            homeCache = set
+            homeCachedAt = now
+        }
+        return homeCache
     }
 
     /**
@@ -194,6 +219,19 @@ class LockAccessibilityService : AccessibilityService() {
                     else -> Verdict()
                 }
                 else -> Verdict()
+            }
+
+            Watched.LAUNCHER -> {
+                val dialogLike = classLower.contains("dialog") || classLower.contains("alert") ||
+                    classLower.contains("uninstall") || classLower.contains("confirm")
+                // While locked (or missed / emergency unlock) any launcher window that asks to
+                // uninstall this app is blocked. Otherwise only real dialogs are guarded, so a
+                // normal home screen never triggers it.
+                if (mentionsUs && uninstallWords && (blockedNow || dialogLike)) {
+                    Verdict(UninstallGuard.Purpose.UNINSTALL)
+                } else {
+                    Verdict()
+                }
             }
 
             Watched.SETTINGS -> when {

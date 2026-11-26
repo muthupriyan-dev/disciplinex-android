@@ -17,3 +17,10 @@ NOT compiled or run (no Android SDK in the sandbox). Build with Codemagic and te
 
 Known limits: adb/root/safe mode; accessibility switched off while unlocked still removes the app-lock
 (the stop-dialog gate is best-effort and English-only); stop-dialog text differs per Android version.
+
+## Round 2: launcher long-press -> Uninstall
+Many launchers show their own uninstall confirm dialog (window owned by the launcher, not the installer),
+so the first version never saw it. Added Watched.LAUNCHER: launcher windows are checked; while locked/missed/
+emergency-unlock any launcher window asking to uninstall DisciplineX is blocked. The device admin (enable the
+"Uninstall protection" card) is the real safety net: Android refuses to uninstall an active admin app for
+every caller, including the launcher.
