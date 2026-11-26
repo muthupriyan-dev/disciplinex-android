@@ -28,3 +28,8 @@ every caller, including the launcher.
 ## Round 3
 Onboarding "Why we ask for this" screen now has an "Uninstall protection" (device admin) row; Continue stays locked
 until it is active. Phones without FEATURE_DEVICE_ADMIN count it as granted so nobody gets stuck.
+
+## Round 4
+Bug: the device-admin ACTIVATE screen (same DeviceAdminAdd class as deactivate) asked for the uninstall password,
+so a fresh install could never switch Uninstall protection on. Now the screen is guarded only while the admin is
+already active.

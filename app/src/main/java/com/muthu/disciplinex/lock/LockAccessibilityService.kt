@@ -236,7 +236,11 @@ class LockAccessibilityService : AccessibilityService() {
 
             Watched.SETTINGS -> when {
                 !mentionsUs -> Verdict()
-                classLower.contains("deviceadmin") -> Verdict(UninstallGuard.Purpose.DEACTIVATE)
+                // The same system screen is used to ACTIVATE and to DEACTIVATE the admin.
+                // Only guard it when the admin is already active (= this is the deactivate
+                // screen); otherwise the user is just switching Uninstall protection ON.
+                classLower.contains("deviceadmin") ->
+                    if (UninstallGuard.isAdminActive(this)) Verdict(UninstallGuard.Purpose.DEACTIVATE) else Verdict()
                 PROTECT_WORDS.any { text.contains(it) } -> Verdict(UninstallGuard.Purpose.PROTECT)
                 else -> Verdict()
             }
