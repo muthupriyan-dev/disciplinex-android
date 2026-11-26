@@ -59,6 +59,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -95,6 +96,7 @@ import com.muthu.disciplinex.ui.theme.Success
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
+import kotlinx.coroutines.delay
 
 /**
  * App settings, grouped into Appearance, Alarm preferences, Lock & Protection,
@@ -110,9 +112,17 @@ fun SettingsScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val locked = remember { ChallengeSession.isLockActive(context) }
+    // Re-checked every second: a challenge can start while this screen is open.
+    var locked by remember { mutableStateOf(ChallengeSession.isLockActive(context)) }
     // Also true during the 30 minutes of an emergency unlock: the password stays hidden then.
-    val uninstallProtected = remember { UninstallGuard.isProtected(context) }
+    var uninstallProtected by remember { mutableStateOf(UninstallGuard.isProtected(context)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            locked = ChallengeSession.isLockActive(context)
+            uninstallProtected = UninstallGuard.isProtected(context)
+            delay(1000)
+        }
+    }
     var showUninstallPassword by remember { mutableStateOf(false) }
     if (showUninstallPassword) {
         UninstallPasswordDialog(onDismiss = { showUninstallPassword = false })
@@ -479,6 +489,7 @@ private fun permissionIcon(kind: PermissionChecks.Kind): ImageVector = when (kin
     PermissionChecks.Kind.ACTIVITY -> Icons.Filled.DirectionsWalk
     PermissionChecks.Kind.BATTERY -> Icons.Filled.BatteryChargingFull
     PermissionChecks.Kind.ACCESSIBILITY -> Icons.Filled.Accessibility
+    PermissionChecks.Kind.DEVICE_ADMIN -> Icons.Filled.Lock
 }
 
 /** Why the app needs this permission, in plain words. */
@@ -506,6 +517,10 @@ private fun permissionReason(kind: PermissionChecks.Kind): String = when (kind) 
     PermissionChecks.Kind.ACCESSIBILITY -> tr(
         "Needed to block other apps during a challenge.",
         "சவால் நேரத்தில் மற்ற ஆப்களை தடுக்க தேவை."
+    )
+    PermissionChecks.Kind.DEVICE_ADMIN -> tr(
+        "Stops DisciplineX from being uninstalled in one tap to dodge the lock. Asks for no control over your phone.",
+        "பூட்டை தவிர்க்க DisciplineX-ஐ ஒரே தட்டலில் நிறுவல் நீக்குவதை தடுக்கும். உங்கள் போனை கட்டுப்படுத்த அனுமதி கேட்காது."
     )
 }
 

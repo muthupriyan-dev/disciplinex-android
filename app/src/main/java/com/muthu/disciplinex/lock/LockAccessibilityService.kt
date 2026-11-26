@@ -78,9 +78,28 @@ class LockAccessibilityService : AccessibilityService() {
 
     private var lastUninstallPromptAt = 0L
 
+    private enum class Watched { INSTALLER, STORE, SETTINGS }
+
+    /** Result of looking at one window: [purpose] set = guard it, [recheck] = look again shortly. */
+    private class Verdict(val purpose: UninstallGuard.Purpose? = null, val recheck: Boolean = false)
+
+    private var pendingPkg: String? = null
+    private var pendingClass: String = ""
+    private var pendingKind: Watched? = null
+    private val recheckRunnable = Runnable { recheckPending() }
+
+    private fun watchedKind(pkg: String): Watched? = when {
+        pkg.contains("packageinstaller", ignoreCase = true) -> Watched.INSTALLER
+        pkg == PLAY_STORE -> Watched.STORE
+        pkg == SETTINGS_PKG -> Watched.SETTINGS
+        else -> null
+    }
+
     /**
-     * The system "uninstall app" dialog is the one place where DisciplineX can be removed
-     * (launcher, Settings, Play Store all end up there). When it is about this app:
+     * The places where DisciplineX can be removed or its protection switched off:
+     *  - the system "uninstall app" dialog (launcher, Settings and Play Store all end there),
+     *  - the "deactivate device admin" screen and the "stop App Lock service?" dialog in Settings.
+     * When one of them is about this app:
      *  - challenge pending / missed -> blocked,
      *  - otherwise -> the password screen opens first.
      * Returns true if the event was handled.
@@ -88,75 +107,211 @@ class LockAccessibilityService : AccessibilityService() {
     private fun handleUninstallDialog(event: AccessibilityEvent): Boolean {
         val pkg = event.packageName?.toString() ?: return false
         if (pkg == packageName) return false
-        val isInstaller = pkg.contains("packageinstaller", ignoreCase = true)
-        val isStore = pkg == PLAY_STORE
-        if (!isInstaller && !isStore) return false
+        val kind = watchedKind(pkg) ?: return false
         if (UninstallGuard.promptShowing) return false
 
-        val blockedNow = UninstallGuard.isProtected(this)
-        if (!blockedNow && UninstallGuard.isUninstallGranted(this)) return false
+        val classLower = event.className?.toString().orEmpty().lowercase(Locale.ROOT)
+        // In Settings only look at the device-admin screen and dialogs, never at normal pages.
+        if (kind == Watched.SETTINGS && !(classLower.contains("deviceadmin") || classLower.contains("dialog"))) {
+            return false
+        }
 
-        val className = event.className?.toString().orEmpty()
-        val text = collectDialogText(event)
+        val blockedNow = UninstallGuard.isProtected(this)
+        if (!blockedNow && UninstallGuard.isUninstallGranted(this)) {
+            if (kind == Watched.INSTALLER && classLower.contains("uninstall")) {
+                UninstallGuard.shrinkGrantAfterDialogSeen()
+            }
+            return false
+        }
+
+        val verdict = judge(kind, classLower, collectDialogText(event), blockedNow, finalPass = false)
+        if (verdict.recheck) {
+            // The dialog is there but its text isn't readable yet (or doesn't say which app).
+            // Look again once it has finished drawing instead of letting it through.
+            pendingPkg = pkg
+            pendingClass = classLower
+            pendingKind = kind
+            handler.removeCallbacks(recheckRunnable)
+            handler.postDelayed(recheckRunnable, RECHECK_DELAY_MS)
+            return false
+        }
+        val purpose = verdict.purpose ?: return false
+        guard(purpose)
+        return true
+    }
+
+    private fun recheckPending() {
+        val pkg = pendingPkg ?: return
+        val kind = pendingKind ?: return
+        val classLower = pendingClass
+        pendingPkg = null
+        pendingKind = null
+        if (UninstallGuard.promptShowing) return
+        val blockedNow = UninstallGuard.isProtected(this)
+        if (!blockedNow && UninstallGuard.isUninstallGranted(this)) return
+
+        val root = findWindowRoot(pkg)
+        val text = collectTreeText(root)
+        val verdict = judge(kind, classLower, text, blockedNow, finalPass = true)
+        verdict.purpose?.let { guard(it) }
+    }
+
+    /**
+     * Decides whether a watched window needs the password / the block.
+     * Fails CLOSED for an uninstall question whose text can't be read at all.
+     */
+    private fun judge(
+        kind: Watched,
+        classLower: String,
+        text: String,
+        blockedNow: Boolean,
+        finalPass: Boolean
+    ): Verdict {
         val appLabel = try {
             applicationInfo.loadLabel(packageManager).toString().lowercase(Locale.ROOT)
         } catch (e: Exception) {
             "disciplinex"
         }
         val mentionsUs = text.contains(appLabel) || text.contains(packageName)
-        val looksLikeUninstall = className.contains("uninstall", ignoreCase = true) ||
-            UNINSTALL_WORDS.any { text.contains(it) }
+        val uninstallWords = UNINSTALL_WORDS.any { text.contains(it) }
+        val uninstallClass = classLower.contains("uninstall")
 
-        val relevant = when {
+        return when (kind) {
             // The Play Store has many screens: only act when it clearly asks about this app.
-            isStore -> mentionsUs && UNINSTALL_WORDS.any { text.contains(it) }
-            // While locked nobody uninstalls anything. Otherwise only this app is guarded.
-            blockedNow -> looksLikeUninstall || mentionsUs
-            else -> looksLikeUninstall && mentionsUs
-        }
-        if (!relevant) return false
+            Watched.STORE ->
+                if (mentionsUs && uninstallWords) Verdict(UninstallGuard.Purpose.UNINSTALL) else Verdict()
 
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastUninstallPromptAt < 2000L) return true
-        lastUninstallPromptAt = now
-
-        // Close the system dialog, then show our own screen.
-        performGlobalAction(GLOBAL_ACTION_BACK)
-        handler.postDelayed({
-            try {
-                startActivity(
-                    Intent(this, UninstallPasswordActivity::class.java)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not open the uninstall password screen", e)
-                performGlobalAction(GLOBAL_ACTION_HOME)
+            Watched.INSTALLER -> when {
+                // While locked nobody uninstalls anything.
+                blockedNow ->
+                    if (uninstallClass || uninstallWords || mentionsUs) Verdict(UninstallGuard.Purpose.UNINSTALL) else Verdict()
+                mentionsUs && (uninstallClass || uninstallWords) -> Verdict(UninstallGuard.Purpose.UNINSTALL)
+                uninstallClass || uninstallWords -> when {
+                    !finalPass -> Verdict(recheck = true)
+                    // Still no readable text at all: assume it is about us.
+                    text.isBlank() -> Verdict(UninstallGuard.Purpose.UNINSTALL)
+                    // Readable and about another app: let it through.
+                    else -> Verdict()
+                }
+                else -> Verdict()
             }
-        }, 250L)
-        return true
+
+            Watched.SETTINGS -> when {
+                !mentionsUs -> Verdict()
+                classLower.contains("deviceadmin") -> Verdict(UninstallGuard.Purpose.DEACTIVATE)
+                PROTECT_WORDS.any { text.contains(it) } -> Verdict(UninstallGuard.Purpose.PROTECT)
+                else -> Verdict()
+            }
+        }
     }
 
-    /** All the text of a dialog, in lower case. Only used on the uninstall dialogs above. */
+    /** Closes the system screen, then shows our own password / "blocked" screen. */
+    private fun guard(purpose: UninstallGuard.Purpose) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastUninstallPromptAt < 2000L) return
+        lastUninstallPromptAt = now
+
+        performGlobalAction(GLOBAL_ACTION_BACK)
+        handler.postDelayed({ openPasswordScreen(purpose) }, 250L)
+    }
+
+    private fun openPasswordScreen(purpose: UninstallGuard.Purpose) {
+        val intent = UninstallPasswordActivity.intent(this, purpose)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not open the uninstall password screen", e)
+        }
+        // Some phones (Xiaomi, Oppo, Vivo...) silently refuse to start an activity from the
+        // background. If the screen did not really appear, leave a notification that opens it
+        // and send the user Home, so the dialog is never simply gone with nothing to type into.
+        handler.postDelayed({
+            if (!UninstallGuard.promptShowing) {
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                postPasswordNotification(intent)
+            }
+        }, 900L)
+    }
+
+    private fun postPasswordNotification(intent: Intent) {
+        try {
+            com.muthu.disciplinex.data.AppSettings.load(this)
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+                ?: return
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                manager.createNotificationChannel(
+                    android.app.NotificationChannel(
+                        GUARD_CHANNEL,
+                        com.muthu.disciplinex.data.tr("Uninstall protection", "நிறுவல் நீக்கப் பாதுகாப்பு"),
+                        android.app.NotificationManager.IMPORTANCE_HIGH
+                    )
+                )
+            }
+            val pending = android.app.PendingIntent.getActivity(
+                this, 7, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val n = androidx.core.app.NotificationCompat.Builder(this, GUARD_CHANNEL)
+                .setContentTitle(com.muthu.disciplinex.data.tr("DisciplineX", "DisciplineX"))
+                .setContentText(
+                    com.muthu.disciplinex.data.tr(
+                        "Tap to continue (password or blocked message).",
+                        "தொடர தட்டுங்கள் (கடவுச்சொல் அல்லது தடை செய்தி)."
+                    )
+                )
+                .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pending)
+                .build()
+            manager.notify(GUARD_NOTIFICATION_ID, n)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not post the password notification", e)
+        }
+    }
+
+    /** All the text of a dialog, in lower case. Only used on the watched screens above. */
     private fun collectDialogText(event: AccessibilityEvent): String {
         val sb = StringBuilder()
         event.text?.forEach { sb.append(it).append(' ') }
         val root = try { event.source } catch (e: Exception) { null }
             ?: try { rootInActiveWindow } catch (e: Exception) { null }
-        if (root != null) {
-            val queue = ArrayDeque<AccessibilityNodeInfo>()
-            queue.add(root)
-            var visited = 0
-            while (queue.isNotEmpty() && visited < 150) {
-                val node = queue.removeFirst()
-                visited++
-                node.text?.let { sb.append(it).append(' ') }
-                node.contentDescription?.let { sb.append(it).append(' ') }
-                for (i in 0 until node.childCount) {
-                    node.getChild(i)?.let { queue.add(it) }
-                }
+        sb.append(collectTreeText(root))
+        return sb.toString().lowercase(Locale.ROOT)
+    }
+
+    private fun collectTreeText(root: AccessibilityNodeInfo?): String {
+        if (root == null) return ""
+        val sb = StringBuilder()
+        val queue = ArrayDeque<AccessibilityNodeInfo>()
+        queue.add(root)
+        var visited = 0
+        while (queue.isNotEmpty() && visited < 150) {
+            val node = queue.removeFirst()
+            visited++
+            node.text?.let { sb.append(it).append(' ') }
+            node.contentDescription?.let { sb.append(it).append(' ') }
+            for (i in 0 until node.childCount) {
+                node.getChild(i)?.let { queue.add(it) }
             }
         }
         return sb.toString().lowercase(Locale.ROOT)
+    }
+
+    /** The content of the window that belongs to [pkg] (the active one first). */
+    private fun findWindowRoot(pkg: String): AccessibilityNodeInfo? {
+        try {
+            val active = rootInActiveWindow
+            if (active != null && active.packageName?.toString() == pkg) return active
+        } catch (e: Exception) {
+            // fall through
+        }
+        val list = try { windows } catch (e: Exception) { null } ?: return null
+        for (w in list) {
+            val root = try { w.root } catch (e: Exception) { null } ?: continue
+            if (root.packageName?.toString() == pkg) return root
+        }
+        return null
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -181,6 +336,7 @@ class LockAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(relockRunnable)
+        handler.removeCallbacks(recheckRunnable)
         super.onDestroy()
     }
 
@@ -297,12 +453,37 @@ class LockAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "LockAccessibility"
         private const val PLAY_STORE = "com.android.vending"
+        private const val SETTINGS_PKG = "com.android.settings"
+        private const val GUARD_CHANNEL = "uninstall_guard_channel"
+        private const val GUARD_NOTIFICATION_ID = 1003
+        private const val RECHECK_DELAY_MS = 450L
 
-        /** Words that show up on an "uninstall this app?" question, in the languages we ship. */
+        /**
+         * Words that show up on an "uninstall this app?" question. The window's CLASS name
+         * ("...UninstallerActivity") is checked first and works in every language; these
+         * words are the backup. Languages other than English/Tamil are a best effort.
+         */
         private val UNINSTALL_WORDS = listOf(
             "uninstall",
             "நிறுவல் நீக்க",
-            "நீக்க வேண்டுமா"
+            "நீக்க வேண்டுமா",
+            "अनइंस्टॉल",
+            "अनइंस्टाल",
+            "desinstalar",
+            "désinstaller",
+            "deinstallieren",
+            "удалить",
+            "卸载",
+            "アンインストール",
+            "إلغاء التثبيت",
+            "copot"
+        )
+
+        /** Words on the "stop this accessibility service?" dialog in Settings (best effort). */
+        private val PROTECT_WORDS = listOf(
+            "stop",
+            "turn off",
+            "deactivate"
         )
         private const val REDIRECT_COOLDOWN_MS = 1500L
         private const val ALLOWED_CACHE_MS = 60_000L

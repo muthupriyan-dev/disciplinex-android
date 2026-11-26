@@ -18,7 +18,7 @@ import com.muthu.disciplinex.lock.LockAccessibilityService
  */
 object PermissionChecks {
 
-    enum class Kind { NOTIFICATIONS, FULL_SCREEN, CAMERA, ACTIVITY, BATTERY, ACCESSIBILITY }
+    enum class Kind { NOTIFICATIONS, FULL_SCREEN, CAMERA, ACTIVITY, BATTERY, ACCESSIBILITY, DEVICE_ADMIN }
 
     fun title(kind: Kind): String = when (kind) {
         Kind.NOTIFICATIONS -> tr("Notifications", "அறிவிப்புகள்")
@@ -27,6 +27,7 @@ object PermissionChecks {
         Kind.ACTIVITY -> tr("Physical activity (walking)", "உடல் செயல்பாடு (நடைப்பயிற்சி)")
         Kind.BATTERY -> tr("Run in background", "பின்னணியில் இயங்க அனுமதி")
         Kind.ACCESSIBILITY -> tr("App lock (Accessibility)", "ஆப் பூட்டு (அணுகல் வசதி)")
+        Kind.DEVICE_ADMIN -> tr("Uninstall protection", "நிறுவல் நீக்கப் பாதுகாப்பு")
     }
 
     fun isGranted(context: Context, kind: Kind): Boolean = when (kind) {
@@ -45,6 +46,7 @@ object PermissionChecks {
             (context.getSystemService(Context.POWER_SERVICE) as? PowerManager)
                 ?.isIgnoringBatteryOptimizations(context.packageName) ?: true
         Kind.ACCESSIBILITY -> LockAccessibilityService.isEnabled(context)
+        Kind.DEVICE_ADMIN -> UninstallGuard.isAdminActive(context)
     }
 
     /** Everything that is switched off right now. */
@@ -66,6 +68,13 @@ object PermissionChecks {
             Kind.ACTIVITY -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri)
             Kind.BATTERY -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkgUri)
             Kind.ACCESSIBILITY -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            Kind.DEVICE_ADMIN -> UninstallGuard.addAdminIntent(
+                context,
+                tr(
+                    "Makes DisciplineX impossible to uninstall in one tap. It asks for no permissions over your phone.",
+                    "DisciplineX-ஐ ஒரே தட்டலில் நிறுவல் நீக்க முடியாதபடி செய்யும். உங்கள் போனில் எந்த கட்டுப்பாட்டையும் கேட்காது."
+                )
+            )
         }
     }
 }

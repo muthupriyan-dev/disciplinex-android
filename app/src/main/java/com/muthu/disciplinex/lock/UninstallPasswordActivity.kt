@@ -1,5 +1,6 @@
 package com.muthu.disciplinex.lock
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -55,9 +56,11 @@ import com.muthu.disciplinex.ui.theme.TextMuted
  */
 class UninstallPasswordActivity : ComponentActivity() {
 
+    private var purpose = UninstallGuard.Purpose.UNINSTALL
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        UninstallGuard.promptShowing = true
+        purpose = readPurpose(intent)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = cancel()
@@ -66,11 +69,32 @@ class UninstallPasswordActivity : ComponentActivity() {
         setContent {
             DisciplineXTheme {
                 UninstallPasswordScreen(
-                    onCorrect = { openUninstallDialog() },
+                    purpose = purpose,
+                    onCorrect = { onPasswordCorrect() },
                     onCancel = { cancel() }
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        UninstallGuard.promptShowing = true
+    }
+
+    /** Not showing any more (Home pressed, screen off...): the uninstall dialog is guarded again. */
+    override fun onPause() {
+        UninstallGuard.promptShowing = false
+        super.onPause()
+    }
+
+    /**
+     * Leaving this screen cancels it. Without this the screen would stay alive in the
+     * background after Home was pressed and a later uninstall attempt could slip through.
+     */
+    override fun onStop() {
+        if (!isFinishing) finish()
+        super.onStop()
     }
 
     override fun onDestroy() {
@@ -78,15 +102,23 @@ class UninstallPasswordActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun openUninstallDialog() {
+    private fun onPasswordCorrect() {
         UninstallGuard.grantUninstall()
-        try {
-            startActivity(
-                Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName"))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-        } catch (e: Exception) {
-            Log.w("UninstallPassword", "Could not open the uninstall dialog", e)
+        when (purpose) {
+            UninstallGuard.Purpose.UNINSTALL -> {
+                // The device admin must be off or Android refuses to uninstall.
+                UninstallGuard.removeOwnAdmin(this)
+                try {
+                    startActivity(
+                        Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName"))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                } catch (e: Exception) {
+                    Log.w("UninstallPassword", "Could not open the uninstall dialog", e)
+                }
+            }
+            UninstallGuard.Purpose.DEACTIVATE -> UninstallGuard.removeOwnAdmin(this)
+            UninstallGuard.Purpose.PROTECT -> Unit // the grant lets the user repeat what they were doing
         }
         finish()
     }
@@ -103,10 +135,30 @@ class UninstallPasswordActivity : ComponentActivity() {
         }
         finish()
     }
+
+    companion object {
+        private const val EXTRA_PURPOSE = "purpose"
+
+        fun intent(context: Context, purpose: UninstallGuard.Purpose): Intent =
+            Intent(context, UninstallPasswordActivity::class.java)
+                .putExtra(EXTRA_PURPOSE, purpose.name)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        private fun readPurpose(intent: Intent?): UninstallGuard.Purpose = try {
+            UninstallGuard.Purpose.valueOf(intent?.getStringExtra(EXTRA_PURPOSE) ?: "UNINSTALL")
+        } catch (e: Exception) {
+            UninstallGuard.Purpose.UNINSTALL
+        }
+    }
 }
 
 @Composable
-private fun UninstallPasswordScreen(onCorrect: () -> Unit, onCancel: () -> Unit) {
+private fun UninstallPasswordScreen(
+    purpose: UninstallGuard.Purpose,
+    onCorrect: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val forUninstall = purpose == UninstallGuard.Purpose.UNINSTALL
     val context = LocalContext.current
     val blocked = remember { UninstallGuard.isProtected(context) }
     var code by remember { mutableStateOf("") }
@@ -131,16 +183,20 @@ private fun UninstallPasswordScreen(onCorrect: () -> Unit, onCancel: () -> Unit)
             ) {
                 if (blocked) {
                     Text(
-                        tr("Uninstall is blocked", "நிறுவல் நீக்கம் தடுக்கப்பட்டுள்ளது"),
+                        if (forUninstall) tr("Uninstall is blocked", "நிறுவல் நீக்கம் தடுக்கப்பட்டுள்ளது")
+                        else tr("This is blocked", "இது தடுக்கப்பட்டுள்ளது"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        tr(
+                        if (forUninstall) tr(
                             "Finish your challenge first. While a challenge is pending or missed, DisciplineX can't be uninstalled.",
                             "முதலில் சவாலை முடியுங்கள். சவால் நிலுவையில் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX-ஐ நிறுவல் நீக்க முடியாது."
+                        ) else tr(
+                            "Finish your challenge first. While a challenge is pending or missed, DisciplineX's protection can't be switched off.",
+                            "முதலில் சவாலை முடியுங்கள். சவால் நிலுவையில் இருக்கும்போதோ தவறியிருக்கும்போதோ DisciplineX பாதுகாப்பை அணைக்க முடியாது."
                         ),
                         color = TextMuted,
                         style = MaterialTheme.typography.bodyMedium,
@@ -150,7 +206,8 @@ private fun UninstallPasswordScreen(onCorrect: () -> Unit, onCancel: () -> Unit)
                     PrimaryPillButton(text = tr("OK", "சரி"), onClick = onCancel)
                 } else {
                     Text(
-                        tr("Enter the password to uninstall", "நிறுவல் நீக்க கடவுச்சொல்லை உள்ளிடுங்கள்"),
+                        if (forUninstall) tr("Enter the password to uninstall", "நிறுவல் நீக்க கடவுச்சொல்லை உள்ளிடுங்கள்")
+                        else tr("Enter the password to continue", "தொடர கடவுச்சொல்லை உள்ளிடுங்கள்"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         textAlign = TextAlign.Center
