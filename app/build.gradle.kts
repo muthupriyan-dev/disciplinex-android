@@ -13,27 +13,16 @@ android {
         applicationId = "com.muthu.disciplinex"
         minSdk = 26
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.2.1"
-    }
-
-    // Fixed signing key (committed in the repo) so every Codemagic build is signed
-    // the same way and can be installed OVER the previous one without uninstalling.
-    // NOTE: this is a personal-use debug key. Keep the repo private if you care
-    // about nobody else being able to sign updates for this app.
-    signingConfigs {
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
+        versionCode = 14
+        versionName = "1.3.0"
     }
 
     // Release signing: the key is NEVER committed. Provide keystore.properties (git-ignored)
     // with storeFile / storePassword / keyAlias / keyPassword, or the same values as the
     // environment variables DX_STORE_FILE / DX_STORE_PASSWORD / DX_KEY_ALIAS / DX_KEY_PASSWORD.
     // If neither is present the release build is simply left unsigned (never debug-signed).
+    // On Codemagic these come from the "dx_release_key" keystore (see codemagic.yaml).
+    // Debug builds use Android's normal per-machine debug key and are only for testing.
     val keystoreProps = Properties().also { props ->
         val f = rootProject.file("keystore.properties")
         if (f.exists()) f.inputStream().use { props.load(it) }

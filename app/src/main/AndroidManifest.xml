@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Lets the alarm and app-lock keep running on phones that aggressively kill background apps. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Lets the password screen open the system "uninstall" dialog after a correct password. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Lets the app-lock see which apps exist (launcher apps, dialer, camera, home screen). -->
@@ -72,6 +74,16 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:resizeableActivity="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.DisciplineX" />
+
+        <!-- Asks for the uninstall password (or says "blocked") when someone tries to remove the app. -->
+        <activity
+            android:name=".lock.UninstallPasswordActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
             android:screenOrientation="portrait"
             android:theme="@style/Theme.DisciplineX" />
 

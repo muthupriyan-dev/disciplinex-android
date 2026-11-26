@@ -13,7 +13,7 @@ Every change was reviewed by reading only. Build it (Codemagic) before trusting 
 | # | Severity | Finding | Status |
 |---|----------|---------|--------|
 | 1 | High | versionName 1.2.0 while the project is 1.2.1 (versionCode not bumped) | FIXED (1.2.1 / 13) |
-| 2 | High | Only debug signing exists; debug.keystore with password "android" is committed | PARTIAL: release signing from git-ignored keystore.properties / env added. debug.keystore left in place on purpose so Codemagic debug APKs still install over old ones. Rotate before any public release. |
+| 2 | High | Only debug signing exists; debug.keystore with password "android" is committed | FIXED in 1.3.0: debug.keystore removed from the repo and git-ignored. Codemagic now builds a release APK signed with a private keystore (dx_release_key). The old key stays in git history, so treat every APK signed with it as untrusted. |
 | 3 | High | Duplicate alarm delivery (e.g. re-arm after TIME_SET) while a session is active recorded a false MISSED day and restarted the session | FIXED in ChallengeSession.start (60 s same-alarm, same-boot guard); AlarmReceiver skips service start on duplicate |
 | 4 | High | Completed challenges only bump per-day counters: no reps, exercise or duration stored, so Statistics/Achievements cannot be real | FIXED (data layer): new HistoryStore, written once from ChallengeSession.complete. No UI yet. Old completions are not recoverable. |
 | 5 | Medium | PoseCameraView: if the screen is left before the CameraProvider future resolves, camera binds after dispose and is never released | FIXED (disposed flag) |

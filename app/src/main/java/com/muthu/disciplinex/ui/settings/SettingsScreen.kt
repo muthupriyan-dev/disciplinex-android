@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
@@ -79,6 +80,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.muthu.disciplinex.alarm.AlarmTest
 import com.muthu.disciplinex.data.AppSettings
 import com.muthu.disciplinex.data.ChallengeSession
+import com.muthu.disciplinex.data.UninstallGuard
 import com.muthu.disciplinex.data.PermissionChecks
 import com.muthu.disciplinex.data.tr
 import com.muthu.disciplinex.ui.components.GuideButton
@@ -109,6 +111,12 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val locked = remember { ChallengeSession.isLockActive(context) }
+    // Also true during the 30 minutes of an emergency unlock: the password stays hidden then.
+    val uninstallProtected = remember { UninstallGuard.isProtected(context) }
+    var showUninstallPassword by remember { mutableStateOf(false) }
+    if (showUninstallPassword) {
+        UninstallPasswordDialog(onDismiss = { showUninstallPassword = false })
+    }
 
     // Re-check the permissions every time the user comes back from a system screen.
     var refreshTick by remember { mutableIntStateOf(0) }
@@ -306,6 +314,25 @@ fun SettingsScreen(
                                 "Missed a challenge? Keep the app open for 10 minutes (the time pauses when you leave) and your phone unlocks for 30 minutes, then it locks again by itself. The day stays missed.",
                                 "சவால் தவறிவிட்டதா? ஆப்பை 10 நிமிடம் திறந்து வையுங்கள் (வெளியே சென்றால் நேரம் நின்றுவிடும்). பிறகு போன் 30 நிமிடம் திறந்திருக்கும், தானாகவே மீண்டும் பூட்டிக்கொள்ளும். அந்த நாள் தவறியதாகவே இருக்கும்."
                             )
+                        )
+                        GroupDivider()
+                        SettingsRow(
+                            icon = Icons.Filled.Lock,
+                            title = tr("Password", "கடவுச்சொல்"),
+                            subtitle = if (uninstallProtected) {
+                                tr(
+                                    "Locked until your challenge is done. It can't be seen or used now.",
+                                    "சவால் முடியும் வரை பூட்டப்பட்டுள்ளது. இப்போது பார்க்கவோ பயன்படுத்தவோ முடியாது."
+                                )
+                            } else {
+                                tr(
+                                    "Needed to uninstall DisciplineX. Tap to see it.",
+                                    "DisciplineX-ஐ நிறுவல் நீக்க இது தேவை. பார்க்க தட்டுங்கள்."
+                                )
+                            },
+                            enabled = !uninstallProtected,
+                            onClick = { showUninstallPassword = true },
+                            showChevron = true
                         )
                     }
 

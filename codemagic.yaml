@@ -3,20 +3,32 @@ workflows:
     name: DisciplineX Android
     max_build_duration: 60
     environment:
+      # The release keystore is stored in Codemagic (Teams > Code signing identities >
+      # Android keystores) under this reference name. It is never in the repo.
+      android_signing:
+        - dx_release_key
       vars:
         PACKAGE_NAME: "com.muthu.disciplinex"
     scripts:
       - name: Generate Gradle wrapper
         script: |
           gradle wrapper --gradle-version 8.7
-      - name: Build debug APK
+      - name: Build signed release APK
         script: |
-          ./gradlew assembleDebug
+          if [ -z "$CM_KEYSTORE_PATH" ]; then
+            echo "ERROR: no release keystore. Add one in Codemagic named dx_release_key."
+            exit 1
+          fi
+          export DX_STORE_FILE="$CM_KEYSTORE_PATH"
+          export DX_STORE_PASSWORD="$CM_KEYSTORE_PASSWORD"
+          export DX_KEY_ALIAS="$CM_KEY_ALIAS"
+          export DX_KEY_PASSWORD="$CM_KEY_PASSWORD"
+          ./gradlew assembleRelease
       - name: Show merged manifest permissions
         script: |
           echo "=== merged manifest permissions ==="
           find app/build -path "*merged_manifest*" -name AndroidManifest.xml -exec grep -H "uses-permission" {} \;
-          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
           AAPT=$(find "$ANDROID_SDK_ROOT/build-tools" "$ANDROID_HOME/build-tools" -name aapt2 2>/dev/null | sort | tail -1)
           if [ -n "$AAPT" ] && [ -n "$APK" ]; then "$AAPT" dump permissions "$APK"; fi
         ignore_failure: true
@@ -25,4 +37,4 @@ workflows:
           ./gradlew testDebugUnitTest
         ignore_failure: true
     artifacts:
-      - app/build/outputs/apk/**/*.apk
+      - app/build/outputs/apk/release/*.apk

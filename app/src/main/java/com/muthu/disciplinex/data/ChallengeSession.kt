@@ -306,6 +306,16 @@ object ChallengeSession {
         return true
     }
 
+    /**
+     * True from the moment an alarm rings until the challenge is finished, and through the
+     * whole missed-day lock - including the 30 minutes of an emergency unlock. While this is
+     * true the app can't be uninstalled and the uninstall password stays hidden.
+     */
+    fun isUninstallProtected(context: Context): Boolean {
+        if (isLockActive(context)) return true // also clears a lock that has run out
+        return prefs(context).getBoolean(K_ACTIVE, false)
+    }
+
     /** Milliseconds of emergency unlock still left; null if none is running. */
     private fun emergencyUnlockLeft(context: Context, p: SharedPreferences): Long? {
         val wall = p.getLong(K_EMU_WALL, 0L)

@@ -10,3 +10,5 @@ captures/
 keystore.properties
 *.jks
 release.keystore
+app/debug.keystore
+*.keystore

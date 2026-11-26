@@ -38,7 +38,7 @@ Theme (system / light / dark), language (English / தமிழ்), alarm ringt
 2. Codemagic reads `codemagic.yaml`, generates the Gradle wrapper and builds a debug APK.
 3. Download the APK and install it over the old one.
 
-**Signing:** `app/debug.keystore` is a fixed key committed on purpose so every build installs *over* the previous one. Keep the repo private, or create your own release key before sharing widely.
+**Signing:** release APKs are signed with a private key that lives only in Codemagic (reference name `dx_release_key`) and in your own backup. It is never committed. Lose it and you can no longer ship updates that install over the old version, so keep a safe copy of the keystore file and its passwords.
 
 ## Project layout
 - `alarm/` — scheduling, ring screen, foreground service, boot re-arming, test sound

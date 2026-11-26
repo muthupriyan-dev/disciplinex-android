@@ -16,6 +16,9 @@ import android.telecom.TelecomManager
 import android.text.TextUtils
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import java.util.Locale
+import com.muthu.disciplinex.data.UninstallGuard
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import com.muthu.disciplinex.MainActivity
@@ -31,8 +34,11 @@ import com.muthu.disciplinex.data.UserPrefs
  * It also checks every visible window (split-screen / floating "mini" windows),
  * so a blocked app can't be used in a small window next to the challenge.
  *
- * It only ever looks at WHICH app owns a window (its package name). It never
- * reads text, messages or anything you type.
+ * It looks at WHICH app owns a window (its package name). The only screens whose
+ * text it reads are the system "uninstall app" dialogs (installer / Play Store), just
+ * to see whether the question is about DisciplineX itself, so the app can't be removed
+ * to dodge the lock (see [UninstallGuard]). It never reads messages, passwords or
+ * anything you type, and nothing it sees is stored or sent anywhere.
  */
 class LockAccessibilityService : AccessibilityService() {
 
@@ -47,6 +53,9 @@ class LockAccessibilityService : AccessibilityService() {
         if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             type != AccessibilityEvent.TYPE_WINDOWS_CHANGED
         ) return
+
+        // Somebody is trying to uninstall DisciplineX: block it or ask for the password.
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && handleUninstallDialog(event)) return
 
         // An emergency unlock is running: make sure the lock comes back when it ends,
         // even if the user stays inside one app the whole time.
@@ -65,6 +74,89 @@ class LockAccessibilityService : AccessibilityService() {
 
         // 2) Any other visible window (split-screen or floating mini window).
         if (hasBlockedWindowOnScreen()) redirectToChallenge()
+    }
+
+    private var lastUninstallPromptAt = 0L
+
+    /**
+     * The system "uninstall app" dialog is the one place where DisciplineX can be removed
+     * (launcher, Settings, Play Store all end up there). When it is about this app:
+     *  - challenge pending / missed -> blocked,
+     *  - otherwise -> the password screen opens first.
+     * Returns true if the event was handled.
+     */
+    private fun handleUninstallDialog(event: AccessibilityEvent): Boolean {
+        val pkg = event.packageName?.toString() ?: return false
+        if (pkg == packageName) return false
+        val isInstaller = pkg.contains("packageinstaller", ignoreCase = true)
+        val isStore = pkg == PLAY_STORE
+        if (!isInstaller && !isStore) return false
+        if (UninstallGuard.promptShowing) return false
+
+        val blockedNow = UninstallGuard.isProtected(this)
+        if (!blockedNow && UninstallGuard.isUninstallGranted(this)) return false
+
+        val className = event.className?.toString().orEmpty()
+        val text = collectDialogText(event)
+        val appLabel = try {
+            applicationInfo.loadLabel(packageManager).toString().lowercase(Locale.ROOT)
+        } catch (e: Exception) {
+            "disciplinex"
+        }
+        val mentionsUs = text.contains(appLabel) || text.contains(packageName)
+        val looksLikeUninstall = className.contains("uninstall", ignoreCase = true) ||
+            UNINSTALL_WORDS.any { text.contains(it) }
+
+        val relevant = when {
+            // The Play Store has many screens: only act when it clearly asks about this app.
+            isStore -> mentionsUs && UNINSTALL_WORDS.any { text.contains(it) }
+            // While locked nobody uninstalls anything. Otherwise only this app is guarded.
+            blockedNow -> looksLikeUninstall || mentionsUs
+            else -> looksLikeUninstall && mentionsUs
+        }
+        if (!relevant) return false
+
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastUninstallPromptAt < 2000L) return true
+        lastUninstallPromptAt = now
+
+        // Close the system dialog, then show our own screen.
+        performGlobalAction(GLOBAL_ACTION_BACK)
+        handler.postDelayed({
+            try {
+                startActivity(
+                    Intent(this, UninstallPasswordActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not open the uninstall password screen", e)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+        }, 250L)
+        return true
+    }
+
+    /** All the text of a dialog, in lower case. Only used on the uninstall dialogs above. */
+    private fun collectDialogText(event: AccessibilityEvent): String {
+        val sb = StringBuilder()
+        event.text?.forEach { sb.append(it).append(' ') }
+        val root = try { event.source } catch (e: Exception) { null }
+            ?: try { rootInActiveWindow } catch (e: Exception) { null }
+        if (root != null) {
+            val queue = ArrayDeque<AccessibilityNodeInfo>()
+            queue.add(root)
+            var visited = 0
+            while (queue.isNotEmpty() && visited < 150) {
+                val node = queue.removeFirst()
+                visited++
+                node.text?.let { sb.append(it).append(' ') }
+                node.contentDescription?.let { sb.append(it).append(' ') }
+                for (i in 0 until node.childCount) {
+                    node.getChild(i)?.let { queue.add(it) }
+                }
+            }
+        }
+        return sb.toString().lowercase(Locale.ROOT)
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -204,6 +296,14 @@ class LockAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "LockAccessibility"
+        private const val PLAY_STORE = "com.android.vending"
+
+        /** Words that show up on an "uninstall this app?" question, in the languages we ship. */
+        private val UNINSTALL_WORDS = listOf(
+            "uninstall",
+            "நிறுவல் நீக்க",
+            "நீக்க வேண்டுமா"
+        )
         private const val REDIRECT_COOLDOWN_MS = 1500L
         private const val ALLOWED_CACHE_MS = 60_000L
 
