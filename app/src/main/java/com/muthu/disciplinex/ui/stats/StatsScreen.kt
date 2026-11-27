@@ -21,6 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -72,7 +75,7 @@ import java.time.format.TextStyle
  * screen says so instead of pretending otherwise.
  */
 @Composable
-fun StatsScreen(onBack: () -> Unit) {
+fun StatsScreen(onBack: () -> Unit, onOpenAchievements: () -> Unit) {
     val context = LocalContext.current
     val stats = remember {
         StatsCalculator.compute(
@@ -199,10 +202,32 @@ fun StatsScreen(onBack: () -> Unit) {
                 }
             }
 
-            Card(Modifier.tourTarget(tour, "achievements")) {
-                SectionTitle(tr("Achievements", "சாதனைகள்"))
-                Spacer(Modifier.height(8.dp))
-                achievements.forEach { AchievementRow(it) }
+            Card(Modifier.tourTarget(tour, "achievements").clickable(onClick = onOpenAchievements)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(OrangeStart.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = OrangeStart)
+                    }
+                    Spacer(Modifier.size(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        SectionTitle(tr("Achievements", "சாதனைகள்"))
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            tr(
+                                "${achievements.count { it.unlocked }} / ${achievements.size} badges unlocked",
+                                "${achievements.size}-ல் ${achievements.count { it.unlocked }} பதக்கங்கள் திறக்கப்பட்டன"
+                            ),
+                            color = TextMuted,
+                            fontSize = 13.sp
+                        )
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted)
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -232,8 +257,8 @@ private fun statsTourSteps(): List<TourStep> = listOf(
     ),
     TourStep(
         "achievements", tr("Achievements", "சாதனைகள்"),
-        tr("A badge unlocks only when your real activity reaches the goal, like a 7-day streak or 100 finished challenges.",
-            "7 நாள் தொடர்ச்சியான சாதனை அல்லது 100 சவால்களை முடித்தது போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பதக்கம் திறக்கும்.")
+        tr("A badge unlocks only when your real activity reaches the goal, like a 7-day streak or 100 finished challenges. Tap it to see all your badges.",
+            "7 நாள் தொடர்ச்சியான சாதனை அல்லது 100 சவால்களை முடித்தது போன்ற இலக்கை உங்கள் உண்மையான செயல்பாடு எட்டினால் மட்டுமே பதக்கம் திறக்கும். எல்லா பதக்கங்களையும் பார்க்க இதை தட்டுங்கள்.")
     )
 )
 
@@ -329,58 +354,5 @@ private fun ExerciseRow(s: ExerciseStat) {
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold
         )
-    }
-}
-
-@Composable
-private fun AchievementRow(a: Achievement) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(if (a.unlocked) Success else ChipBackground),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                if (a.unlocked) Icons.Default.Check else Icons.Default.Lock,
-                contentDescription = if (a.unlocked) tr("Unlocked", "திறக்கப்பட்டது") else tr("Locked", "பூட்டப்பட்டது"),
-                tint = if (a.unlocked) Color.White else TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(Modifier.size(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                tr(a.titleEn, a.titleTa),
-                color = if (a.unlocked) SuccessText else TextPrimary,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(4.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(ChipBackground)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(a.fraction)
-                        .height(6.dp)
-                        .background(if (a.unlocked) Success else OrangeStart)
-                )
-            }
-            Spacer(Modifier.height(2.dp))
-            Text(
-                "${minOf(a.progress, a.goal)} / ${a.goal} " + tr(a.unitEn, a.unitTa),
-                color = TextMuted,
-                fontSize = 12.sp
-            )
-        }
     }
 }

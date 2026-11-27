@@ -21,15 +21,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -393,7 +388,7 @@ fun HomeScreen(
                 alarms.forEachIndexed { index, alarm ->
                     key(alarm.id) {
                         val committed = AlarmScheduler.isCommitted(alarm)
-                        SwipeableAlarmCard(
+                        AlarmCard(
                             alarm = alarm,
                             locked = locked || committed,
                             committed = committed && !locked,
@@ -406,23 +401,6 @@ fun HomeScreen(
                                 if (on) AlarmScheduler.schedule(context, updated)
                                 else AlarmScheduler.cancel(context, updated.id)
                                 refreshTick++
-                            },
-                            onDelete = {
-                                AlarmScheduler.cancel(context, alarm.id)
-                                AlarmStore.delete(context, alarm.id)
-                                refreshTick++
-                                scope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = tr("Alarm deleted", "அலாரம் நீக்கப்பட்டது"),
-                                        actionLabel = tr("Undo", "திரும்பப்பெறு"),
-                                        duration = androidx.compose.material3.SnackbarDuration.Long
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        AlarmStore.save(context, alarm)
-                                        if (alarm.enabled) AlarmScheduler.schedule(context, alarm)
-                                        refreshTick++
-                                    }
-                                }
                             }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -591,62 +569,6 @@ private fun TimeLeftBar(msLeft: Long, windowMs: Long) {
         trackColor = com.muthu.disciplinex.ui.theme.Divider,
         modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
     )
-}
-
-/**
- * An alarm card you can swipe left to delete (with an Undo in the snackbar).
- * A locked or committed alarm can't be deleted, so it is not swipeable.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SwipeableAlarmCard(
-    alarm: AlarmEntry,
-    locked: Boolean,
-    committed: Boolean,
-    modifier: Modifier,
-    switchModifier: Modifier,
-    onClick: () -> Unit,
-    onToggle: (Boolean) -> Unit,
-    onDelete: () -> Unit
-) {
-    if (locked) {
-        AlarmCard(alarm, locked, committed, modifier, switchModifier, onClick, onToggle)
-        return
-    }
-    val currentOnDelete by rememberUpdatedState(onDelete)
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                currentOnDelete()
-                true
-            } else {
-                false
-            }
-        }
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        modifier = modifier,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Danger)
-                    .padding(end = 24.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = tr("Delete alarm", "அலாரத்தை நீக்கு"),
-                    tint = Color.White
-                )
-            }
-        }
-    ) {
-        AlarmCard(alarm, locked, committed, Modifier, switchModifier, onClick, onToggle)
-    }
 }
 
 @Composable
