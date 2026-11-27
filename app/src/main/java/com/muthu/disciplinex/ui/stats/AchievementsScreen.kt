@@ -1,9 +1,18 @@
 package com.muthu.disciplinex.ui.stats
 
-import androidx.compose.foundation.Canvas
+import android.content.Context
+import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -21,37 +30,44 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Terrain
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.muthu.disciplinex.R
 import com.muthu.disciplinex.data.AppSettings
 import com.muthu.disciplinex.data.HistoryStore
 import com.muthu.disciplinex.data.StreakStore
@@ -66,19 +82,23 @@ import com.muthu.disciplinex.ui.theme.SuccessText
 import com.muthu.disciplinex.ui.theme.Surface
 import com.muthu.disciplinex.ui.theme.TextMuted
 import com.muthu.disciplinex.ui.theme.TextPrimary
+import kotlinx.coroutines.delay
 import java.time.LocalDate
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
- * The badges screen. Which badge is unlocked is decided only by [Achievements.evaluate]
- * (real stored activity); this screen just draws the result. Badge artwork is drawn in
- * code, so there are no image files and it works in light and dark themes.
+ * The badges screen. Which badge is unlocked, and every progress number, comes only from
+ * [Achievements.evaluate] (real stored activity); this screen just draws the result.
+ * The badge artwork is a set of PNG drawables (res/drawable-nodpi/badge_*.png).
+ *
+ * The only thing this screen stores itself is which unlocked badges it has already
+ * celebrated (a small "achievements_ui" preference), so the unlock animation and the haptic
+ * tick play once per new badge. That never touches the achievement data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AchievementsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val achievements = remember {
         val stats = StatsCalculator.compute(
             StreakStore.allDays(context),
@@ -87,15 +107,29 @@ fun AchievementsScreen(onBack: () -> Unit) {
         )
         Achievements.evaluate(stats.totalDone, StreakStore.bestStreak(context), stats.totalReps)
     }
-    val unlockedCount = achievements.count { it.unlocked }
+    val unlockedIds = remember(achievements) { achievements.filter { it.unlocked }.map { it.id }.toSet() }
+    val celebrated = remember { loadCelebrated(context) } // null on the very first visit
+    val newIds: Set<String> = remember(celebrated) {
+        if (celebrated == null) emptySet() else unlockedIds - celebrated
+    }
+    var selected by remember { mutableStateOf<Achievement?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            if (newIds.isNotEmpty()) {
+                delay(450)
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+        } finally {
+            saveCelebrated(context, unlockedIds)
+        }
+    }
 
     Scaffold(
         containerColor = Background,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(tr("Achievements", "சாதனைகள்"), fontWeight = FontWeight.Bold)
-                },
+                title = { Text(tr("Achievements", "சாதனைகள்"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = tr("Back", "பின்செல்"))
@@ -117,42 +151,128 @@ fun AchievementsScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ProgressBanner(unlockedCount, achievements.size)
+        BoxWithConstraints(modifier = Modifier.padding(padding).fillMaxSize()) {
+            // Three columns on normal phones, two on very narrow screens.
+            val columns = if (maxWidth >= 340.dp) 3 else 2
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(GAP)
+            ) {
+                ProgressBanner(achievements)
 
-            achievements.chunked(3).forEach { rowItems ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    rowItems.forEach { a ->
-                        BadgeCard(a, Modifier.weight(1f).fillMaxHeight())
+                achievements.chunked(columns).forEachIndexed { rowIndex, rowItems ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(GAP)
+                    ) {
+                        rowItems.forEachIndexed { col, a ->
+                            BadgeCard(
+                                a = a,
+                                index = rowIndex * columns + col,
+                                isNew = a.id in newIds,
+                                onClick = { selected = a },
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        }
+                        repeat(columns - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
-                    repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
                 }
-            }
 
-            TipCard()
-            Spacer(Modifier.height(16.dp))
+                TipCard()
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
+
+    selected?.let { BadgeDetailDialog(it, onDismiss = { selected = null }) }
 }
+
+private val GAP = 10.dp
+
+// ---------------------------------------------------------------------------------------------
+// Celebration bookkeeping (UI only)
+// ---------------------------------------------------------------------------------------------
+
+private const val UI_PREFS = "achievements_ui"
+private const val KEY_CELEBRATED = "celebrated_ids"
+
+private fun loadCelebrated(context: Context): Set<String>? {
+    val p = context.getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
+    return if (p.contains(KEY_CELEBRATED)) {
+        p.getStringSet(KEY_CELEBRATED, emptySet())?.toSet() ?: emptySet()
+    } else {
+        null
+    }
+}
+
+private fun saveCelebrated(context: Context, ids: Set<String>) {
+    context.getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
+        .edit().putStringSet(KEY_CELEBRATED, ids.toSet()).apply()
+}
+
+// ---------------------------------------------------------------------------------------------
+// Look of each badge: artwork plus a colour identity
+// ---------------------------------------------------------------------------------------------
+
+private data class BadgeLook(
+    @DrawableRes val image: Int,
+    val accent: Color,
+    val tintLight: Color
+)
+
+private fun lookFor(id: String): BadgeLook = when (id) {
+    "first" -> BadgeLook(R.drawable.badge_first, Color(0xFF1B9E4B), Color(0xFFD3F7DC))
+    "streak3" -> BadgeLook(R.drawable.badge_streak3, Color(0xFFF57C00), Color(0xFFFFE5C8))
+    "streak7" -> BadgeLook(R.drawable.badge_streak7, Color(0xFF1E6BFF), Color(0xFFD6E6FF))
+    "streak30" -> BadgeLook(R.drawable.badge_streak30, Color(0xFF8E3FF0), Color(0xFFE6D8FF))
+    "done100" -> BadgeLook(R.drawable.badge_done100, Color(0xFF12A594), Color(0xFFCFF5EE))
+    else -> BadgeLook(R.drawable.badge_reps500, Color(0xFFF59E0B), Color(0xFFFFEBC2))
+}
+
+/** Vibrant for unlocked badges, muted for locked ones. */
+private fun badgeFilter(unlocked: Boolean): ColorFilter? =
+    if (unlocked) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0.25f) })
+
+private fun tipBackground(): Color =
+    if (AppSettings.isDark) Color(0xFF2A2A48) else Color(0xFFE8E8FF)
+
+/** "1 day" / "3 days", "1 challenge" / "100 challenges", "1 rep" / "500 reps". */
+private fun unitText(a: Achievement, n: Int): String =
+    if (n == 1) {
+        tr(
+            a.unitEn.removeSuffix("s"),
+            when (a.unitTa) {
+                "நாட்கள்" -> "நாள்"
+                "சவால்கள்" -> "சவால்"
+                else -> a.unitTa
+            }
+        )
+    } else {
+        tr(a.unitEn, a.unitTa)
+    }
+
+private fun progressText(a: Achievement): String =
+    "${minOf(a.progress, a.goal)} / ${a.goal} " + unitText(a, a.goal)
 
 // ---------------------------------------------------------------------------------------------
 // Banner and tip
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-private fun ProgressBanner(unlocked: Int, total: Int) {
+private fun ProgressBanner(achievements: List<Achievement>) {
+    val total = achievements.size
+    val unlocked = achievements.count { it.unlocked }
+    val next = achievements.filter { !it.unlocked }.maxByOrNull { it.fraction }
+    val barTarget = if (total == 0) 0f else unlocked.toFloat() / total
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    val bar by animateFloatAsState(if (started) barTarget else 0f, tween(800), label = "banner")
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -169,7 +289,7 @@ private fun ProgressBanner(unlocked: Int, total: Int) {
             Icons.Default.EmojiEvents,
             contentDescription = null,
             tint = Color(0xFFFFC83D),
-            modifier = Modifier.size(76.dp)
+            modifier = Modifier.size(72.dp)
         )
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -181,11 +301,33 @@ private fun ProgressBanner(unlocked: Int, total: Int) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                tr("Keep going! You're doing great!", "தொடருங்கள்! நீங்கள் சிறப்பாக செய்கிறீர்கள்!"),
+                if (next == null) {
+                    tr("All badges unlocked. Amazing!", "எல்லா பதக்கங்களும் திறக்கப்பட்டன. அருமை!")
+                } else {
+                    tr(
+                        "Next: ${next.titleEn} \u00b7 ${next.goal - next.progress} ${unitText(next, next.goal - next.progress)} to go",
+                        "அடுத்தது: ${next.titleTa} \u00b7 இன்னும் ${next.goal - next.progress} ${unitText(next, next.goal - next.progress)}"
+                    )
+                },
                 color = Color.White.copy(alpha = 0.85f),
-                fontSize = 14.sp
+                fontSize = 13.sp
             )
             Spacer(Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.18f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(bar)
+                        .fillMaxHeight()
+                        .background(Color(0xFFFFC83D))
+                )
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 "\uD83D\uDD25 " + tr(
                     "$unlocked / $total Badges Unlocked",
@@ -193,18 +335,11 @@ private fun ProgressBanner(unlocked: Int, total: Int) {
                 ),
                 color = Color.White,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Color.White.copy(alpha = 0.14f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
-
-private fun tipBackground(): Color =
-    if (AppSettings.isDark) Color(0xFF2A2A48) else Color(0xFFE8E8FF)
 
 @Composable
 private fun TipCard() {
@@ -243,36 +378,76 @@ private fun TipCard() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// One badge card
+// Badge card
 // ---------------------------------------------------------------------------------------------
 
-private data class BadgeStyle(val light: Color, val dark: Color, val ribbon: Color)
-
-private fun styleFor(id: String): BadgeStyle = when (id) {
-    "first" -> BadgeStyle(Color(0xFF5BE38A), Color(0xFF1B9E4B), Color(0xFF0E7A37))
-    "streak3" -> BadgeStyle(Color(0xFFFFB04A), Color(0xFFE8631F), Color(0xFFD62F3A))
-    "streak7" -> BadgeStyle(Color(0xFF7DB3FF), Color(0xFF2557C9), Color(0xFF1B3F9B))
-    "streak30" -> BadgeStyle(Color(0xFFC58BFF), Color(0xFF7A2FD9), Color(0xFF5A1FB0))
-    "done100" -> BadgeStyle(Color(0xFF4FE3CB), Color(0xFF0F9A8B), Color(0xFF0B766B))
-    else -> BadgeStyle(Color(0xFFFFD25A), Color(0xFFE08E00), Color(0xFFB86A00))
-}
-
 @Composable
-private fun BadgeCard(a: Achievement, modifier: Modifier) {
-    val style = styleFor(a.id)
+private fun BadgeCard(
+    a: Achievement,
+    index: Int,
+    isNew: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val look = lookFor(a.id)
+
+    // Gentle entrance, staggered by position, and a pop for a badge that was just unlocked.
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    val enter by animateFloatAsState(
+        if (started) 1f else 0f,
+        tween(durationMillis = 380, delayMillis = index * 60),
+        label = "enter"
+    )
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(isNew) {
+        if (isNew) {
+            delay(450)
+            pop.animateTo(1.18f, tween(200))
+            pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
+
+    val top = if (AppSettings.isDark) lerp(Surface, look.accent, 0.20f) else look.tintLight
+    val brush = if (a.unlocked) {
+        Brush.verticalGradient(listOf(top, Surface))
+    } else {
+        Brush.verticalGradient(listOf(lerp(Surface, top, 0.45f), Surface))
+    }
+
     Column(
         modifier = modifier
+            .graphicsLayer {
+                alpha = enter
+                scaleX = 0.94f + 0.06f * enter
+                scaleY = 0.94f + 0.06f * enter
+            }
             .clip(RoundedCornerShape(20.dp))
-            .background(Surface)
+            .background(brush)
+            .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Badge(style) { BadgeFace(a, style) }
-        Spacer(Modifier.height(6.dp))
+        Image(
+            painter = painterResource(look.image),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            colorFilter = badgeFilter(a.unlocked),
+            alpha = if (a.unlocked) 1f else 0.9f,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(84.dp)
+                .graphicsLayer {
+                    scaleX = pop.value
+                    scaleY = pop.value
+                }
+        )
+        Spacer(Modifier.height(8.dp))
         Text(
             tr(a.titleEn, a.titleTa),
             color = TextPrimary,
             fontSize = 13.sp,
+            lineHeight = 17.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             minLines = 2
@@ -282,193 +457,180 @@ private fun BadgeCard(a: Achievement, modifier: Modifier) {
             tr(a.descEn, a.descTa),
             color = TextMuted,
             fontSize = 11.sp,
-            textAlign = TextAlign.Center
+            lineHeight = 14.sp,
+            textAlign = TextAlign.Center,
+            minLines = 2
         )
         Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(10.dp))
+        StatusPill(a.unlocked)
         Spacer(Modifier.height(8.dp))
-        if (a.unlocked) {
-            Row(
+        ProgressBlock(a, look.accent)
+    }
+}
+
+@Composable
+private fun StatusPill(unlocked: Boolean) {
+    val color = if (unlocked) SuccessText else TextMuted
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (unlocked) Success.copy(alpha = 0.18f) else ChipBackground)
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            if (unlocked) Icons.Default.CheckCircle else Icons.Default.Lock,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(13.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            if (unlocked) tr("Unlocked", "திறக்கப்பட்டது") else tr("Locked", "பூட்டப்பட்டது"),
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
+    }
+}
+
+/** The progress bar and the count under it; identical for every badge. */
+@Composable
+private fun ProgressBlock(a: Achievement, accent: Color) {
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    val fraction by animateFloatAsState(
+        if (started) a.fraction else 0f,
+        tween(durationMillis = 700, delayMillis = 200),
+        label = "progress"
+    )
+    val barColor = if (a.unlocked) Success else accent
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(ChipBackground)
+        ) {
+            Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Success.copy(alpha = 0.18f))
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = SuccessText,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(4.dp))
+                    .fillMaxWidth(fraction)
+                    .fillMaxHeight()
+                    .background(barColor)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            if (a.unlocked) {
+                "${a.goal} / ${a.goal} " + tr("Completed", "நிறைவு")
+            } else {
+                progressText(a)
+            },
+            color = if (a.unlocked) SuccessText else TextPrimary,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Detail dialog
+// ---------------------------------------------------------------------------------------------
+
+@Composable
+private fun BadgeDetailDialog(a: Achievement, onDismiss: () -> Unit) {
+    val look = lookFor(a.id)
+    val top = if (AppSettings.isDark) lerp(Surface, look.accent, 0.22f) else look.tintLight
+    val goalText = if (a.id == "first") tr("1 challenge", "1 சவால்") else "${a.goal} " + unitText(a, a.goal)
+    val isStreak = a.id.startsWith("streak")
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(Brush.verticalGradient(listOf(top, Surface)))
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(look.image),
+                contentDescription = tr(a.titleEn, a.titleTa),
+                contentScale = ContentScale.Fit,
+                colorFilter = badgeFilter(a.unlocked),
+                modifier = Modifier.fillMaxWidth().height(150.dp)
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                tr(a.titleEn, a.titleTa),
+                color = TextPrimary,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                tr(a.descEn, a.descTa),
+                color = TextMuted,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(14.dp))
+            StatusPill(a.unlocked)
+            Spacer(Modifier.height(14.dp))
+
+            DetailLine(tr("Requirement", "தேவை"), goalText)
+            Spacer(Modifier.height(8.dp))
+            DetailLine(tr("Progress", "முன்னேற்றம்"), progressText(a))
+            Spacer(Modifier.height(8.dp))
+            ProgressBlockBar(a, look.accent)
+            if (isStreak) {
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    tr("Unlocked", "திறக்கப்பட்டது"),
-                    color = SuccessText,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    tr(
+                        "Counted from your best streak.",
+                        "உங்கள் அதிகபட்ச தொடர்ச்சியான சாதனையிலிருந்து கணக்கிடப்படும்."
+                    ),
+                    color = TextMuted,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
                 )
             }
-        } else {
-            ProgressPill(a, style)
+            Spacer(Modifier.height(12.dp))
+            TextButton(onClick = onDismiss) {
+                Text(tr("Close", "மூடு"), fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
 
 @Composable
-private fun ProgressPill(a: Achievement, style: BadgeStyle) {
-    val fill = if (a.progress > 0) a.fraction.coerceAtLeast(0.1f) else 0f
+private fun DetailLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = TextMuted, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(value, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun ProgressBlockBar(a: Achievement, accent: Color) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(24.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .height(10.dp)
+            .clip(RoundedCornerShape(5.dp))
             .background(ChipBackground)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(fill)
+                .fillMaxWidth(a.fraction)
                 .fillMaxHeight()
-                .background(style.dark)
+                .background(if (a.unlocked) Success else accent)
         )
-        Text(
-            "${minOf(a.progress, a.goal)} / ${a.goal} " + tr(a.unitEn, a.unitTa),
-            color = TextPrimary,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------------------------
-// Badge artwork (hexagon medal with two ribbon tails), drawn with Canvas
-// ---------------------------------------------------------------------------------------------
-
-private fun hexagon(cx: Float, cy: Float, r: Float): Path = Path().apply {
-    for (i in 0 until 6) {
-        val angle = Math.toRadians((-90 + 60 * i).toDouble())
-        val x = cx + (r * cos(angle)).toFloat()
-        val y = cy + (r * sin(angle)).toFloat()
-        if (i == 0) moveTo(x, y) else lineTo(x, y)
-    }
-    close()
-}
-
-@Composable
-private fun Badge(style: BadgeStyle, face: @Composable () -> Unit) {
-    Box(modifier = Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val cx = w / 2f
-            val cy = size.height * 0.5f
-            val r = w * 0.38f
-
-            // Ribbon tails, behind the medal.
-            val left = Path().apply {
-                moveTo(cx - 0.62f * r, cy + 0.45f * r)
-                lineTo(cx - 0.12f * r, cy + 0.55f * r)
-                lineTo(cx - 0.30f * r, cy + 1.18f * r)
-                lineTo(cx - 0.80f * r, cy + 1.05f * r)
-                close()
-            }
-            val right = Path().apply {
-                moveTo(cx + 0.62f * r, cy + 0.45f * r)
-                lineTo(cx + 0.12f * r, cy + 0.55f * r)
-                lineTo(cx + 0.30f * r, cy + 1.18f * r)
-                lineTo(cx + 0.80f * r, cy + 1.05f * r)
-                close()
-            }
-            drawPath(left, style.ribbon, style = Fill)
-            drawPath(right, style.ribbon, style = Fill)
-
-            // Outer medal.
-            val outerBrush = Brush.verticalGradient(
-                colors = listOf(style.light, style.dark),
-                startY = cy - r,
-                endY = cy + r
-            )
-            val outer = hexagon(cx, cy, r)
-            drawPath(outer, outerBrush, style = Fill)
-            drawPath(outer, outerBrush, style = Stroke(width = r * 0.14f, join = StrokeJoin.Round))
-
-            // Inner medal.
-            val innerBrush = Brush.verticalGradient(
-                colors = listOf(lerp(style.dark, Color.Black, 0.18f), style.dark),
-                startY = cy - r,
-                endY = cy + r
-            )
-            val inner = hexagon(cx, cy, r * 0.78f)
-            drawPath(inner, innerBrush, style = Fill)
-            drawPath(inner, innerBrush, style = Stroke(width = r * 0.08f, join = StrokeJoin.Round))
-
-            // Small highlight on the top edge.
-            drawLine(
-                color = Color.White.copy(alpha = 0.35f),
-                start = Offset(cx - r * 0.35f, cy - r * 0.62f),
-                end = Offset(cx + r * 0.35f, cy - r * 0.62f),
-                strokeWidth = r * 0.06f
-            )
-        }
-        face()
-    }
-}
-
-@Composable
-private fun BadgeFace(a: Achievement, style: BadgeStyle) {
-    when (a.id) {
-        "first" -> Icon(
-            Icons.Default.Check,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(34.dp)
-        )
-        "streak3", "streak7", "streak30" -> CalendarFace(a.goal.toString(), style)
-        "done100" -> Icon(
-            Icons.Default.Terrain,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(32.dp)
-        )
-        else -> Icon(
-            Icons.Default.Star,
-            contentDescription = null,
-            tint = Color(0xFFFFF1B8),
-            modifier = Modifier.size(34.dp)
-        )
-    }
-}
-
-/** A tiny calendar page showing the day count. */
-@Composable
-private fun CalendarFace(number: String, style: BadgeStyle) {
-    Column(
-        modifier = Modifier
-            .size(width = 30.dp, height = 32.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(9.dp)
-                .background(style.ribbon)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                number,
-                color = style.ribbon,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-        }
     }
 }

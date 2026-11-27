@@ -15,7 +15,7 @@ A discipline app: **an alarm rings, and your phone stays locked down until you f
 - **Appearance:** theme (system / light / dark), language (English / தமிழ்).
 - **Alarm preferences:** ringtone, vibration, test alarm sound.
 - **Lock & Protection:** allowed apps (with icons), emergency unlock info, uninstall password, permission status with fix buttons.
-- **Progress & History:** streak history calendar. Statistics opens from Home, and the Achievements badges open from the Statistics screen.
+- **Progress & History:** streak history calendar. Statistics opens from Home, and the Achievements badges open from the Statistics screen. Tap a badge to see its requirement, progress and status.
 - **Data & Privacy:** save / restore a backup file, privacy explanation.
 - **About:** **How DisciplineX Works**, app version.
 
@@ -56,5 +56,5 @@ Every screen also has an **(i)** button that explains what is on it.
 - `lock/` — the accessibility service that enforces the lock
 - `pose/` — camera preview, ML Kit analyzer, rep counters (push-ups, squats, jumping jacks)
 - `data/` — alarms, `ChallengeSession` (lock, time limit, away rule, emergency unlock), streaks, challenge history, settings, backup, uninstall guard, step check
-- `domain/` — statistics and achievements calculation
+- `domain/` — statistics and achievements calculation (badge artwork lives in `res/drawable-nodpi/badge_*.png`)
 - `ui/` — Compose screens: `home/`, `alarms/` (editor), `challenge/`, `onboarding/`, `stats/` (Statistics + Achievements), `settings/` (Settings, history calendar, allowed apps, backup, **How DisciplineX Works**), `navigation/`, `components/` (guide tour)
